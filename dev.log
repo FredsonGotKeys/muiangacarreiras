@@ -1,0 +1,47 @@
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3001
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 13.8s
+ ○ Compiling / ...
+ ✓ Compiled / in 20.5s (626 modules)
+ GET / 200 in 21264ms
+ ✓ Compiled in 1124ms (289 modules)
+ GET / 200 in 342ms
+ ○ Compiling /emprego ...
+ ✓ Compiled /emprego in 3.4s (642 modules)
+ GET /emprego 200 in 3990ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 892ms (385 modules)
+ GET /favicon.ico 200 in 1245ms
+ GET /favicon.ico 200 in 26ms
+ ○ Compiling /api/vagas ...
+ ✓ Compiled /api/vagas in 3s (461 modules)
+ GET /api/vagas 200 in 6496ms
+ ○ Compiling /api/vagas/[slug] ...
+ ✓ Compiled /api/vagas/[slug] in 758ms (463 modules)
+ GET /api/vagas/motorista-de-carga-2 200 in 3597ms
+ GET /api/vagas/motorista-de-carga-2 200 in 72ms
+ ✓ Compiled in 3.5s (607 modules)
+ ✓ Compiled in 817ms (303 modules)
+ ✓ Compiled in 3.9s (607 modules)
+ ✓ Compiled in 2.8s (607 modules)
+ ✓ Compiled in 2.4s (607 modules)
+ ✓ Compiled in 4.8s (611 modules)
+ GET /emprego 200 in 700ms
+ GET /emprego 200 in 135ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 905ms (338 modules)
+ GET /favicon.ico 200 in 1335ms
+ ✓ Compiled /api/vagas in 433ms (414 modules)
+ GET /api/vagas 200 in 993ms
+ ✓ Compiled /api/vagas/[slug] in 350ms (416 modules)
+ GET /api/vagas/motorista-de-carga-2 200 in 570ms
+ GET /api/vagas/motorista-de-carga-2 200 in 375ms
+ GET /api/vagas/ajudante-de-motorista-2 200 in 67ms
+ GET /api/vagas/ajudante-de-motorista-2 200 in 84ms
+ GET /api/vagas/oficial-senior-de-monitoria-e-avaliacao 200 in 93ms
+ GET /api/vagas/oficial-senior-de-monitoria-e-avaliacao 200 in 97ms
+ GET /api/vagas/technician-instrumentation-energy 200 in 81ms
+ GET /api/vagas/technician-instrumentation-energy 200 in 128ms
