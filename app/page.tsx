@@ -30,7 +30,7 @@ const boladas: BoladaCard[] = [
 const trust = [
   { num: "200+", label: "Projectos entregues" },
   { num: "10+",  label: "Anos de experiência" },
-  { num: "3",    label: "Países: MZ · PT · ZA" },
+  { num: "6",    label: "Países lusófonos" },
   { num: "98%",  label: "Clientes satisfeitos" },
 ];
 
@@ -62,23 +62,31 @@ export default function HomePage() {
         <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 grid lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1">
 
-            <h1 className="text-[clamp(3rem,7.5vw,5.5rem)] text-white leading-[0.95] mb-5 tracking-tight">
-              <span className="text-[#C9A84C]">MUIANGA</span><br />
-              <span className="font-light text-white/40 text-[0.42em] tracking-[0.35em] uppercase">Consultores</span>
+            {/* Pill de credibilidade */}
+            <div className="inline-flex items-center gap-2 bg-[#C9A84C]/15 border border-[#C9A84C]/30 rounded-full px-4 py-1.5 mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1D9E75] animate-pulse" />
+              <span className="text-[#C9A84C] text-xs font-semibold tracking-wide">A plataforma lusófona de consultoria & emprego</span>
+            </div>
+
+            <h1 className="text-[clamp(2.6rem,6.5vw,5rem)] text-white leading-[1.05] mb-5 tracking-tight">
+              Conectamos talento,<br />
+              <span className="text-[#C9A84C]">negócio e oportunidade</span>
             </h1>
-            <p className="text-white/50 text-lg font-light leading-relaxed mb-2">Consultoria · Formação · Emprego</p>
-            <p className="text-white/50 text-sm leading-relaxed mb-9 max-w-md">
-              A plataforma moçambicana que une talento, negócio e oportunidade — de Maputo aos <span className="text-white/75 font-medium">PALOP, Brasil e Portugal</span>.
+            <p className="text-white/55 text-base leading-relaxed mb-8 max-w-md">
+              Consultoria estratégica para empresas. Emprego acessível para profissionais. Tudo num só lugar — de Maputo aos <span className="text-white/80 font-medium">PALOP, Brasil e Portugal</span>.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 mb-12">
-              <Link href="/servicos" className="btn-primary text-base px-8 py-4 rounded-2xl justify-center">
-                Ver Serviços e Preços
+            {/* Dois CTAs para dois públicos */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-5">
+              <Link href="/emprego" className="btn-primary text-base px-7 py-4 rounded-2xl justify-center">
+                Encontrar Emprego →
               </Link>
-              <Link href="/emprego" className="inline-flex items-center justify-center gap-2 bg-white/6 border border-[#C9A84C]/25 text-[#C9A84C] font-semibold text-base px-8 py-4 rounded-2xl hover:bg-[#C9A84C]/12 hover:border-[#C9A84C]/40 transition-all active:scale-95">
-                Boladas Disponíveis
+              <Link href="/servicos" className="inline-flex items-center justify-center gap-2 bg-white/6 border border-white/15 text-white font-semibold text-base px-7 py-4 rounded-2xl hover:bg-white/10 hover:border-white/25 transition-all active:scale-95">
+                Ver Serviços de Consultoria
               </Link>
             </div>
+            {/* Âncora de preço */}
+            <p className="text-white/30 text-xs mb-10">Candidatura inteligente · Subscrição a partir de <span className="text-[#C9A84C] font-semibold">199 MT/mês</span> · Cancela quando quiseres</p>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8 border-t border-white/8">
               {trust.map(({ num, label }) => (
@@ -122,6 +130,39 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+
+      {/* ── DOIS PÚBLICOS ── */}
+      <section className="py-14 px-4 sm:px-6 lg:px-8 bg-[#F8F5EF]">
+        <div className="max-w-7xl mx-auto grid sm:grid-cols-2 gap-4">
+          {/* Card job seeker */}
+          <Link href="/emprego" className="group relative rounded-3xl overflow-hidden bg-[#0D0D0D] p-8 flex flex-col gap-4 hover:scale-[1.02] transition-transform duration-300">
+            <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C9A84C, transparent 70%)" }} />
+            <span className="relative inline-flex items-center gap-2 bg-[#C9A84C]/20 text-[#C9A84C] text-xs font-bold px-3 py-1.5 rounded-full w-fit border border-[#C9A84C]/30">
+              <span className="w-1.5 h-1.5 bg-[#C9A84C] rounded-full animate-pulse" /> Para profissionais
+            </span>
+            <div className="relative">
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">Procuras emprego<br />ou boladas?</h3>
+              <p className="text-white/45 text-sm leading-relaxed">Candidata-te a vagas reais em MZ e abroad — email pré-preenchido, CV em anexo. Rápido e profissional.</p>
+            </div>
+            <div className="relative flex items-center gap-2 text-[#C9A84C] font-bold text-sm group-hover:gap-3 transition-all">
+              Ver vagas disponíveis <span>→</span>
+            </div>
+          </Link>
+          {/* Card empresa */}
+          <Link href="/servicos" className="group relative rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-sm p-8 flex flex-col gap-4 hover:scale-[1.02] transition-transform duration-300 hover:shadow-md hover:border-[#C9A84C]/20">
+            <span className="inline-flex items-center gap-2 bg-[#1D9E75]/10 text-[#1D9E75] text-xs font-bold px-3 py-1.5 rounded-full w-fit border border-[#1D9E75]/20">
+              <span className="w-1.5 h-1.5 bg-[#1D9E75] rounded-full" /> Para empresas
+            </span>
+            <div>
+              <h3 className="text-2xl sm:text-3xl font-bold text-[#0D0D0D] mb-2">Precisas de<br />consultoria?</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">Planos de negócio, branding, formação, monografias e muito mais — propostas em 24h, sem burocracia.</p>
+            </div>
+            <div className="flex items-center gap-2 text-[#C9A84C] font-bold text-sm group-hover:gap-3 transition-all">
+              Ver serviços e preços <span>→</span>
+            </div>
+          </Link>
+        </div>
+      </section>
 
       {/* ── BOLADAS ── */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#0D0D0D]">
@@ -260,14 +301,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── VAGAS CTA ── */}
+      {/* ── VAGAS CTA com âncora de preço ── */}
       <section className="py-12 px-4 sm:px-6 lg:px-8 bg-[#F8F5EF]">
         <div className="max-w-7xl mx-auto">
           <div className="rounded-3xl p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6" style={{ background: "linear-gradient(135deg, #0A0A0F 0%, #0D0B08 100%)" }}>
             <div>
-              <span className="badge bg-white/8 text-white/40 mb-3 border border-white/10">Para empresas & talentos</span>
-              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">Vagas de Emprego</h3>
-              <p className="text-white/35 text-sm max-w-md leading-relaxed">Procuras talento ou a tua próxima oportunidade? A rede MUIANGA liga profissionais a empresas em MZ, PT e ZA.</p>
+              <span className="badge bg-white/8 text-white/40 mb-3 border border-white/10">Para profissionais</span>
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">Candidatura inteligente</h3>
+              <p className="text-white/40 text-sm max-w-md leading-relaxed mb-3">O email já vem pré-preenchido com o teu nome, a vaga e o corpo do texto. Só precisas de anexar o CV.</p>
+              {/* Âncora de preço */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-[#C9A84C] text-2xl font-bold">199 MT</span>
+                  <span className="text-white/30 text-xs">/mês</span>
+                </div>
+                <span className="text-white/20 text-xs">·</span>
+                <span className="text-white/35 text-xs">Imprimir e enviar CV custa mais. Aqui candidatas-te a todas as vagas.</span>
+              </div>
             </div>
             <Link href="/emprego" className="shrink-0 btn-primary text-base px-8 py-4 rounded-2xl">Ver Vagas em aberto →</Link>
           </div>
