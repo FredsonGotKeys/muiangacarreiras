@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import AuthModal from "@/components/AuthModal";
-import SubscricaoModal from "@/components/SubscricaoModal";
+import PaysuiteModal from "@/components/PaysuiteModal";
 import { useSubscricao } from "@/lib/use-subscricao";
 
 /* ── Boladas (estáticas) ── */
@@ -479,11 +479,12 @@ export default function EmpregoPage() {
         />
       )}
 
-      {/* Subscrição Modal */}
-      {showSubModal && (
-        <SubscricaoModal
+      {/* Pagamento PaySuite */}
+      {showSubModal && user && (
+        <PaysuiteModal
+          userId={user.id}
           onClose={() => { setShowSubModal(false); setPendingSlug(null); }}
-          onSucesso={onSubEnviada}
+          onSuccess={onSubEnviada}
         />
       )}
 
