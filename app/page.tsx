@@ -62,12 +62,6 @@ export default function HomePage() {
         <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 grid lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1">
 
-            {/* Pill de credibilidade */}
-            <div className="inline-flex items-center gap-2 bg-[#C9A84C]/15 border border-[#C9A84C]/30 rounded-full px-4 py-1.5 mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1D9E75] animate-pulse" />
-              <span className="text-[#C9A84C] text-xs font-semibold tracking-wide">A plataforma lusófona de consultoria & emprego</span>
-            </div>
-
             <h1 className="text-[clamp(2.6rem,6.5vw,5rem)] text-white leading-[1.05] mb-5 tracking-tight">
               Conectamos talento,<br />
               <span className="text-[#C9A84C]">negócio e oportunidade</span>
