@@ -48,7 +48,7 @@ export default function SobrePage() {
             <div className="w-8 h-1 bg-[#C9A84C] rounded-full mb-5" />
             <span className="badge bg-[#C9A84C]/10 text-[#C9A84C] mb-3 inline-flex">Missão</span>
             <h2 className="text-2xl font-bold text-[#0D0D0D] mb-4 leading-snug">Impulsionar o crescimento sustentável</h2>
-            <p className="text-gray-400 text-sm leading-relaxed">A MUIANGA CONSULTORES existe para impulsionar o crescimento sustentável de empresas, profissionais e comunidades em Moçambique e na África lusófona — através de consultoria estratégica, formação de excelência e conexão de talentos com oportunidades reais.</p>
+            <p className="text-gray-400 text-sm leading-relaxed">A MUIANGA CARREIRAS existe para impulsionar o crescimento sustentável de empresas, profissionais e comunidades em Moçambique e na África lusófona — através de consultoria estratégica, formação de excelência e conexão de talentos com oportunidades reais.</p>
           </div>
           <div className="bg-[#0D0D0D] rounded-2xl p-8">
             <div className="w-8 h-1 bg-[#C9A84C] rounded-full mb-5" />
@@ -92,8 +92,8 @@ export default function SobrePage() {
               <span className="badge bg-[#C9A84C]/10 text-[#C9A84C] mb-3 inline-flex">Fundador & CEO</span>
               <h3 className="text-3xl sm:text-4xl font-bold text-[#0D0D0D] mb-1 leading-tight">Fredson Bernardo</h3>
               <h3 className="text-3xl sm:text-4xl font-bold text-[#C9A84C] mb-6">Muianga</h3>
-              <p className="text-gray-500 text-base leading-relaxed mb-4">A MUIANGA CONSULTORES foi fundada e é liderada por alguém com mais de uma década de experiência entre Moçambique, Portugal e África do Sul — construindo pontes entre mercados, culturas e oportunidades lusófonas.</p>
-              <p className="text-gray-500 text-base leading-relaxed mb-4">À frente da empresa, a visão é clara: Moçambique tem talento de sobra. O que falta são as pontes certas. A MUIANGA CONSULTORES é exactamente isso — uma plataforma onde o talento moçambicano encontra estratégia, formação e oportunidade.</p>
+              <p className="text-gray-500 text-base leading-relaxed mb-4">A MUIANGA CARREIRAS foi fundada e é liderada por alguém com mais de uma década de experiência entre Moçambique, Portugal e África do Sul — construindo pontes entre mercados, culturas e oportunidades lusófonas.</p>
+              <p className="text-gray-500 text-base leading-relaxed mb-4">À frente da empresa, a visão é clara: Moçambique tem talento de sobra. O que falta são as pontes certas. A MUIANGA CARREIRAS é exactamente isso — uma plataforma onde o talento moçambicano encontra estratégia, formação e oportunidade.</p>
               <p className="text-gray-400 text-sm leading-relaxed mb-8">A liderança da empresa está também envolvida na <span className="text-[#C9A84C] font-semibold">ADIEP</span> e na <span className="text-[#C9A84C] font-semibold">Fundação Muianga</span> — iniciativas que reforçam o compromisso com o impacto social e cultural em Moçambique.</p>
               <div className="flex flex-wrap gap-2 mb-8">
                 {["Professor","Palestrante","Empresário","Pres. ADIEP","Lusofonia"].map((tag) => (

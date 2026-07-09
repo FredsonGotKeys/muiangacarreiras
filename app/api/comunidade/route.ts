@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { rateLimit, getIp, str, email, rateLimitedResponse, validationError } from "@/lib/api-utils";
+import { sendEmail, templates, adminEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   if (!rateLimit(getIp(req), 5)) return rateLimitedResponse();
@@ -25,5 +26,12 @@ export async function POST(req: NextRequest) {
   }]);
 
   if (error) return NextResponse.json({ error: "Erro ao guardar. Tenta novamente." }, { status: 500 });
+
+  sendEmail({ to: emailVal, subject: "Pedido de adesão recebido", html: templates.pedidoServicoRecebido(nome, "adesão à Comunidade MUIANGA") }).catch(() => {});
+  const adminTo = adminEmail();
+  if (adminTo) {
+    sendEmail({ to: adminTo, subject: "Novo pedido de adesão à comunidade", html: templates.adminNotificacao("Novo membro da comunidade", `${nome} (${emailVal}) — ${area}, ${pais}`) }).catch(() => {});
+  }
+
   return NextResponse.json({ ok: true });
 }

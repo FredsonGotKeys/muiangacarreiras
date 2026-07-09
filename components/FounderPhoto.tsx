@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 export default function FounderPhoto() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -26,11 +27,37 @@ export default function FounderPhoto() {
 
   return (
     <>
-      {/* Foto normal — sempre visível no container */}
-      <div
+      {/* Mobile: card horizontal compacto com motion */}
+      <motion.div
         ref={containerRef}
-        className="relative rounded-2xl overflow-hidden aspect-[4/5] bg-gray-200 shadow-xl lg:block"
+        className="lg:hidden flex items-center gap-4 bg-[#F8F5EF] rounded-2xl p-4 mb-2"
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
+        <motion.div
+          className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 shadow-md border-2 border-[#C9A84C]/30"
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Image
+            src="/images/fredson-muianga.jpg"
+            alt="Fredson Bernardo Muianga"
+            fill
+            className="object-cover object-top"
+            priority
+          />
+        </motion.div>
+        <div>
+          <p className="font-bold text-[#0D0D0D] text-base leading-tight">Fredson Bernardo Muianga</p>
+          <p className="text-xs text-[#C9A84C] font-semibold mt-0.5">Fundador & CEO</p>
+          <p className="text-xs text-gray-400 mt-1.5 italic leading-relaxed">"Moçambique tem talento. A MUIANGA é a ponte."</p>
+        </div>
+      </motion.div>
+
+      {/* Desktop: foto vertical completa */}
+      <div className="relative rounded-2xl overflow-hidden aspect-[4/5] bg-gray-200 shadow-xl hidden lg:block">
         <Image
           src="/images/fredson-muianga.jpg"
           alt="Fredson Bernardo Muianga — Fundador & CEO"
@@ -57,7 +84,7 @@ export default function FounderPhoto() {
       >
         {/* Anel dourado animado */}
         <div className="relative group">
-          <div className="absolute inset-0 rounded-full border-2 border-[#C9A84C]/60 animate-ping" />
+          <div className="absolute inset-0 rounded-full founder-pulse" />
           <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#C9A84C] shadow-xl shadow-black/40 relative">
             <Image
               src="/images/fredson-muianga.jpg"

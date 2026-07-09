@@ -3,30 +3,33 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/lib/auth-context";
+import ScrollProgress from "@/components/ScrollProgress";
+import Preloader from "@/components/premium/Preloader";
+import BottomNav from "@/components/premium/BottomNav";
 
 const BASE = "https://muiangaconsultores.co.mz";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE),
   title: {
-    default: "MUIANGA CONSULTORES — Consultoria de Excelência em Moçambique",
-    template: "%s | MUIANGA CONSULTORES",
+    default: "MUIANGA CARREIRAS — Emprego, CV e Oportunidades em Moçambique",
+    template: "%s | MUIANGA CARREIRAS",
   },
-  description: "Empresa de consultoria multifuncional baseada em Maputo, Moçambique. Consultoria estratégica, formação, emprego e inovação.",
-  keywords: ["consultoria", "Moçambique", "Maputo", "formação", "emprego", "negócios"],
+  description: "Plataforma moçambicana de empregabilidade: vagas em Moçambique e Europa, criação de CV profissional, orientação de carreira e conexão com empresas.",
+  keywords: ["emprego", "carreiras", "vagas", "CV", "currículo", "Moçambique", "Maputo", "PALOP", "candidatura"],
   openGraph: {
     type: "website",
     locale: "pt_MZ",
     url: BASE,
-    siteName: "MUIANGA CONSULTORES",
-    title: "MUIANGA CONSULTORES — Consultoria de Excelência em Moçambique",
-    description: "Empresa de consultoria multifuncional baseada em Maputo, Moçambique. Consultoria estratégica, formação, emprego e inovação.",
-    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "MUIANGA CONSULTORES" }],
+    siteName: "MUIANGA CARREIRAS",
+    title: "MUIANGA CARREIRAS — Emprego, CV e Oportunidades em Moçambique",
+    description: "Plataforma moçambicana de empregabilidade: vagas, CV profissional e orientação de carreira.",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "MUIANGA CARREIRAS" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "MUIANGA CONSULTORES",
-    description: "Consultoria estratégica, formação, emprego e inovação em Moçambique.",
+    title: "MUIANGA CARREIRAS",
+    description: "Empregabilidade e carreiras em Moçambique — vagas, CV e oportunidades.",
     images: ["/og-image.jpg"],
   },
   robots: { index: true, follow: true },
@@ -37,13 +40,37 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const orgLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "MUIANGA CARREIRAS",
+    url: BASE,
+    logo: `${BASE}/og-image.jpg`,
+    description:
+      "Plataforma de empregabilidade em Moçambique — vagas, criação de CV e orientação de carreira.",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Maputo",
+      addressCountry: "MZ",
+    },
+    areaServed: ["MZ", "AO", "CV", "ST", "GW", "BR", "PT"],
+    sameAs: [] as string[],
+  };
+
   return (
     <html lang="pt">
       <body className="antialiased bg-white text-[#0D0D0D]">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}
+        />
+        <Preloader />
+        <ScrollProgress />
         <AuthProvider>
           <Navbar />
-          <main>{children}</main>
+          <main className="pb-24 lg:pb-0">{children}</main>
           <Footer />
+          <BottomNav />
         </AuthProvider>
       </body>
     </html>

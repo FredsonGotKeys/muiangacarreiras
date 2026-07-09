@@ -60,9 +60,9 @@ function parseDescription(raw: string): { heading: string; lines: string[] }[] {
 
 export async function GET(
   _req: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = params;
+  const { slug } = await params;
   const url = `${BASE}/vaga/${slug}/`;
 
   try {

@@ -1,63 +1,52 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import {
-  Headphones, PenTool, Globe2, Share2, Table2,
   MapPin, Briefcase, Clock, RefreshCw, X,
-  GraduationCap, Users, ChevronRight, Mail, ExternalLink,
-  Zap, CheckCircle2, LogIn,
-  type LucideIcon,
+  ChevronRight, Mail, ExternalLink,
+  Zap, CheckCircle2, Globe2, Plane,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import AuthModal from "@/components/AuthModal";
-import PaysuiteModal from "@/components/PaysuiteModal";
+import ZumboPayModal from "@/components/ZumboPayModal";
 import { useSubscricao } from "@/lib/use-subscricao";
+import AlertaVagasForm from "@/components/premium/AlertaVagasForm";
 
-/* ── Boladas (estáticas) ── */
-type Bolada = {
-  id: string; Icon: LucideIcon; iconBg: string; iconColor: string;
-  title: string; prazo: string; valor: string; descricao: string;
-  email: string;
-};
-const boladas: Bolada[] = [
-  { id:"b1", Icon:Headphones, iconBg:"bg-sky-50",    iconColor:"text-sky-600",    title:"Transcrição de áudio para texto (PT)",           prazo:"3 dias", valor:"800 MT",   descricao:"Transcrever 2 horas de áudio em português para documento Word formatado.",        email:"minville@outlook.pt" },
-  { id:"b2", Icon:Globe2,     iconBg:"bg-emerald-50",iconColor:"text-emerald-600",title:"Tradução EN→PT de documento técnico",             prazo:"5 dias", valor:"1.500 MT", descricao:"Tradução de relatório técnico (8 páginas) de inglês para português.",             email:"minville@outlook.pt" },
-  { id:"b3", Icon:PenTool,    iconBg:"bg-rose-50",   iconColor:"text-rose-500",   title:"Design de cartaz para evento",                    prazo:"2 dias", valor:"1.200 MT", descricao:"Criar cartaz A3 para evento empresarial em Maputo. Briefing fornecido.",           email:"minville@outlook.pt" },
-  { id:"b4", Icon:Share2,     iconBg:"bg-violet-50", iconColor:"text-violet-600", title:"Publicação de conteúdo em redes sociais (1 sem.)", prazo:"7 dias", valor:"2.000 MT", descricao:"Gerir e publicar conteúdo pré-aprovado em Instagram e Facebook.",                  email:"minville@outlook.pt" },
-  { id:"b5", Icon:Table2,     iconBg:"bg-teal-50",   iconColor:"text-teal-600",   title:"Entrada de dados em Excel",                       prazo:"2 dias", valor:"600 MT",   descricao:"Inserir lista de 500 contactos numa folha Excel com formatação definida.",         email:"minville@outlook.pt" },
-];
-
-/* ── Vaga (listagem) ── */
+/* ── Tipos ── */
 type Vaga = {
   slug: string; title: string; empresa: string; local: string;
   categoria: string; prazoLabel: string; diasRestantes: number | null;
   status: "Aberto" | "Encerrado"; url: string;
 };
-
-/* ── Vaga detalhe (drawer) ── */
 type VagaDetail = {
   slug: string; title: string; empresa: string; logoUrl: string | null;
   local: string; categoria: string; prazoLabel: string;
   diasRestantes: number | null; nivelAcademico: string | null;
   numVagas: number | null; tipoEmprego: string | null;
   sections: { heading: string; lines: string[] }[];
-  appEmail: string | null;
-  appUrl: string | null;
-  sourceUrl: string;
+  appEmail: string | null; appUrl: string | null; sourceUrl: string;
   error?: string;
 };
 
-/* ── helpers ── */
+type VagaEuropa = {
+  id: string; title: string; empresa: string;
+  categoria: string; zona: string; data: string;
+  descricao: string; url: string;
+};
+
+type TabEmprego = "nacional" | "europa";
+
+/* ── Helpers ── */
 function diasColor(d: number | null) {
   if (d === null) return "bg-gray-100 text-gray-500";
-  if (d <= 3)  return "bg-red-100 text-red-600";
-  if (d <= 7)  return "bg-orange-100 text-orange-600";
+  if (d <= 3) return "bg-red-100 text-red-600";
+  if (d <= 7) return "bg-orange-100 text-orange-600";
   return "bg-emerald-100 text-emerald-700";
 }
 function diasLabel(d: number | null) {
   if (d === null) return "Prazo indefinido";
-  if (d === 0)   return "Último dia!";
-  if (d < 0)     return "Encerrada";
-  if (d === 1)   return "1 dia restante";
+  if (d === 0) return "Último dia!";
+  if (d < 0)  return "Encerrada";
+  if (d === 1) return "1 dia restante";
   return `${d} dias restantes`;
 }
 function timeAgo(iso: string) {
@@ -72,22 +61,20 @@ function SkeletonCard() {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col gap-3 animate-pulse">
       <div className="flex justify-between">
-        <div className="w-10 h-10 bg-gray-100 rounded-xl"/>
-        <div className="w-20 h-5 bg-gray-100 rounded-full"/>
+        <div className="w-10 h-10 bg-gray-100 rounded-xl" />
+        <div className="w-20 h-5 bg-gray-100 rounded-full" />
       </div>
-      <div className="h-4 bg-gray-100 rounded w-3/4"/>
-      <div className="h-3 bg-gray-100 rounded w-1/2"/>
+      <div className="h-4 bg-gray-100 rounded w-3/4" />
+      <div className="h-3 bg-gray-100 rounded w-1/2" />
       <div className="flex gap-2 pt-3 border-t border-gray-100">
-        <div className="h-5 bg-gray-100 rounded-full w-20"/>
-        <div className="h-5 bg-gray-100 rounded-full w-24"/>
+        <div className="h-5 bg-gray-100 rounded-full w-20" />
+        <div className="h-5 bg-gray-100 rounded-full w-24" />
       </div>
     </div>
   );
 }
 
-/* ════════════════════════════════════════════
-   DRAWER — detalhe da vaga (mobile-first)
-════════════════════════════════════════════ */
+/* ── Drawer ── */
 function VagaDrawer({ slug, onClose, nomeUser }: { slug: string; onClose: () => void; nomeUser: string }) {
   const [detail, setDetail] = useState<VagaDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,10 +83,7 @@ function VagaDrawer({ slug, onClose, nomeUser }: { slug: string; onClose: () => 
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/vagas/${slug}`)
-      .then(r => r.json())
-      .then(setDetail)
-      .finally(() => setLoading(false));
+    fetch(`/api/vagas/${slug}`).then(r => r.json()).then(setDetail).finally(() => setLoading(false));
   }, [slug]);
 
   useEffect(() => {
@@ -137,10 +121,7 @@ ${nomeStr}`
 
   return (
     <>
-      {/* Overlay */}
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={onClose} />
-
-      {/* Drawer — full screen mobile, slide-over desktop */}
       <div className="fixed inset-0 sm:inset-y-0 sm:right-0 sm:left-auto z-50 w-full sm:w-[min(100vw,640px)] bg-white flex flex-col overflow-hidden sm:shadow-2xl">
 
         {/* Header */}
@@ -151,19 +132,13 @@ ${nomeStr}`
             </div>
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Detalhe da vaga</span>
           </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-            aria-label="Fechar"
-          >
+          <button onClick={onClose} className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors" aria-label="Fechar">
             <X size={18} className="text-gray-600" />
           </button>
         </div>
 
-        {/* Conteúdo com scroll */}
+        {/* Conteúdo */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
-
-          {/* Loading */}
           {loading && (
             <div className="p-5 sm:p-6 space-y-3">
               {[...Array(7)].map((_, i) => (
@@ -172,7 +147,6 @@ ${nomeStr}`
             </div>
           )}
 
-          {/* Erro */}
           {!loading && d?.error && (
             <div className="p-8 text-center">
               <p className="text-red-500 font-semibold mb-2">Não foi possível carregar esta vaga.</p>
@@ -182,110 +156,47 @@ ${nomeStr}`
 
           {!loading && d && !d.error && (
             <>
-              {/* Hero */}
+              {/* Info principal */}
               <div className="px-4 sm:px-6 pt-5 pb-4 border-b border-gray-100">
-                <h2 className="text-xl sm:text-2xl font-bold text-[#0D0D0D] mb-1 leading-snug capitalize">{d.title}</h2>
-                <p className="text-[#C9A84C] font-semibold text-sm sm:text-base mb-4">{d.empresa}</p>
-
-                {/* Badges */}
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {d.diasRestantes !== null && (
-                    <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${diasColor(d.diasRestantes)}`}>
-                      <Clock size={10} /> {diasLabel(d.diasRestantes)}
-                    </span>
-                  )}
-                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
-                    <MapPin size={10} /> {d.local}
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
-                    {d.categoria}
-                  </span>
-                </div>
-
-                {/* Meta info — scroll horizontal no mobile */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  {d.prazoLabel && (
-                    <div className="bg-[#F8F5EF] rounded-xl p-3">
-                      <p className="text-xs text-gray-400 mb-0.5">Prazo</p>
-                      <p className="text-xs sm:text-sm font-semibold text-[#0D0D0D] leading-tight">{d.prazoLabel}</p>
-                    </div>
-                  )}
-                  {d.nivelAcademico && (
-                    <div className="bg-[#F8F5EF] rounded-xl p-3">
-                      <p className="text-xs text-gray-400 mb-0.5">Nível académico</p>
-                      <p className="text-xs sm:text-sm font-semibold text-[#0D0D0D] leading-tight flex items-center gap-1">
-                        <GraduationCap size={12} className="text-[#C9A84C] shrink-0" /> {d.nivelAcademico}
-                      </p>
-                    </div>
-                  )}
-                  {d.numVagas && (
-                    <div className="bg-[#F8F5EF] rounded-xl p-3">
-                      <p className="text-xs text-gray-400 mb-0.5">Nº de vagas</p>
-                      <p className="text-xs sm:text-sm font-semibold text-[#0D0D0D] flex items-center gap-1">
-                        <Users size={12} className="text-[#C9A84C]" /> {d.numVagas} vaga{d.numVagas > 1 ? "s" : ""}
-                      </p>
-                    </div>
-                  )}
-                  {d.tipoEmprego && (
-                    <div className="bg-[#F8F5EF] rounded-xl p-3">
-                      <p className="text-xs text-gray-400 mb-0.5">Tipo</p>
-                      <p className="text-xs sm:text-sm font-semibold text-[#0D0D0D]">{d.tipoEmprego}</p>
-                    </div>
-                  )}
+                <h2 className="text-lg sm:text-2xl font-bold text-[#0D0D0D] leading-snug mb-1 capitalize">{d.title}</h2>
+                <p className="text-[#C9A84C] font-semibold text-sm mb-3">{d.empresa}</p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="badge bg-gray-100 text-gray-600 text-xs flex items-center gap-1"><MapPin size={10}/>{d.local}</span>
+                  {d.tipoEmprego && <span className="badge bg-blue-50 text-blue-700 text-xs">{d.tipoEmprego}</span>}
+                  {d.nivelAcademico && <span className="badge bg-purple-50 text-purple-700 text-xs">{d.nivelAcademico}</span>}
+                  {d.numVagas && <span className="badge bg-emerald-50 text-emerald-700 text-xs">{d.numVagas} vaga{d.numVagas > 1 ? "s" : ""}</span>}
+                  <span className={`badge text-xs ${diasColor(d.diasRestantes)}`}>{diasLabel(d.diasRestantes)}</span>
                 </div>
               </div>
 
-              {/* Secções da descrição */}
-              {d.sections.length > 0 && (
-                <div className="px-4 sm:px-6 py-5 border-b border-gray-100 space-y-5">
-                  {d.sections.map(({ heading, lines }) => (
-                    <div key={heading}>
-                      <h3 className="text-xs sm:text-sm font-bold text-[#0D0D0D] mb-2.5 flex items-center gap-2">
-                        <span className="w-1 h-4 bg-[#C9A84C] rounded-full inline-block shrink-0" />
-                        {heading}
-                      </h3>
-                      <ul className="space-y-1.5 pl-3">
-                        {lines.map((line, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs sm:text-sm text-gray-600 leading-relaxed">
-                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#C9A84C]/60 shrink-0" />
-                            {line}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* Secções */}
+              <div className="px-4 sm:px-6 py-5 space-y-5">
+                {d.sections.map((sec) => (
+                  <div key={sec.heading}>
+                    <p className="text-xs font-bold text-[#0D0D0D] uppercase tracking-wider mb-2">{sec.heading}</p>
+                    <ul className="space-y-1.5">
+                      {sec.lines.map((line, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-500">
+                          <ChevronRight size={13} className="text-[#C9A84C] mt-0.5 shrink-0" />
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
 
-              {d.sections.length === 0 && (
-                <div className="px-4 sm:px-6 py-8 border-b border-gray-100 text-center">
-                  <p className="text-gray-400 text-sm">Descrição não disponível.</p>
-                </div>
-              )}
+              {/* CTA candidatura */}
+              <div className="px-4 sm:px-6 pb-6 pt-4 border-t border-gray-100 space-y-3">
+                <p className="text-xs font-bold text-[#0D0D0D] uppercase tracking-wider">Candidatar-se</p>
 
-              {/* ── CANDIDATURA ── */}
-              <div className="px-4 sm:px-6 py-5 bg-[#F8F5EF]">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/25 mb-3">
-                  Como candidatar-se
-                </span>
-
-                {/* Email: pede o nome antes de abrir o mailto */}
                 {d.appEmail && (
-                  <div className="space-y-3">
-                    <div className="bg-white rounded-2xl border border-gray-200 p-4">
-                      <p className="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wider">Email de candidatura</p>
-                      <p className="text-sm font-bold text-[#0D0D0D] break-all">{d.appEmail}</p>
-                    </div>
-
+                  <>
                     {!nameSubmitted ? (
                       <>
-                        <p className="text-xs text-gray-500 leading-relaxed">
-                          Introduz o teu nome para personalizarmos o email automaticamente. Só precisas de <span className="font-semibold text-[#0D0D0D]">anexar o CV</span>.
-                        </p>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">O teu nome completo</label>
+                          <label className="block text-xs text-gray-400 mb-1.5">O teu nome completo</label>
                           <input
-                            type="text"
                             value={candidateName}
                             onChange={e => setCandidateName(e.target.value)}
                             placeholder="Ex: João Silva"
@@ -298,8 +209,7 @@ ${nomeStr}`
                           onClick={() => { if (candidateName.trim()) setNameSubmitted(true); }}
                           className="flex items-center justify-center gap-2 w-full bg-[#C9A84C] hover:bg-[#B8943E] text-white font-bold text-sm py-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-[#C9A84C]/30"
                         >
-                          <Mail size={16} />
-                          Abrir email de candidatura
+                          <Mail size={16} /> Abrir email de candidatura
                         </a>
                         <p className="text-xs text-center text-gray-400">Abre no Gmail, Outlook ou app de email instalada</p>
                       </>
@@ -312,66 +222,202 @@ ${nomeStr}`
                             <p className="text-xs text-gray-500 mt-0.5">O email foi aberto com o teu nome, assunto e texto já preenchidos. Só anexa o teu CV e envia.</p>
                           </div>
                         </div>
-                        <a
-                          href={buildMailto(d.appEmail, d.title, d.empresa, candidateName)}
-                          className="flex items-center justify-center gap-2 w-full bg-[#C9A84C]/15 hover:bg-[#C9A84C]/25 text-[#C9A84C] font-bold text-sm py-3.5 rounded-xl transition-all border border-[#C9A84C]/30"
-                        >
-                          <Mail size={15} />
-                          Reabrir email
+                        <a href={buildMailto(d.appEmail, d.title, d.empresa, candidateName)}
+                          className="flex items-center justify-center gap-2 w-full bg-[#C9A84C]/15 hover:bg-[#C9A84C]/25 text-[#C9A84C] font-bold text-sm py-3.5 rounded-xl transition-all border border-[#C9A84C]/30">
+                          <Mail size={15} /> Reabrir email
                         </a>
-                        <button
-                          onClick={() => { setCandidateName(""); setNameSubmitted(false); }}
-                          className="w-full text-xs text-gray-400 hover:text-gray-600 py-2 transition-colors"
-                        >
+                        <button onClick={() => { setCandidateName(""); setNameSubmitted(false); }}
+                          className="w-full text-xs text-gray-400 hover:text-gray-600 py-2 transition-colors">
                           Usar outro nome
                         </button>
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
 
-                {/* Link externo (ex: Contact, formulário próprio) */}
                 {!d.appEmail && d.appUrl && (
                   <div className="space-y-3">
-                    <p className="text-sm text-gray-500 leading-relaxed">
-                      Esta vaga tem formulário de candidatura próprio. Clica para te candidatares directamente no site da empresa.
-                    </p>
-                    <a
-                      href={d.appUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full bg-[#C9A84C] hover:bg-[#B8943E] text-white font-bold text-sm py-4 rounded-xl transition-all active:scale-[0.98]"
-                    >
-                      <ExternalLink size={16} />
-                      Candidatar-se agora
+                    <p className="text-sm text-gray-500 leading-relaxed">Esta vaga tem formulário próprio. Clica para te candidatares directamente no site da empresa.</p>
+                    <a href={d.appUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full bg-[#C9A84C] hover:bg-[#B8943E] text-white font-bold text-sm py-4 rounded-xl transition-all active:scale-[0.98]">
+                      <ExternalLink size={16} /> Candidatar-se agora
                     </a>
                     <p className="text-xs text-center text-gray-400">Abre o site original da empresa</p>
                   </div>
                 )}
 
-                {/* Fallback */}
                 {!d.appEmail && !d.appUrl && (
                   <div className="space-y-3">
-                    <p className="text-sm text-gray-500 leading-relaxed">
-                      Consulta as instruções de candidatura completas na fonte original.
-                    </p>
-                    <a
-                      href={d.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full bg-[#0D0D0D] hover:bg-gray-800 text-white font-bold text-sm py-4 rounded-xl transition-all active:scale-[0.98]"
-                    >
-                      <ExternalLink size={16} />
-                      Ver vaga em njobs.co.mz
+                    <p className="text-sm text-gray-500 leading-relaxed">Consulta as instruções de candidatura na fonte original.</p>
+                    <a href={d.sourceUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full bg-[#0D0D0D] hover:bg-gray-800 text-white font-bold text-sm py-4 rounded-xl transition-all active:scale-[0.98]">
+                      <ExternalLink size={16} /> Ver vaga em njobs.co.mz
                     </a>
                   </div>
                 )}
               </div>
-
-              {/* Safe area bottom no mobile */}
               <div className="h-6 sm:h-0" />
             </>
           )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ── Drawer Europa ── */
+function VagaEuropaDrawer({ vaga, onClose, nomeUser, userEmail }: {
+  vaga: VagaEuropa; onClose: () => void; nomeUser: string; userEmail: string;
+}) {
+  const [candidateName, setCandidateName] = useState(nomeUser);
+  const [candidateEmail, setCandidateEmail] = useState(userEmail);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", fn);
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", fn); document.body.style.overflow = ""; };
+  }, [onClose]);
+
+  async function handleSubmit() {
+    if (!candidateName.trim()) { setError("Preenche o teu nome."); return; }
+    if (!candidateEmail.trim()) { setError("Preenche o teu email."); return; }
+    if (!cvFile) { setError("Anexa o teu CV em PDF."); return; }
+    setSubmitting(true); setError(null);
+
+    const formData = new FormData();
+    formData.append("nome", candidateName.trim());
+    formData.append("email", candidateEmail.trim());
+    formData.append("vagaTitulo", vaga.title);
+    formData.append("vagaEmpresa", vaga.empresa);
+    formData.append("vagaZona", vaga.zona);
+    formData.append("vagaUrl", vaga.url);
+    formData.append("cv", cvFile);
+
+    try {
+      const res = await fetch("/api/candidatura-europa", { method: "POST", body: formData });
+      if (res.ok) { setSubmitted(true); }
+      else { const d = await res.json(); setError(d.error ?? "Erro ao enviar candidatura."); }
+    } catch { setError("Erro de ligação."); }
+    setSubmitting(false);
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={onClose} />
+      <div className="fixed inset-0 sm:inset-y-0 sm:right-0 sm:left-auto z-50 w-full sm:w-[min(100vw,640px)] bg-white flex flex-col overflow-hidden sm:shadow-2xl">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-white shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-blue-50 rounded-xl flex items-center justify-center">
+              <Globe2 size={16} className="text-blue-600" />
+            </div>
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Vaga Europa</span>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors" aria-label="Fechar">
+            <X size={18} className="text-gray-600" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          {/* Info principal */}
+          <div className="px-4 sm:px-6 pt-5 pb-4 border-b border-gray-100">
+            <h2 className="text-lg sm:text-2xl font-bold text-[#0D0D0D] leading-snug mb-1">{vaga.title}</h2>
+            <p className="text-blue-600 font-semibold text-sm mb-3">{vaga.empresa}</p>
+            <div className="flex flex-wrap gap-2">
+              {vaga.zona && <span className="badge bg-gray-100 text-gray-600 text-xs flex items-center gap-1"><MapPin size={10}/>{vaga.zona}</span>}
+              {vaga.categoria && <span className="badge bg-blue-50 text-blue-700 text-xs">{vaga.categoria}</span>}
+              {vaga.data && <span className="badge bg-gray-100 text-gray-500 text-xs flex items-center gap-1"><Clock size={10}/>{vaga.data}</span>}
+              <span className="badge bg-blue-100 text-blue-700 text-xs">🇪🇺 Europa</span>
+            </div>
+          </div>
+
+          {/* Descrição */}
+          {vaga.descricao && (
+            <div className="px-4 sm:px-6 py-5 border-b border-gray-100">
+              <p className="text-xs font-bold text-[#0D0D0D] uppercase tracking-wider mb-2">Descrição</p>
+              <p className="text-sm text-gray-500 leading-relaxed">{vaga.descricao}</p>
+            </div>
+          )}
+
+          {/* Candidatura */}
+          <div className="px-4 sm:px-6 pb-6 pt-5 space-y-4">
+            <p className="text-xs font-bold text-[#0D0D0D] uppercase tracking-wider">Candidatar-se via MUIANGA</p>
+
+            {submitted ? (
+              <div className="space-y-4">
+                <div className="bg-[#1D9E75]/10 border border-[#1D9E75]/25 rounded-2xl p-5 flex items-start gap-3">
+                  <CheckCircle2 size={24} className="text-[#1D9E75] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-[#1D9E75] text-base">Candidatura enviada!</p>
+                    <p className="text-sm text-gray-500 mt-1">A tua candidatura para <span className="font-semibold text-[#0D0D0D]">{vaga.title}</span> na <span className="font-semibold">{vaga.empresa}</span> foi recebida.</p>
+                    <p className="text-xs text-gray-400 mt-2">A MUIANGA Carreiras vai reencaminhar o teu CV directamente para a empresa. Receberás feedback por email.</p>
+                  </div>
+                </div>
+                <button onClick={onClose} className="w-full bg-[#0D0D0D] hover:bg-gray-800 text-white font-bold py-4 rounded-xl text-sm transition-all">
+                  Fechar
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-start gap-2">
+                  <Globe2 size={14} className="text-blue-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-700">
+                    A MUIANGA envia o teu CV directamente para a empresa europeia. Processo seguro e acompanhado.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="label-xs mb-1.5">Nome completo</label>
+                  <input value={candidateName} onChange={e => setCandidateName(e.target.value)}
+                    placeholder="O teu nome completo"
+                    className="input-field" />
+                </div>
+
+                <div>
+                  <label className="label-xs mb-1.5">Email de contacto</label>
+                  <input type="email" value={candidateEmail} onChange={e => setCandidateEmail(e.target.value)}
+                    placeholder="email@exemplo.com"
+                    className="input-field" />
+                </div>
+
+                <div>
+                  <label className="label-xs mb-1.5">Curriculum Vitae (PDF) <span className="text-red-400">*</span></label>
+                  <label className="flex items-center justify-center gap-2 w-full border-2 border-dashed border-gray-200 hover:border-blue-300 bg-gray-50 hover:bg-blue-50 rounded-xl py-5 cursor-pointer transition-all">
+                    <input type="file" accept=".pdf" className="hidden"
+                      onChange={e => { if (e.target.files?.[0]) setCvFile(e.target.files[0]); }} />
+                    {cvFile ? (
+                      <span className="text-sm font-semibold text-[#1D9E75] flex items-center gap-2">
+                        <CheckCircle2 size={16} /> {cvFile.name}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-400">Clica para anexar o teu CV em PDF</span>
+                    )}
+                  </label>
+                </div>
+
+                {error && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-3">
+                    <span className="text-xs text-red-600">{error}</span>
+                  </div>
+                )}
+
+                <button onClick={handleSubmit} disabled={submitting}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold py-4 rounded-xl text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                  {submitting ? "A enviar..." : <><Mail size={16} /> Enviar candidatura</>}
+                </button>
+
+                <p className="text-xs text-center text-gray-400">
+                  O teu CV será encaminhado pela MUIANGA Carreiras
+                </p>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </>
@@ -382,71 +428,44 @@ ${nomeStr}`
    PÁGINA PRINCIPAL
 ════════════════════════════════════════════ */
 export default function EmpregoPage() {
-  const [tab, setTab] = useState<"bolada" | "vaga">("bolada");
-
-  /* Boladas */
-  const [candidateId, setCandidateId] = useState<string | null>(null);
-  const [candidateForm, setCandidateForm] = useState({ nome: "", contacto: "", mensagem: "" });
-  const [submitted, setSubmitted] = useState(false);
-
-  /* Vagas */
   const [vagas, setVagas]               = useState<Vaga[]>([]);
-  const [vagasLoading, setVagasLoading] = useState(false);
+  const [vagasLoading, setVagasLoading] = useState(true);
   const [vagasError, setVagasError]     = useState<string | null>(null);
   const [updatedAt, setUpdatedAt]       = useState<string | null>(null);
   const [vagasFetched, setVagasFetched] = useState(false);
 
-  /* Auth + Subscrição */
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { estado: estadoSub, diasRestantes: diasSub } = useSubscricao();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showSubModal, setShowSubModal] = useState(false);
-  const [pendingSlug, setPendingSlug] = useState<string | null>(null);
+  const [showSubModal, setShowSubModal]   = useState(false);
+  const [subModalFase, setSubModalFase]   = useState<"metodo" | "aguardando">("metodo");
+  const [pendingSlug, setPendingSlug]     = useState<string | null>(null);
   const nomeUser: string = (user?.user_metadata?.nome as string | undefined) || user?.email?.split("@")[0] || "";
-
-  /* Drawer */
   const [drawerSlug, setDrawerSlug] = useState<string | null>(null);
   const closeDrawer = useCallback(() => setDrawerSlug(null), []);
+  const [selectedEuropaVaga, setSelectedEuropaVaga] = useState<VagaEuropa | null>(null);
+  const [tab, setTab] = useState<TabEmprego>("nacional");
+  const [vagasEuropa, setVagasEuropa] = useState<VagaEuropa[]>([]);
+  const [europaLoading, setEuropaLoading] = useState(false);
+  const [europaFetched, setEuropaFetched] = useState(false);
+  const [europaUpdatedAt, setEuropaUpdatedAt] = useState<string | null>(null);
 
-  function openVaga(slug: string) {
-    if (!user) {
-      setPendingSlug(slug);
-      setShowAuthModal(true);
-    } else if (estadoSub === "loading") {
-      // Auth carregada mas sub ainda a verificar — guarda e aguarda
-      setPendingSlug(slug);
-    } else if (estadoSub !== "ativa") {
-      setPendingSlug(slug);
-      setShowSubModal(true);
-    } else {
-      setDrawerSlug(slug);
-    }
-  }
-
-  // Quando estadoSub resolver após login, abre automaticamente o drawer pendente
+  /* Detecta retorno do checkout de cartão via ?pagamento=sucesso (processador nunca exposto ao utilizador) */
   useEffect(() => {
-    if (!pendingSlug || estadoSub === "loading" || showAuthModal || showSubModal) return;
-    if (estadoSub === "ativa") {
-      setDrawerSlug(pendingSlug);
-      setPendingSlug(null);
-    } else if (estadoSub !== "loading") {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("pagamento") === "sucesso" && user) {
+      setSubModalFase("aguardando");
       setShowSubModal(true);
+      // Limpa o URL sem recarregar a página
+      const url = new URL(window.location.href);
+      url.searchParams.delete("pagamento");
+      window.history.replaceState({}, "", url.toString());
     }
-  }, [estadoSub, pendingSlug, showAuthModal, showSubModal]);
+  }, [user]);
 
-  function onAuthSuccess(nome: string) {
-    setShowAuthModal(false);
-    void nome;
-    // pendingSlug + useEffect acima tratam do resto quando estadoSub resolver
-  }
-
-  function onSubEnviada() {
-    setShowSubModal(false);
-    setPendingSlug(null);
-  }
-
+  /* Carregar vagas nacionais ao montar */
   useEffect(() => {
-    if (tab !== "vaga" || vagasFetched) return;
+    if (vagasFetched) return;
     setVagasLoading(true);
     setVagasError(null);
     fetch("/api/vagas")
@@ -454,131 +473,168 @@ export default function EmpregoPage() {
       .then(data => { setVagas(data.vagas ?? []); setUpdatedAt(data.updatedAt ?? null); setVagasFetched(true); })
       .catch(() => setVagasError("Não foi possível carregar as vagas. Tenta novamente."))
       .finally(() => setVagasLoading(false));
-  }, [tab, vagasFetched]);
+  }, [vagasFetched]);
 
-  function refreshVagas() { setVagasFetched(false); setVagas([]); }
+  /* Carregar vagas Europa ao seleccionar tab */
+  useEffect(() => {
+    if (tab !== "europa" || europaFetched) return;
+    setEuropaLoading(true);
+    fetch("/api/vagas-europa")
+      .then(r => r.json())
+      .then(data => { setVagasEuropa(data.vagas ?? []); setEuropaUpdatedAt(data.updatedAt ?? null); setEuropaFetched(true); })
+      .catch(() => {})
+      .finally(() => setEuropaLoading(false));
+  }, [tab, europaFetched]);
 
-  async function handleCandidate(e: React.FormEvent) {
-    e.preventDefault();
-    await fetch("/api/candidatura", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...candidateForm, job_id: candidateId }),
-    });
-    setSubmitted(true);
+  function refreshVagas() {
+    if (tab === "nacional") { setVagasFetched(false); setVagas([]); }
+    else { setEuropaFetched(false); setVagasEuropa([]); }
   }
+
+  function openVaga(slug: string) {
+    if (!user) { setPendingSlug(slug); setShowAuthModal(true); }
+    else if (estadoSub === "loading") { setPendingSlug(slug); }
+    else if (estadoSub !== "ativa") { setPendingSlug(slug); setShowSubModal(true); }
+    else { setDrawerSlug(slug); }
+  }
+
+  useEffect(() => {
+    if (!pendingSlug || estadoSub === "loading" || showAuthModal || showSubModal) return;
+    if (estadoSub === "ativa") { setDrawerSlug(pendingSlug); setPendingSlug(null); }
+    else { setShowSubModal(true); }
+  }, [estadoSub, pendingSlug, showAuthModal, showSubModal]);
 
   return (
     <div className="bg-white min-h-screen">
 
-      {/* Auth Modal */}
       {showAuthModal && (
         <AuthModal
           onClose={() => { setShowAuthModal(false); setPendingSlug(null); }}
-          onSuccess={onAuthSuccess}
+          onSuccess={() => setShowAuthModal(false)}
         />
       )}
-
-      {/* Pagamento PaySuite */}
       {showSubModal && user && (
-        <PaysuiteModal
-          userId={user.id}
-          onClose={() => { setShowSubModal(false); setPendingSlug(null); }}
-          onSuccess={onSubEnviada}
+        <ZumboPayModal
+          initialFase={subModalFase}
+          onClose={() => { setShowSubModal(false); setPendingSlug(null); setSubModalFase("metodo"); }}
+          onSuccess={() => { setShowSubModal(false); setPendingSlug(null); setSubModalFase("metodo"); }}
+        />
+      )}
+      {drawerSlug && <VagaDrawer slug={drawerSlug} onClose={closeDrawer} nomeUser={nomeUser} />}
+      {selectedEuropaVaga && (
+        <VagaEuropaDrawer
+          vaga={selectedEuropaVaga}
+          onClose={() => setSelectedEuropaVaga(null)}
+          nomeUser={nomeUser}
+          userEmail={user?.email ?? ""}
         />
       )}
 
-      {/* Drawer */}
-      {drawerSlug && <VagaDrawer slug={drawerSlug} onClose={closeDrawer} nomeUser={nomeUser} />}
-
-      {/* HERO */}
-      <section className="pt-20 sm:pt-32 pb-8 sm:pb-10 bg-white border-b border-gray-100">
+      {/* ── HERO ── */}
+      <section className="pt-24 sm:pt-32 pb-8 sm:pb-10 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#C9A84C]/10 text-[#C9A84C] border border-[#C9A84C]/20 mb-3">
-            Emprego & Oportunidades
+            Vagas de Emprego
           </span>
           <h1 className="text-2xl sm:text-5xl font-bold text-[#0D0D0D] mb-2 sm:mb-3 leading-tight">
             Talento encontra <span className="text-[#C9A84C]">oportunidade</span>
           </h1>
           <p className="text-gray-400 text-sm max-w-xl leading-relaxed">
-            Boladas pagas e vagas reais actualizadas em tempo real — tudo sem sair do site.
+            Vagas reais actualizadas em tempo real — candidata-te directamente por email, sem sair do site.
           </p>
-        </div>
-      </section>
-
-      {/* TABS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8">
-        <div className="grid grid-cols-2 gap-3 sm:gap-5">
-          {(["bolada", "vaga"] as const).map((t) => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`rounded-2xl p-4 sm:p-6 text-left transition-all duration-200 border-2 ${
-                tab === t
-                  ? t === "bolada" ? "bg-[#C9A84C] border-[#C9A84C] shadow-lg shadow-[#C9A84C]/25" : "bg-[#0D0D0D] border-[#0D0D0D] shadow-lg"
-                  : "bg-white border-gray-200 hover:border-gray-300 active:scale-[0.98]"
-              }`}>
-              <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center mb-2.5 sm:mb-3 ${tab === t ? "bg-white/20" : t === "bolada" ? "bg-[#C9A84C]/10" : "bg-gray-100"}`}>
-                {t === "bolada"
-                  ? <Zap size={16} className={tab === t ? "text-white fill-white" : "text-[#C9A84C] fill-[#C9A84C]"} />
-                  : <Briefcase size={16} className={tab === t ? "text-white" : "text-gray-500"} />}
+          {/* Stats inline */}
+          <div className="flex items-center gap-5 mt-5 flex-wrap">
+            {!vagasLoading && vagasFetched && (
+              <div className="flex items-center gap-1.5 text-sm">
+                <span className="w-2 h-2 rounded-full bg-[#1D9E75] animate-pulse" />
+                <span className="font-bold text-[#0D0D0D]">{vagas.length}</span>
+                <span className="text-gray-400">vagas em aberto</span>
               </div>
-              <p className={`font-bold text-sm sm:text-xl mb-0.5 sm:mb-1 leading-tight ${tab === t ? "text-white" : "text-[#0D0D0D]"}`}>
-                {t === "bolada" ? "Boladas" : "Vagas"}
-              </p>
-              <p className={`text-xs hidden sm:block ${tab === t ? "text-white/70" : "text-gray-500"}`}>
-                {t === "bolada" ? "Micro-trabalhos pagos — executa e recebe directamente." : "Vagas reais de njobs.co.mz — candidata-te aqui mesmo."}
-              </p>
-              <span className={`inline-flex mt-2 sm:mt-3 text-xs font-bold px-2.5 py-1 rounded-full ${tab === t ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600"}`}>
-                {t === "bolada" ? `${boladas.length} disponíveis` : vagasLoading ? "A carregar..." : vagasFetched ? `${vagas.length} em aberto` : "Ver vagas →"}
-              </span>
-            </button>
-          ))}
+            )}
+            <div className="flex items-center gap-1.5 text-sm text-gray-400">
+              <span className="font-semibold text-[#0D0D0D]">199 MT/mês</span>
+              <span>· acesso ilimitado</span>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* CONTEÚDO */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      {/* ── CONTEÚDO ── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
 
-        {/* ── BOLADAS ── */}
-        {tab === "bolada" && (
-          <>
-            <div className="flex items-center gap-3 mb-5">
-              <h2 className="text-lg sm:text-xl font-bold text-[#0D0D0D]">Boladas disponíveis</h2>
-              <span className="badge bg-[#C9A84C]/10 text-[#C9A84C] border border-[#C9A84C]/20">{boladas.length} listadas</span>
+        {/* Banners de estado */}
+        {user && estadoSub === "pendente" && (
+          <div className="flex items-start gap-3 mb-5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+            <Clock size={15} className="text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-amber-700">Pagamento em verificação</p>
+              <p className="text-xs text-amber-600">Activamos o teu acesso em até 24h após confirmar o pagamento.</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-              {boladas.map((b) => (
-                <div key={b.id} className="service-card">
-                  <div className="flex items-start justify-between">
-                    <div className={`w-10 h-10 sm:w-11 sm:h-11 ${b.iconBg} rounded-xl flex items-center justify-center`}>
-                      <b.Icon size={18} className={b.iconColor} />
-                    </div>
-                    <span className="badge bg-[#1D9E75]/10 text-[#1D9E75]">Aberto</span>
-                  </div>
-                  <h3 className="font-bold text-sm sm:text-base text-[#0D0D0D] leading-snug">{b.title}</h3>
-                  <p className="text-gray-400 text-xs leading-relaxed flex-1">{b.descricao}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="badge bg-sky-100 text-sky-700">Remoto</span>
-                    <span className="badge bg-gray-100 text-gray-500">{b.prazo}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
-                    <span className="text-[#C9A84C] font-bold text-sm">{b.valor}</span>
-                    <button
-                      onClick={() => { setCandidateId(b.id); setTimeout(() => document.getElementById("form-candidatura")?.scrollIntoView({ behavior: "smooth" }), 100); }}
-                      className="text-xs font-semibold text-[#1D9E75] bg-[#1D9E75]/10 hover:bg-[#1D9E75] hover:text-white px-3 py-1.5 rounded-full transition-all active:scale-95"
-                    >
-                      Candidatar →
-                    </button>
-                  </div>
+          </div>
+        )}
+        {user && (estadoSub === "expirada" || estadoSub === "sem_sub") && (
+          <div className="relative mb-8 rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, #0D0D0D 0%, #1A1208 100%)" }}>
+            {/* glow dourado */}
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C9A84C, transparent 70%)" }} />
+            <div className="relative px-6 py-7 sm:px-8 sm:py-8 flex flex-col sm:flex-row sm:items-center gap-5">
+              <div className="w-12 h-12 bg-[#C9A84C]/20 rounded-2xl flex items-center justify-center shrink-0 border border-[#C9A84C]/30">
+                <Zap size={22} className="text-[#C9A84C] fill-[#C9A84C]" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-bold text-lg sm:text-xl leading-tight mb-1">
+                  {estadoSub === "expirada" ? "A tua subscrição expirou" : "Desbloqueia o acesso às vagas"}
+                </p>
+                <p className="text-white/50 text-sm leading-relaxed">
+                  Candidata-te a todas as vagas com email pré-preenchido. Apenas{" "}
+                  <span className="text-[#C9A84C] font-bold">199 MT/mês</span> — cancela quando quiseres.
+                </p>
+                <div className="flex items-center gap-4 mt-3 flex-wrap">
+                  {["Candidatura por email em 1 clique", "Acesso a todas as vagas", "Cancela quando quiseres"].map((item) => (
+                    <span key={item} className="flex items-center gap-1.5 text-xs text-white/60">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#C9A84C]" />{item}
+                    </span>
+                  ))}
                 </div>
-              ))}
+              </div>
+              <button
+                onClick={() => setShowSubModal(true)}
+                className="shrink-0 bg-[#C9A84C] hover:bg-[#B8943E] text-white font-bold px-7 py-4 rounded-xl transition-all active:scale-95 text-sm whitespace-nowrap shadow-lg shadow-[#C9A84C]/30"
+              >
+                Activar por 199 MT →
+              </button>
             </div>
-          </>
+          </div>
+        )}
+        {user && estadoSub === "ativa" && diasSub !== null && diasSub <= 7 && (
+          <div className="flex items-center gap-3 mb-5 px-4 py-3 bg-orange-50 border border-orange-200 rounded-xl">
+            <Clock size={15} className="text-orange-500 shrink-0" />
+            <p className="text-xs text-orange-700 flex-1">
+              O teu acesso expira em <span className="font-bold">{diasSub} dia{diasSub !== 1 ? "s" : ""}</span>. Renova para não perderes as candidaturas.
+            </p>
+            <button onClick={() => setShowSubModal(true)} className="text-xs font-bold text-orange-600 bg-orange-100 hover:bg-orange-200 px-3 py-1.5 rounded-lg transition-all shrink-0">
+              Renovar
+            </button>
+          </div>
         )}
 
-        {/* ── VAGAS ── */}
-        {tab === "vaga" && (
+        {/* ── TABS ── */}
+        <div className="flex items-center gap-2 mb-6 p-1 bg-gray-100 rounded-xl w-fit">
+          <button onClick={() => setTab("nacional")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === "nacional" ? "bg-white text-[#0D0D0D] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+            <span className="text-base">🇲🇿</span> Moçambique
+            {vagasFetched && <span className="text-xs opacity-60">({vagas.length})</span>}
+          </button>
+          <button onClick={() => setTab("europa")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === "europa" ? "bg-white text-[#0D0D0D] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+            <span className="text-base">🇪🇺</span> Europa
+            {europaFetched && <span className="text-xs opacity-60">({vagasEuropa.length})</span>}
+          </button>
+        </div>
+
+        {/* ════════════ TAB NACIONAL ════════════ */}
+        {tab === "nacional" && (
           <>
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
               <div className="flex items-center gap-2.5">
                 <h2 className="text-lg sm:text-xl font-bold text-[#0D0D0D]">Vagas em aberto</h2>
                 {!vagasLoading && vagasFetched && (
@@ -595,71 +651,35 @@ export default function EmpregoPage() {
               </div>
             </div>
 
-            {/* Banner estado subscrição */}
-            {user && estadoSub === "pendente" && (
-              <div className="flex items-start gap-3 mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-                <Clock size={15} className="text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-bold text-amber-700">Pagamento em verificação</p>
-                  <p className="text-xs text-amber-600">Activamos o teu acesso em até 24h após confirmar o pagamento.</p>
-                </div>
-              </div>
-            )}
-            {user && (estadoSub === "expirada" || estadoSub === "sem_sub") && (
-              <div className="flex items-start gap-3 mb-4 px-4 py-3 bg-[#C9A84C]/10 border border-[#C9A84C]/25 rounded-xl">
-                <Zap size={15} className="text-[#C9A84C] fill-[#C9A84C] shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-[#0D0D0D]">{estadoSub === "expirada" ? "Subscrição expirada" : "Acesso Premium necessário"}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Activa por <span className="font-semibold text-[#C9A84C]">199 MT/mês</span> para te candidatares a qualquer vaga.</p>
-                </div>
-                <button onClick={() => setShowSubModal(true)} className="text-xs font-bold text-white bg-[#C9A84C] hover:bg-[#B8943E] px-3 py-1.5 rounded-lg transition-all shrink-0">
-                  Activar
-                </button>
-              </div>
-            )}
-            {user && estadoSub === "ativa" && diasSub !== null && diasSub <= 7 && (
-              <div className="flex items-center gap-3 mb-4 px-4 py-3 bg-orange-50 border border-orange-200 rounded-xl">
-                <Clock size={15} className="text-orange-500 shrink-0" />
-                <p className="text-xs text-orange-700 flex-1">
-                  O teu acesso expira em <span className="font-bold">{diasSub} dia{diasSub !== 1 ? "s" : ""}</span>. Renova para não perderes as candidaturas.
-                </p>
-                <button onClick={() => setShowSubModal(true)} className="text-xs font-bold text-orange-600 bg-orange-100 hover:bg-orange-200 px-3 py-1.5 rounded-lg transition-all shrink-0">
-                  Renovar
-                </button>
-              </div>
-            )}
-
             {vagasFetched && vagas.length > 0 && (
-              <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-[#F8F5EF] border border-amber-100 rounded-xl w-fit">
-                <span className="w-2 h-2 rounded-full bg-[#1D9E75] animate-pulse shrink-0"/>
+              <div className="flex items-center gap-2 mb-5 px-3 py-2 bg-[#F8F5EF] border border-amber-100 rounded-xl w-fit">
+                <span className="w-2 h-2 rounded-full bg-[#1D9E75] animate-pulse shrink-0" />
                 <span className="text-xs text-gray-500">Fonte: <span className="font-semibold text-[#0D0D0D]">njobs.co.mz</span> · actualizado a cada hora</span>
               </div>
             )}
 
+            <div className="mb-6">
+              <AlertaVagasForm />
+            </div>
+
             {vagasLoading && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i}/>)}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                {Array.from({ length: 9 }).map((_, i) => <SkeletonCard key={i} />)}
               </div>
             )}
-
             {vagasError && (
               <div className="bg-red-50 border border-red-100 rounded-2xl p-8 text-center">
                 <p className="text-red-600 font-semibold mb-2">{vagasError}</p>
                 <button onClick={refreshVagas} className="btn-primary mt-2">Tentar novamente</button>
               </div>
             )}
-
             {!vagasLoading && !vagasError && vagas.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {vagas.map((v) => (
-                  <button
-                    key={v.slug}
-                    onClick={() => openVaga(v.slug)}
-                    className="service-card group text-left active:scale-[0.98]"
-                  >
+                  <button key={v.slug} onClick={() => openVaga(v.slug)} className="service-card group text-left active:scale-[0.98]">
                     <div className="flex items-start justify-between">
                       <div className="w-10 h-10 sm:w-11 sm:h-11 bg-amber-50 rounded-xl flex items-center justify-center group-hover:bg-amber-100 transition-colors">
-                        <Briefcase size={18} className="text-amber-600"/>
+                        <Briefcase size={18} className="text-amber-600" />
                       </div>
                       <span className={`badge ${diasColor(v.diasRestantes)}`}>{diasLabel(v.diasRestantes)}</span>
                     </div>
@@ -683,7 +703,6 @@ export default function EmpregoPage() {
                 ))}
               </div>
             )}
-
             {!vagasLoading && !vagasError && vagasFetched && vagas.length === 0 && (
               <div className="bg-gray-50 border border-gray-100 rounded-2xl p-8 text-center">
                 <p className="text-gray-500 font-semibold mb-1">Sem vagas disponíveis neste momento</p>
@@ -693,44 +712,124 @@ export default function EmpregoPage() {
             )}
           </>
         )}
-      </section>
 
-      {/* FORMULÁRIO BOLADA */}
-      {candidateId && tab === "bolada" && (
-        <section id="form-candidatura" className="bg-[#F8F5EF] border-t border-gray-100 py-12 sm:py-16">
-          <div className="max-w-xl mx-auto px-4 sm:px-6">
-            <span className="badge bg-[#C9A84C]/10 text-[#C9A84C] border border-[#C9A84C]/20 mb-3 inline-flex">Candidatura</span>
-            <h2 className="text-xl sm:text-3xl font-bold text-[#0D0D0D] mb-6">{boladas.find(b => b.id === candidateId)?.title}</h2>
-            {submitted ? (
-              <div className="bg-[#1D9E75]/10 border border-[#1D9E75]/30 rounded-2xl p-8 text-center">
-                <CheckCircle2 size={32} className="text-[#1D9E75] mx-auto mb-3" />
-                <p className="text-xl font-bold text-[#1D9E75] mb-2">Candidatura enviada!</p>
-                <p className="text-gray-500 text-sm">Entraremos em contacto brevemente.</p>
-                <button onClick={() => { setSubmitted(false); setCandidateId(null); }} className="btn-primary mt-6">Ver mais oportunidades</button>
-              </div>
-            ) : (
-              <form onSubmit={handleCandidate} className="space-y-4 bg-white rounded-2xl p-5 sm:p-8 shadow-sm border border-gray-100">
-                {[{ name:"nome", label:"Nome completo", placeholder:"O seu nome" }, { name:"contacto", label:"Contacto (tel / email)", placeholder:"+258 84 000 0000" }].map(({ name, label, placeholder }) => (
-                  <div key={name}>
-                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">{label}</label>
-                    <input type="text" required placeholder={placeholder} value={candidateForm[name as keyof typeof candidateForm]}
-                      onChange={e => setCandidateForm(f => ({ ...f, [name]: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl text-sm px-4 py-3 focus:outline-none focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/10 transition-all placeholder:text-gray-300"/>
+        {/* ════════════ TAB EUROPA ════════════ */}
+        {tab === "europa" && (
+          <>
+            {/* Banner emocional */}
+            <div className="relative mb-8 rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, #0B1628 0%, #122044 50%, #0D0D0D 100%)" }}>
+              <div className="absolute top-0 left-0 w-64 h-64 rounded-full opacity-15 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #3B82F6, transparent 70%)" }} />
+              <div className="absolute bottom-0 right-0 w-48 h-48 rounded-full opacity-10 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #C9A84C, transparent 70%)" }} />
+              <div className="relative px-6 py-7 sm:px-8 sm:py-8">
+                <div className="flex items-start gap-5">
+                  <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center shrink-0 border border-blue-400/30">
+                    <Plane size={24} className="text-blue-400" />
                   </div>
-                ))}
-                <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Mensagem / experiência relevante</label>
-                  <textarea rows={4} required placeholder="Apresente-se brevemente..."
-                    value={candidateForm.mensagem}
-                    onChange={e => setCandidateForm(f => ({ ...f, mensagem: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl text-sm px-4 py-3 focus:outline-none focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/10 transition-all placeholder:text-gray-300 resize-none"/>
+                  <div>
+                    <p className="text-white font-bold text-xl sm:text-2xl leading-tight mb-2">
+                      Trabalha na <span className="text-blue-400">Europa</span>
+                    </p>
+                    <p className="text-white/50 text-sm leading-relaxed max-w-lg">
+                      Centenas de empresas europeias a recrutar agora. Vagas reais com contrato, em Portugal, Espanha, Alemanha e mais — o teu futuro pode começar hoje.
+                    </p>
+                    <div className="flex items-center gap-4 mt-4 flex-wrap">
+                      {["Vagas com contrato", "Empresas verificadas", "Actualizado a cada hora"].map((item) => (
+                        <span key={item} className="flex items-center gap-1.5 text-xs text-white/60">
+                          <CheckCircle2 size={11} className="text-blue-400" />{item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <button type="submit" className="btn-primary w-full justify-center py-4 text-base rounded-xl">Enviar Candidatura →</button>
-              </form>
+              </div>
+            </div>
+
+            {/* Cabeçalho */}
+            <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-lg sm:text-xl font-bold text-[#0D0D0D]">Vagas na Europa</h2>
+                {europaFetched && (
+                  <span className="badge bg-blue-100 text-blue-700 border border-blue-200">{vagasEuropa.length} vagas</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {europaUpdatedAt && <span className="text-xs text-gray-400 flex items-center gap-1"><Clock size={10}/> {timeAgo(europaUpdatedAt)}</span>}
+                {europaFetched && (
+                  <button onClick={refreshVagas} className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full transition-all border border-blue-200">
+                    <RefreshCw size={10}/> Actualizar
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {europaFetched && vagasEuropa.length > 0 && (
+              <div className="flex items-center gap-2 mb-5 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl w-fit">
+                <Globe2 size={12} className="text-blue-500 shrink-0" />
+                <span className="text-xs text-gray-500">Fonte: <span className="font-semibold text-[#0D0D0D]">net-empregos.com</span> · vagas em tempo real</span>
+              </div>
             )}
-          </div>
-        </section>
-      )}
+
+            {/* Loading */}
+            {europaLoading && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                {Array.from({ length: 9 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            )}
+
+            {/* Grid Europa */}
+            {!europaLoading && vagasEuropa.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                {vagasEuropa.map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => { if (!user) { setShowAuthModal(true); } else if (estadoSub !== "ativa") { setShowSubModal(true); } else { setSelectedEuropaVaga(v); } }}
+                    className="service-card group text-left active:scale-[0.98] hover:border-blue-300"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                        <Globe2 size={18} className="text-blue-600" />
+                      </div>
+                      <span className="badge bg-blue-100 text-blue-700 text-[10px]">🇪🇺 Europa</span>
+                    </div>
+                    <h3 className="font-bold text-sm sm:text-base text-[#0D0D0D] leading-snug group-hover:text-blue-600 transition-colors">
+                      {v.title}
+                    </h3>
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-gray-500 text-xs font-semibold">{v.empresa}</p>
+                      {v.zona && <div className="flex items-center gap-1 text-gray-400 text-xs"><MapPin size={10}/>{v.zona}</div>}
+                    </div>
+                    {v.categoria && (
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="badge bg-gray-100 text-gray-600 text-xs">{v.categoria}</span>
+                      </div>
+                    )}
+                    {v.descricao && (
+                      <p className="text-xs text-gray-400 leading-relaxed line-clamp-2">{v.descricao}</p>
+                    )}
+                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
+                      {v.data && (
+                        <div className="flex items-center gap-1 text-gray-400 text-xs">
+                          <Clock size={10}/> <span className="font-medium text-[#0D0D0D]">{v.data}</span>
+                        </div>
+                      )}
+                      <span className="flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-50 group-hover:bg-blue-600 group-hover:text-white px-3 py-1.5 rounded-full transition-all">
+                        Candidatar →
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {!europaLoading && europaFetched && vagasEuropa.length === 0 && (
+              <div className="bg-gray-50 border border-gray-100 rounded-2xl p-8 text-center">
+                <p className="text-gray-500 font-semibold mb-1">Sem vagas disponíveis neste momento</p>
+                <p className="text-gray-400 text-sm">As vagas europeias são actualizadas a cada hora. Volta em breve.</p>
+                <button onClick={refreshVagas} className="btn-primary mt-4">Actualizar</button>
+              </div>
+            )}
+          </>
+        )}
+      </section>
     </div>
   );
 }

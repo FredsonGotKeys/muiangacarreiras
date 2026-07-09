@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Termos de Uso — MUIANGA CONSULTORES",
-  description: "Termos e condições de utilização da plataforma MUIANGA CONSULTORES.",
+  title: "Termos de Uso — MUIANGA CARREIRAS",
+  description: "Termos e condições de utilização da plataforma MUIANGA CARREIRAS.",
 };
 
 const YEAR = new Date().getFullYear();
@@ -35,11 +35,11 @@ export default function TermosPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
 
         <div className="bg-[#F8F5EF] border border-amber-100 rounded-2xl p-5 mb-10 text-sm text-gray-600 leading-relaxed">
-          Ao aceder e utilizar a plataforma <strong className="text-[#0D0D0D]">MUIANGA CONSULTORES</strong> (disponível em muiangaconsultores.co.mz), declara que leu, compreendeu e aceita os presentes Termos de Uso na íntegra. Caso não concorde com alguma das condições, deverá cessar imediatamente a utilização da plataforma.
+          Ao aceder e utilizar a plataforma <strong className="text-[#0D0D0D]">MUIANGA CARREIRAS</strong> (disponível em muiangaconsultores.co.mz), declara que leu, compreendeu e aceita os presentes Termos de Uso na íntegra. Caso não concorde com alguma das condições, deverá cessar imediatamente a utilização da plataforma.
         </div>
 
         <Section title="1. Identificação da Empresa">
-          <p><strong className="text-[#0D0D0D]">MUIANGA CONSULTORES</strong> é uma empresa de consultoria multifuncional sediada em Maputo, Moçambique, que opera uma plataforma digital de serviços de consultoria, boladas (micro-trabalhos) e vagas de emprego destinada ao mercado Moçambicano e à lusofonia (Angola, Brasil, Portugal e PALOP).</p>
+          <p><strong className="text-[#0D0D0D]">MUIANGA CARREIRAS</strong> é uma empresa de consultoria multifuncional sediada em Maputo, Moçambique, que opera uma plataforma digital de serviços de consultoria, boladas (micro-trabalhos) e vagas de emprego destinada ao mercado Moçambicano e à lusofonia (Angola, Brasil, Portugal e PALOP).</p>
           <p>Contactos oficiais:</p>
           <ul className="list-disc pl-5 space-y-1">
             <li>Email: <a href="mailto:minville@outlook.pt" className="text-[#C9A84C] hover:underline">minville@outlook.pt</a></li>
@@ -55,9 +55,9 @@ export default function TermosPage() {
           <ul className="list-disc pl-5 space-y-1">
             <li>Manter a confidencialidade das suas credenciais de acesso;</li>
             <li>Fornecer informações verdadeiras, actualizadas e completas;</li>
-            <li>Notificar imediatamente a MUIANGA CONSULTORES em caso de uso não autorizado da sua conta.</li>
+            <li>Notificar imediatamente a MUIANGA CARREIRAS em caso de uso não autorizado da sua conta.</li>
           </ul>
-          <p>A MUIANGA CONSULTORES reserva-se o direito de suspender ou eliminar contas que violem os presentes termos, sem aviso prévio.</p>
+          <p>A MUIANGA CARREIRAS reserva-se o direito de suspender ou eliminar contas que violem os presentes termos, sem aviso prévio.</p>
         </Section>
 
         <Section title="3. Plano Premium — Subscrição Mensal">
@@ -69,21 +69,21 @@ export default function TermosPage() {
           </ul>
           <p>Após o pagamento, o utilizador deve submeter a referência da transacção na plataforma. A activação é efectuada manualmente em até <strong className="text-[#0D0D0D]">24 horas úteis</strong>.</p>
           <p>A subscrição não é renovada automaticamente. O utilizador é responsável por renovar o acesso antes do término do período contratado. A expiração da subscrição implica a desactivação imediata das funcionalidades premium.</p>
-          <p><strong className="text-[#0D0D0D]">Política de reembolso:</strong> Não são efectuados reembolsos após a activação do período de acesso, salvo em casos de erro comprovado da parte da MUIANGA CONSULTORES.</p>
+          <p><strong className="text-[#0D0D0D]">Política de reembolso:</strong> Não são efectuados reembolsos após a activação do período de acesso, salvo em casos de erro comprovado da parte da MUIANGA CARREIRAS.</p>
         </Section>
 
         <Section title="4. Boladas (Micro-trabalhos)">
           <p>As Boladas são tarefas de trabalho de curta duração publicadas na plataforma, remuneradas em Meticais (MT). Ao candidatar-se a uma Bolada, o utilizador aceita:</p>
           <ul className="list-disc pl-5 space-y-1">
             <li>Executar o trabalho dentro do prazo indicado e com a qualidade acordada;</li>
-            <li>Que a MUIANGA CONSULTORES actua como intermediária e não garante a atribuição de nenhuma tarefa;</li>
+            <li>Que a MUIANGA CARREIRAS actua como intermediária e não garante a atribuição de nenhuma tarefa;</li>
             <li>Que o pagamento está condicionado à aceitação do trabalho entregue pelo solicitante.</li>
           </ul>
         </Section>
 
         <Section title="5. Vagas de Emprego">
-          <p>As vagas de emprego exibidas na plataforma são agregadas de fontes externas (nomeadamente njobs.co.mz) e actualizadas automaticamente a cada hora. A MUIANGA CONSULTORES não é responsável pela exactidão, completude ou disponibilidade das vagas publicadas por terceiros.</p>
-          <p>A candidatura por email é facilitada pela plataforma através de um email pré-preenchido. A MUIANGA CONSULTORES não garante resposta por parte das entidades empregadoras nem intervém no processo de selecção.</p>
+          <p>As vagas de emprego exibidas na plataforma são agregadas de fontes externas (nomeadamente njobs.co.mz) e actualizadas automaticamente a cada hora. A MUIANGA CARREIRAS não é responsável pela exactidão, completude ou disponibilidade das vagas publicadas por terceiros.</p>
+          <p>A candidatura por email é facilitada pela plataforma através de um email pré-preenchido. A MUIANGA CARREIRAS não garante resposta por parte das entidades empregadoras nem intervém no processo de selecção.</p>
         </Section>
 
         <Section title="6. Conduta do Utilizador">
@@ -100,8 +100,8 @@ export default function TermosPage() {
         </Section>
 
         <Section title="7. Propriedade Intelectual">
-          <p>Todo o conteúdo da plataforma — incluindo textos, logótipos, design, código-fonte e identidade visual — é propriedade exclusiva da MUIANGA CONSULTORES e está protegido pela legislação moçambicana e internacional de propriedade intelectual.</p>
-          <p>É proibida a reprodução, distribuição ou utilização comercial de qualquer elemento sem autorização prévia e escrita da MUIANGA CONSULTORES.</p>
+          <p>Todo o conteúdo da plataforma — incluindo textos, logótipos, design, código-fonte e identidade visual — é propriedade exclusiva da MUIANGA CARREIRAS e está protegido pela legislação moçambicana e internacional de propriedade intelectual.</p>
+          <p>É proibida a reprodução, distribuição ou utilização comercial de qualquer elemento sem autorização prévia e escrita da MUIANGA CARREIRAS.</p>
         </Section>
 
         <Section title="8. Privacidade e Protecção de Dados">
@@ -116,7 +116,7 @@ export default function TermosPage() {
         </Section>
 
         <Section title="9. Limitação de Responsabilidade">
-          <p>A MUIANGA CONSULTORES não se responsabiliza por:</p>
+          <p>A MUIANGA CARREIRAS não se responsabiliza por:</p>
           <ul className="list-disc pl-5 space-y-1">
             <li>Interrupções ou falhas técnicas na plataforma;</li>
             <li>Resultados de candidaturas submetidas a entidades externas;</li>
@@ -127,7 +127,7 @@ export default function TermosPage() {
         </Section>
 
         <Section title="10. Alterações aos Termos">
-          <p>A MUIANGA CONSULTORES reserva-se o direito de actualizar os presentes Termos de Uso a qualquer momento. As alterações entram em vigor imediatamente após publicação na plataforma. A continuação da utilização após as alterações constitui aceitação dos novos termos.</p>
+          <p>A MUIANGA CARREIRAS reserva-se o direito de actualizar os presentes Termos de Uso a qualquer momento. As alterações entram em vigor imediatamente após publicação na plataforma. A continuação da utilização após as alterações constitui aceitação dos novos termos.</p>
           <p>Recomendamos a consulta periódica desta página.</p>
         </Section>
 
@@ -138,7 +138,7 @@ export default function TermosPage() {
         <div className="border-t border-gray-100 pt-8 mt-4">
           <p className="text-xs text-gray-400 leading-relaxed">
             Para qualquer questão relativa a estes termos, contacte-nos em <a href="mailto:minville@outlook.pt" className="text-[#C9A84C] hover:underline">minville@outlook.pt</a> ou através dos nossos números de pagamento móvel.<br/>
-            &copy; {YEAR} MUIANGA CONSULTORES — Todos os direitos reservados. Maputo, Moçambique.
+            &copy; {YEAR} MUIANGA CARREIRAS — Todos os direitos reservados. Maputo, Moçambique.
           </p>
         </div>
       </div>

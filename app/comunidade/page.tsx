@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Zap, Globe, BookOpen, Calendar, Compass, Rocket, type LucideIcon } from "lucide-react";
 
 const benefits: { Icon: LucideIcon; iconBg: string; iconColor: string; title: string; desc: string }[] = [
-  { Icon: Zap,      iconBg: "bg-amber-50",  iconColor: "text-amber-600",  title: "Acesso a Boladas",       desc: "Candidata-te a micro-trabalhos pagos publicados pela MUIANGA CONSULTORES e parceiros." },
+  { Icon: Zap,      iconBg: "bg-amber-50",  iconColor: "text-amber-600",  title: "Acesso a Boladas",       desc: "Candidata-te a micro-trabalhos pagos publicados pela MUIANGA CARREIRAS e parceiros." },
   { Icon: Globe,    iconBg: "bg-blue-50",   iconColor: "text-blue-600",   title: "Rede PALOP & Lusofonia",    desc: "Conecta-te com profissionais em MZ, Angola, Cabo Verde, Brasil, Portugal e todos os PALOP." },
   { Icon: BookOpen, iconBg: "bg-purple-50", iconColor: "text-purple-600", title: "Conteúdo Exclusivo",        desc: "Artigos, guias e recursos formativos disponíveis apenas para membros da comunidade." },
   { Icon: Calendar, iconBg: "bg-green-50",  iconColor: "text-[#1D9E75]",  title: "Eventos & Webinars",        desc: "Acesso antecipado e gratuito a eventos, workshops e webinars promovidos pela empresa." },

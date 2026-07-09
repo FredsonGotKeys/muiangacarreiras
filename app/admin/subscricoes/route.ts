@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
 import { rateLimit, getIp } from "@/lib/api-utils";
 
 const sb = createClient(
@@ -13,52 +12,69 @@ function isAdminAuthed(req: NextRequest): boolean {
   return cookie === process.env.ADMIN_SESSION_TOKEN;
 }
 
-// GET — listar subscrições
+// GET — listar subscrições com email dos utilizadores
 export async function GET(req: NextRequest) {
   if (!isAdminAuthed(req)) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-  const { data } = await sb
+
+  const { data: subs } = await sb
     .from("subscricoes")
-    .select("*, perfis(nome)")
+    .select("*, perfis(nome, bloqueado)")
     .order("created_at", { ascending: false })
-    .limit(100);
-  return NextResponse.json(data ?? []);
+    .limit(200);
+
+  // Buscar emails via auth admin
+  const { data: { users } } = await sb.auth.admin.listUsers({ perPage: 1000 });
+  const emailMap: Record<string, string> = {};
+  for (const u of users) emailMap[u.id] = u.email ?? "";
+
+  const result = (subs ?? []).map(s => ({
+    ...s,
+    email: emailMap[s.user_id] ?? null,
+  }));
+
+  return NextResponse.json(result);
 }
 
-// POST — aprovar, rejeitar, ou fazer login
+// POST — login, logout, aprovar, rejeitar, revogar, bloquear
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
 
-  // Login do admin
+  // Login
   if (body.action === "login") {
     if (!rateLimit(getIp(req), 5)) {
       return NextResponse.json({ error: "Demasiadas tentativas." }, { status: 429 });
     }
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    if (!adminPassword || body.password !== adminPassword) {
-      return NextResponse.json({ error: "Credenciais incorrectas." }, { status: 401 });
+    if (!process.env.ADMIN_PASSWORD || body.password !== process.env.ADMIN_PASSWORD) {
+      return NextResponse.json({ error: "Código incorrecto." }, { status: 401 });
     }
     const token = process.env.ADMIN_SESSION_TOKEN;
     if (!token) return NextResponse.json({ error: "Servidor mal configurado." }, { status: 500 });
-
     const res = NextResponse.json({ ok: true });
     res.cookies.set("admin_session", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 60 * 60 * 8, // 8 horas
+      maxAge: 60 * 60 * 8,
       path: "/",
     });
     return res;
   }
 
-  // Acções (aprovar/rejeitar)
+  // Logout
+  if (body.action === "logout") {
+    const res = NextResponse.json({ ok: true });
+    res.cookies.delete("admin_session");
+    return res;
+  }
+
   if (!isAdminAuthed(req)) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  const { id, acao, notas } = body as { id: string; acao: "aprovar" | "rejeitar"; notas?: string };
-  if (!id || !acao) return NextResponse.json({ error: "Dados incompletos." }, { status: 400 });
+  const { action, id, userId, notas } = body as {
+    action: string; id?: string; userId?: string; notas?: string;
+  };
 
-  if (acao === "aprovar") {
+  if (action === "aprovar" && id) {
     const inicio = new Date();
     const fim = new Date(inicio);
     fim.setDate(fim.getDate() + 30);
@@ -69,15 +85,65 @@ export async function POST(req: NextRequest) {
       aprovado_em: inicio.toISOString(),
       notas_admin: notas ?? null,
     }).eq("id", id);
-  } else if (acao === "rejeitar") {
+  }
+
+  if (action === "rejeitar" && id) {
     await sb.from("subscricoes").update({
       status: "rejeitada",
       notas_admin: notas ?? null,
     }).eq("id", id);
-  } else if (acao === "logout") {
-    const res = NextResponse.json({ ok: true });
-    res.cookies.delete("admin_session");
-    return res;
+  }
+
+  if (action === "revogar" && id) {
+    await sb.from("subscricoes").update({
+      status: "expirada",
+      notas_admin: notas ?? "Acesso revogado pelo administrador.",
+    }).eq("id", id);
+  }
+
+  if (action === "bloquear" && userId) {
+    await sb.from("perfis").update({ bloqueado: true }).eq("id", userId);
+    // Expirar todas as subscrições do utilizador
+    await sb.from("subscricoes").update({ status: "expirada" })
+      .eq("user_id", userId).in("status", ["ativa", "pendente"]);
+  }
+
+  if (action === "desbloquear" && userId) {
+    await sb.from("perfis").update({ bloqueado: false }).eq("id", userId);
+  }
+
+  // Candidaturas Europa
+  if (action === "list_candidaturas") {
+    const { data } = await sb.from("candidaturas_europa")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    return NextResponse.json(data ?? []);
+  }
+
+  if (action === "cand_tratada" && id) {
+    await sb.from("candidaturas_europa").update({ status: "tratada" }).eq("id", id);
+  }
+
+  if (action === "cand_eliminar" && id) {
+    // Apagar também o ficheiro CV do storage, se existir
+    const { data: cand } = await sb.from("candidaturas_europa").select("cv_url").eq("id", id).maybeSingle();
+    const path = (cand as { cv_url: string | null } | null)?.cv_url ?? null;
+    if (path && !path.startsWith("http")) {
+      await sb.storage.from("cvs").remove([path]).catch(() => {});
+    }
+    await sb.from("candidaturas_europa").delete().eq("id", id);
+  }
+
+  // Gera signed URL temporária (5 min) para visualizar o CV
+  if (action === "cand_cv_url" && id) {
+    const { data: cand } = await sb.from("candidaturas_europa").select("cv_url").eq("id", id).maybeSingle();
+    const path = (cand as { cv_url: string | null } | null)?.cv_url ?? null;
+    if (!path) return NextResponse.json({ error: "CV não encontrado." }, { status: 404 });
+    if (path.startsWith("http")) return NextResponse.json({ url: path }); // legacy
+    const { data, error } = await sb.storage.from("cvs").createSignedUrl(path, 300);
+    if (error || !data?.signedUrl) return NextResponse.json({ error: "Erro ao gerar URL." }, { status: 500 });
+    return NextResponse.json({ url: data.signedUrl });
   }
 
   return NextResponse.json({ ok: true });

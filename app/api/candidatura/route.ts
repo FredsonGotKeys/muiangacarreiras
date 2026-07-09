@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { rateLimit, getIp, str, rateLimitedResponse, validationError } from "@/lib/api-utils";
 import { createClient } from "@supabase/supabase-js";
+import { sendEmail, templates } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   if (!rateLimit(getIp(req), 5)) return rateLimitedResponse();
@@ -38,5 +39,10 @@ export async function POST(req: NextRequest) {
   }]);
 
   if (error) return NextResponse.json({ error: "Erro ao guardar. Tenta novamente." }, { status: 500 });
+
+  if (user.email) {
+    sendEmail({ to: user.email, subject: "Candidatura recebida", html: templates.candidaturaRecebida(nome, job_title ?? "a vaga") }).catch(() => {});
+  }
+
   return NextResponse.json({ ok: true });
 }

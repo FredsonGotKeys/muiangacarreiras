@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { rateLimit, getIp, str, email, rateLimitedResponse, validationError } from "@/lib/api-utils";
+import { sendEmail, templates, adminEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   if (!rateLimit(getIp(req), 5)) return rateLimitedResponse();
@@ -22,5 +23,11 @@ export async function POST(req: NextRequest) {
   }]);
 
   if (error) return NextResponse.json({ error: "Erro ao guardar. Tenta novamente." }, { status: 500 });
+
+  const adminTo = adminEmail();
+  if (adminTo) {
+    sendEmail({ to: adminTo, subject: `Contacto: ${assunto}`, html: templates.adminNotificacao(`Nova mensagem de contacto — ${assunto}`, `${nome} (${emailVal})\n\n${mensagem}`) }).catch(() => {});
+  }
+
   return NextResponse.json({ ok: true });
 }

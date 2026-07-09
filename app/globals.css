@@ -4,9 +4,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════
+   DESIGN SYSTEM — MUIANGA CARREIRAS
+   Fonte única de verdade para cor, tipografia, espaçamento,
+   sombra e raio. Todo componente novo deve usar estes tokens
+   em vez de valores soltos — é o que garante consistência.
+   ═══════════════════════════════════════════════════════════ */
 :root {
+  /* ── Tipografia ── */
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-body: 'DM Sans', system-ui, sans-serif;
+
+  /* ── Cor de marca — dourado, único accent do site ── */
+  --gold-50:  #FBF7EC;
+  --gold-100: #F5EBCC;
+  --gold-200: #E8C766;  /* claro — brilhos, hover */
+  --gold-300: #D4AF37;  /* âmbar */
+  --gold-400: #C9A84C;  /* marca — cor principal */
+  --gold-500: #A87C2E;  /* bronze — texto sobre claro, gradientes */
+  --gold-600: #8B6F1E;  /* escuro — contraste extra */
+
+  /* ── Neutros ── */
+  --ink-900: #0D0D0D;   /* texto principal / fundos escuros */
+  --ink-700: #1A1408;   /* texto sobre dourado */
+  --ink-500: #6B7280;   /* texto secundário */
+  --ink-300: #9CA3AF;   /* texto terciário / placeholder */
+  --paper-50: #FAF9F6;  /* fundo creme (secções alternadas) */
+  --paper-0:  #FFFFFF;
+
+  /* ── Semântica ── */
+  --success: #10B981;
+  --success-dark: #0D9668;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+
+  /* ── Espaçamento (escala 4px) ── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ── Raio ── */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 999px;
+
+  /* ── Sombra ── */
+  --shadow-sm: 0 1px 2px rgba(13,13,13,0.04);
+  --shadow-md: 0 8px 24px -8px rgba(13,13,13,0.10);
+  --shadow-lg: 0 20px 48px -16px rgba(13,13,13,0.16);
+  --shadow-gold: 0 12px 28px -8px rgba(201,168,76,0.45);
+  --shadow-gold-lg: 0 20px 44px -10px rgba(201,168,76,0.55);
 }
 
 html { scroll-behavior: smooth; }
@@ -14,8 +68,8 @@ html { scroll-behavior: smooth; }
 * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
 body {
-  background-color: #ffffff;
-  color: #0D0D0D;
+  background-color: var(--paper-0);
+  color: var(--ink-900);
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.6;
@@ -31,42 +85,70 @@ body {
 }
 
 @layer components {
+  /* ── Botões ── */
   .btn-primary {
-    @apply inline-flex items-center gap-2 bg-[#C9A84C] text-white font-semibold px-6 py-3 rounded-xl text-sm transition-all duration-200 hover:bg-[#B8943E] hover:shadow-lg hover:shadow-[#C9A84C]/30 active:scale-95;
+    @apply inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-xl text-sm active:scale-95;
+    color: var(--ink-700);
+    background: linear-gradient(135deg, var(--gold-200) 0%, var(--gold-400) 55%, var(--gold-500) 100%);
+    box-shadow: var(--shadow-gold);
   }
   .btn-dark {
-    @apply inline-flex items-center gap-2 bg-[#0D0D0D] text-white font-semibold px-6 py-3 rounded-xl text-sm transition-all duration-200 hover:bg-[#1A1A1A] hover:shadow-lg active:scale-95;
+    @apply inline-flex items-center gap-2 text-white font-semibold px-6 py-3 rounded-xl text-sm transition-all duration-200 active:scale-95;
+    background: var(--ink-900);
   }
+  .btn-dark:hover { background: #1A1A1A; box-shadow: var(--shadow-lg); }
   .btn-ghost {
-    @apply inline-flex items-center gap-2 border-2 border-[#0D0D0D] text-[#0D0D0D] font-semibold px-6 py-3 rounded-xl text-sm transition-all duration-200 hover:bg-[#0D0D0D] hover:text-white active:scale-95;
+    @apply inline-flex items-center gap-2 border-2 font-semibold px-6 py-3 rounded-xl text-sm transition-all duration-200 active:scale-95;
+    border-color: var(--ink-900);
+    color: var(--ink-900);
   }
+  .btn-ghost:hover { background: var(--ink-900); color: #fff; }
   .btn-green {
-    @apply inline-flex items-center gap-2 bg-[#1D9E75] text-white font-semibold px-6 py-3 rounded-xl text-sm transition-all duration-200 hover:bg-[#178A64] hover:shadow-lg hover:shadow-[#1D9E75]/30 active:scale-95;
+    @apply inline-flex items-center gap-2 text-white font-semibold px-6 py-3 rounded-xl text-sm transition-all duration-200 active:scale-95;
+    background: var(--success);
   }
+  .btn-green:hover { background: var(--success-dark); box-shadow: 0 12px 32px -8px rgba(16,185,129,0.45); }
+
+  /* ── Cards ── */
   .service-card {
-    @apply bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#C9A84C]/30 cursor-pointer;
-  }
-  .bolada-card {
-    @apply bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#C9A84C]/40 cursor-pointer;
+    @apply rounded-2xl border p-6 flex flex-col gap-3 cursor-pointer;
+    background: var(--paper-0);
+    border-color: #F1F1F1;
+    box-shadow: var(--shadow-sm);
   }
   .badge {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
+  }
+
+  /* ── Formulários ── */
+  .input-field {
+    @apply w-full border rounded-xl text-sm px-4 py-3 focus:outline-none transition-all bg-white;
+    border-color: #E5E7EB;
+  }
+  .input-field:focus {
+    border-color: var(--gold-400);
+    box-shadow: 0 0 0 4px rgba(201,168,76,0.10);
+  }
+  .input-field::placeholder { color: var(--ink-300); }
+  .label-xs {
+    @apply block text-xs font-semibold uppercase tracking-wider;
+    color: var(--ink-300);
   }
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #fff; }
-::-webkit-scrollbar-thumb { background: #C9A84C; border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--gold-200), var(--gold-500)); border-radius: var(--radius-full); }
 
-::selection { background: rgba(201,168,76,0.2); }
+::selection { background: rgba(201,168,76,0.20); }
 
-/* Marquee */
+/* Marquee — 45s para equilíbrio entre velocidade e legibilidade */
 @keyframes marquee {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
-.animate-marquee { animation: marquee 60s linear infinite; }
+.animate-marquee { animation: marquee 45s linear infinite; }
 
 /* Float pulse */
 @keyframes float {
@@ -82,9 +164,162 @@ body {
 }
 .fade-up { animation: fadeUp 0.6s ease forwards; }
 
-/* Bolada pulse dot */
-@keyframes boladaPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(201,168,76,0); }
+/* Avatar founder — pulse suave em vez de ping agressivo */
+@keyframes founderPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
 }
-.bolada-pulse { animation: boladaPulse 2s ease infinite; }
+.founder-pulse { animation: founderPulse 2.5s ease-in-out infinite; }
+
+/* ─── Botão — hover/active unificados (transform + sombra) ─── */
+.btn-primary,
+.btn-green,
+.btn-dark,
+.btn-ghost {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.25s ease,
+              border-color 0.25s ease;
+  will-change: transform, box-shadow;
+}
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: var(--shadow-gold-lg), 0 0 0 1px rgba(255,255,255,0.25) inset;
+}
+.btn-primary:active,
+.btn-green:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ─── Card — lift + glow dourado + brilho a atravessar ─── */
+.service-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.3s ease;
+  will-change: transform, box-shadow;
+}
+.service-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.5) 50%, transparent 65%);
+  background-size: 250% 100%;
+  background-position: 150% 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.service-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(201,168,76,0.30);
+  border-color: rgba(201,168,76,0.35);
+}
+.service-card:hover::before {
+  opacity: 1;
+  animation: shineSweep 0.9s ease forwards;
+}
+@keyframes shineSweep {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+/* Alias mantido por compatibilidade — mesmo comportamento do service-card */
+.premium-card { }
+.premium-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(201,168,76,0.30);
+}
+
+/* ─── Navbar active glow ─── */
+.nav-active-glow { position: relative; }
+.nav-active-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 18px rgba(201,168,76,0.45);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.nav-active-glow.is-active::after { opacity: 1; }
+
+/* GPU-friendly hints */
+.gpu { transform: translateZ(0); will-change: transform, opacity; backface-visibility: hidden; }
+
+/* ─── Botões alternativos (usados em cartões de acção/CV) — mesma linguagem dourada ─── */
+.btn-vivid {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1.75rem;
+  color: var(--ink-700);
+  background: linear-gradient(135deg, var(--gold-200) 0%, var(--gold-400) 55%, var(--gold-500) 100%);
+  box-shadow: var(--shadow-gold);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, box-shadow;
+}
+.btn-vivid:hover { transform: translateY(-2px) scale(1.03); box-shadow: var(--shadow-gold-lg); }
+.btn-vivid:active { transform: translateY(0) scale(0.96); transition-duration: 0.12s; }
+
+.btn-vivid-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1.75rem;
+  color: var(--ink-900);
+  background: rgba(201,168,76,0.08);
+  border: 1px solid rgba(201,168,76,0.35);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease, background 0.3s ease;
+  will-change: transform, box-shadow;
+}
+.btn-vivid-outline:hover { transform: translateY(-2px) scale(1.03); background: rgba(201,168,76,0.14); box-shadow: 0 0 24px -8px rgba(201,168,76,0.35); }
+.btn-vivid-outline:active { transform: translateY(0) scale(0.96); }
+
+.input-vivid {
+  position: relative;
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid #E5E7EB;
+  border-radius: var(--radius-lg);
+  padding: 0.85rem 1.1rem;
+  font-size: 0.9rem;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.input-vivid:focus {
+  outline: none;
+  border-color: var(--gold-400);
+  box-shadow: 0 0 0 4px rgba(201,168,76,0.12);
+}
+
+/* ─── Ripple effect (JS adds .ripple span on click) ─── */
+.ripple-container { position: relative; overflow: hidden; }
+.ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+  transform: scale(0);
+  animation: rippleAnim 0.6s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes rippleAnim {
+  to { transform: scale(3); opacity: 0; }
+}
+
+/* ─── Reduced motion — desliga sweeps/ripples decorativos ─── */
+@media (prefers-reduced-motion: reduce) {
+  .service-card:hover::before,
+  .ripple-effect { animation: none !important; }
+  .service-card, .btn-vivid, .btn-vivid-outline, .btn-primary, .btn-dark, .btn-ghost, .btn-green {
+    transition: none !important;
+  }
+}

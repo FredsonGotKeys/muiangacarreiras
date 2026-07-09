@@ -25,9 +25,9 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <span className="font-syne text-3xl font-bold text-[#C9A84C] block mb-1">MUIANGA</span>
-            <span className="text-xs text-white/30 tracking-widest uppercase">Consultores</span>
+            <span className="text-xs text-white/30 tracking-widest uppercase">Carreiras</span>
             <p className="text-white/40 text-sm mt-4 leading-relaxed">
-              A plataforma de consultoria e desenvolvimento para Moçambique e a lusofonia.
+              A plataforma de empregabilidade e carreiras para Moçambique e a lusofonia.
             </p>
             <div className="flex gap-2 mt-5">
               {["MZ","AO","BR","PT","CV","ST"].map(c => (
@@ -50,7 +50,7 @@ export default function Footer() {
           <div>
             <p className="text-white/30 text-xs font-semibold uppercase tracking-widest mb-5">Empresa</p>
             <ul className="space-y-3">
-              {[["Sobre Nós","/sobre"],["Contacto","/contacto"],["Termos de Uso","/termos"]].map(([l,h]) => (
+              {[["Sobre Nós","/sobre"],["Contacto","/contacto"],["Termos de Uso","/termos"],["Privacidade","/privacidade"]].map(([l,h]) => (
                 <li key={h}><Link href={h} className="text-white/50 text-sm hover:text-[#C9A84C] transition-colors">{l}</Link></li>
               ))}
             </ul>
@@ -69,9 +69,10 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-3">
-          <p className="text-white/20 text-xs">&copy; {year} MUIANGA CONSULTORES — Todos os direitos reservados.</p>
+          <p className="text-white/20 text-xs">&copy; {year} MUIANGA CARREIRAS — Todos os direitos reservados.</p>
           <div className="flex items-center gap-4">
-            <Link href="/termos" className="text-white/20 text-xs hover:text-white/40 transition-colors">Termos de Uso</Link>
+            <Link href="/termos" className="text-white/20 text-xs hover:text-white/40 transition-colors">Termos</Link>
+            <Link href="/privacidade" className="text-white/20 text-xs hover:text-white/40 transition-colors">Privacidade</Link>
             <p className="text-white/15 text-xs">Feito em Maputo 🇲🇿</p>
           </div>
         </div>

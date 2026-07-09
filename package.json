@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/download-founder-image.mjs && next dev",
-    "build": "node scripts/download-founder-image.mjs && next build",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "download-image": "node scripts/download-founder-image.mjs"
@@ -12,9 +12,14 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
     "clsx": "^2.1.1",
+    "docx": "^9.7.1",
+    "eslint-config-next": "^15.5.20",
+    "framer-motion": "^11.18.2",
     "lucide-react": "^1.18.0",
-    "next": "14.2.35",
+    "mammoth": "^1.12.0",
+    "next": "^15.5.20",
     "node-html-parser": "^7.1.0",
+    "pdf-parse": "^2.4.5",
     "react": "^18",
     "react-dom": "^18"
   },
@@ -22,8 +27,11 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "postcss": "^8",
+    "postcss": "^8.5.16",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "^8.5.16"
   }
 }

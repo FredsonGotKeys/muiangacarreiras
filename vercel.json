@@ -1,4 +1,6 @@
 {
-  "buildCommand": "node scripts/download-founder-image.mjs && next build",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "crons": [
+    { "path": "/api/cron/alertas-vagas", "schedule": "0 7 * * *" }
+  ]
 }

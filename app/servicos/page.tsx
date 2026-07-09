@@ -1,5 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   FileText, BarChart2, TrendingUp,
   Users, Mic, Building2,
@@ -10,6 +13,11 @@ import {
   Palette, Megaphone,
   Globe, Handshake,
   X, CheckCircle2, Clock, MapPin,
+  Kanban, ShieldCheck, Puzzle, Video,
+  FileSpreadsheet, Braces, Target, Award,
+  BookMarked, Sparkles, LayoutTemplate, FileCheck2,
+  ListChecks, Bot, Cloud, Camera,
+  Newspaper, MapPinned, Presentation, Rocket,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,6 +35,7 @@ type Service = {
   modalidade: string;    // ex: "Presencial ou Remoto"
   inclui: string[];      // o que está incluído
   ganhas: string[];      // o que o cliente ganha / resultados
+  internalHref?: string; // se definido, o CTA leva a uma ferramenta interna em vez do formulário de pedido
 };
 
 const services: Service[] = [
@@ -55,6 +64,22 @@ const services: Service[] = [
     ganhas: ["Apresentação convincente e profissional", "Maior probabilidade de obter financiamento", "Clareza sobre o valor real do negócio"],
   },
   {
+    category: "Consultoria Estratégica", Icon: Kanban, iconBg: "bg-amber-50", iconColor: "text-amber-600",
+    title: "Gestão de Projectos", desc: "Planeamento, acompanhamento e execução de projectos com metodologias ágeis adaptadas à tua equipa.",
+    price: "A partir de 6.000 MT", tags: ["Remoto","Ágil"],
+    entrega: "Contínuo ou por projecto", modalidade: "Remoto",
+    inclui: ["Definição de cronograma e marcos", "Ferramenta de gestão configurada (Trello/Asana)", "Reuniões de acompanhamento quinzenais", "Relatório de progresso"],
+    ganhas: ["Projectos entregues dentro do prazo", "Equipa organizada e com responsabilidades claras", "Visibilidade total do progresso"],
+  },
+  {
+    category: "Consultoria Estratégica", Icon: ShieldCheck, iconBg: "bg-amber-50", iconColor: "text-amber-600",
+    title: "Auditoria & Due Diligence", desc: "Avaliação de riscos e conformidade antes de investimentos, fusões ou parcerias estratégicas.",
+    price: "Sob consulta", tags: ["Presencial","Empresarial"],
+    entrega: "10–20 dias úteis", modalidade: "Presencial ou Remoto",
+    inclui: ["Análise documental e financeira", "Identificação de riscos legais e operacionais", "Relatório de conformidade", "Recomendações de mitigação"],
+    ganhas: ["Decisão de investimento informada", "Redução de risco em parcerias", "Conformidade legal garantida"],
+  },
+  {
     category: "Formação & Palestras", Icon: Users, iconBg: "bg-purple-50", iconColor: "text-purple-600",
     title: "Workshop Empresarial", desc: "Formação prática para equipas de gestão, com metodologias actuais e casos reais do mercado africano.",
     price: "A partir de 8.000 MT", tags: ["Presencial","Grupo"],
@@ -77,6 +102,22 @@ const services: Service[] = [
     entrega: "Programa definido em conjunto", modalidade: "Presencial",
     inclui: ["Diagnóstico de necessidades formativas", "Programa de formação à medida", "Facilitadores especializados", "Relatório de avaliação de impacto"],
     ganhas: ["Equipa com competências actualizadas", "Menor rotatividade e maior satisfação", "ROI mensurável em produtividade"],
+  },
+  {
+    category: "Formação & Palestras", Icon: Puzzle, iconBg: "bg-purple-50", iconColor: "text-purple-600",
+    title: "Team Building", desc: "Dinâmicas de grupo para fortalecer a coesão, comunicação e confiança dentro da equipa.",
+    price: "A partir de 6.000 MT", tags: ["Presencial","Grupo"],
+    entrega: "Agendado em 5–7 dias", modalidade: "Presencial",
+    inclui: ["Sessão de meio-dia ou dia inteiro", "Dinâmicas adaptadas ao perfil da equipa", "Facilitador experiente", "Relatório de observações"],
+    ganhas: ["Equipa mais unida e colaborativa", "Melhor comunicação interna", "Ambiente de trabalho mais saudável"],
+  },
+  {
+    category: "Formação & Palestras", Icon: Video, iconBg: "bg-purple-50", iconColor: "text-purple-600",
+    title: "Formação Online (e-Learning)", desc: "Cursos gravados ou ao vivo, à distância, para equipas dispersas geograficamente.",
+    price: "A partir de 5.000 MT", tags: ["Online","Flexível"], badge: { label: "Novo", color: "bg-green-100 text-green-800" },
+    entrega: "Conforme módulo escolhido", modalidade: "Online",
+    inclui: ["Aulas gravadas ou sessões ao vivo", "Material de apoio digital", "Acesso por 3 meses", "Certificado digital"],
+    ganhas: ["Formação flexível, ao ritmo de cada um", "Sem custos de deslocação", "Conteúdo revisitável a qualquer momento"],
   },
   {
     category: "Aulas de Informática", Icon: Laptop, iconBg: "bg-blue-50", iconColor: "text-blue-600",
@@ -103,6 +144,22 @@ const services: Service[] = [
     ganhas: ["Equipa actualizada com as melhores ferramentas", "Redução de erros e riscos digitais", "Maior eficiência nos processos diários"],
   },
   {
+    category: "Aulas de Informática", Icon: FileSpreadsheet, iconBg: "bg-blue-50", iconColor: "text-blue-600",
+    title: "Excel Avançado & Power BI", desc: "Fórmulas avançadas, tabelas dinâmicas e dashboards para análise de dados profissional.",
+    price: "3.500 MT / mês", tags: ["Presencial","Remoto","Profissional"],
+    entrega: "Aulas semanais (2x por semana)", modalidade: "Presencial ou Remoto",
+    inclui: ["Fórmulas avançadas e macros", "Tabelas dinâmicas", "Introdução ao Power BI", "Certificado de conclusão"],
+    ganhas: ["Análise de dados mais rápida e precisa", "Relatórios visuais profissionais", "Vantagem competitiva no mercado de trabalho"],
+  },
+  {
+    category: "Aulas de Informática", Icon: Braces, iconBg: "bg-blue-50", iconColor: "text-blue-600",
+    title: "Programação para Iniciantes", desc: "Primeiros passos em lógica de programação e desenvolvimento web, sem experiência prévia.",
+    price: "3.000 MT / mês", tags: ["Presencial","Iniciantes"], badge: { label: "Novo", color: "bg-green-100 text-green-800" },
+    entrega: "Aulas semanais (2x por semana)", modalidade: "Presencial ou Remoto",
+    inclui: ["Lógica de programação", "HTML, CSS e JavaScript básico", "Projecto prático final", "Certificado de conclusão"],
+    ganhas: ["Base sólida para seguir carreira em tecnologia", "Primeiro projecto no portfólio", "Pensamento lógico e resolução de problemas"],
+  },
+  {
     category: "Desenvolvimento Profissional", Icon: FileUser, iconBg: "bg-sky-50", iconColor: "text-sky-600",
     title: "CV & Candidaturas", desc: "Revisão e criação de CV profissional, carta de motivação e optimização de perfil LinkedIn.",
     price: "1.500 MT", tags: ["Remoto","Individual"], badge: { label: "Rápido", color: "bg-blue-100 text-blue-800" },
@@ -125,6 +182,66 @@ const services: Service[] = [
     entrega: "1–2 dias úteis", modalidade: "Online",
     inclui: ["2 simulações de entrevista", "Feedback detalhado por escrito", "Guia de respostas para perguntas difíceis", "Estratégias de linguagem corporal e comunicação"],
     ganhas: ["Confiança e segurança na entrevista", "Respostas preparadas e impactantes", "Maior probabilidade de ser seleccionado"],
+  },
+  {
+    category: "Desenvolvimento Profissional", Icon: Target, iconBg: "bg-sky-50", iconColor: "text-sky-600",
+    title: "Plano de Carreira", desc: "Mapeamento de objectivos profissionais a curto, médio e longo prazo, com passos concretos.",
+    price: "2.500 MT", tags: ["Online","Individual"],
+    entrega: "3–5 dias úteis", modalidade: "Online",
+    inclui: ["Diagnóstico de competências actuais", "Definição de objectivos SMART", "Plano de acção a 12 meses", "Sessão de acompanhamento"],
+    ganhas: ["Direcção clara para a carreira", "Passos concretos e mensuráveis", "Maior motivação e foco"],
+  },
+  {
+    category: "Desenvolvimento Profissional", Icon: Award, iconBg: "bg-sky-50", iconColor: "text-sky-600",
+    title: "Coaching de Liderança", desc: "Desenvolvimento de competências de liderança para quem gere equipas ou aspira a cargos de gestão.",
+    price: "3.500 MT / sessão", tags: ["Online","Individual"],
+    entrega: "Sessões de 60 minutos", modalidade: "Online",
+    inclui: ["Sessões estruturadas 1:1", "Avaliação de estilo de liderança", "Plano de desenvolvimento pessoal", "Recursos de leitura recomendados"],
+    ganhas: ["Liderança mais eficaz e confiante", "Melhor gestão de equipas e conflitos", "Reconhecimento profissional"],
+  },
+  {
+    category: "Monografias & Académico", Icon: Sparkles, iconBg: "bg-orange-50", iconColor: "text-orange-600",
+    title: "Assistente Académico IA", desc: "Gera automaticamente a estrutura completa do teu trabalho académico em Word — capa, índice, formatação e conteúdo desenvolvido por IA, adaptado ao teu nível académico.",
+    price: "A partir de 500 MT", tags: ["Online","Instantâneo","IA"], badge: { label: "Principal", color: "bg-orange-500 text-white" },
+    entrega: "Imediato", modalidade: "Online — ferramenta interactiva",
+    inclui: ["Formulário guiado passo-a-passo", "Capa académica com logótipo (opcional)", "Estrutura 100% configurável por ti", "Formatação automática (Times New Roman, espaçamento, paginação, índice)", "Conteúdo gerado por IA em português europeu"],
+    ganhas: ["Documento Word pronto a rever em minutos", "Formatação técnica sem esforço manual", "Base sólida para desenvolver e personalizar"],
+    internalHref: "/academico",
+  },
+  {
+    category: "Monografias & Académico", Icon: LayoutTemplate, iconBg: "bg-orange-50", iconColor: "text-orange-600",
+    title: "Formatação Académica", desc: "Já tens o texto escrito? Formatamos o teu trabalho segundo as normas exigidas pela tua instituição.",
+    price: "A partir de 2.000 MT", tags: ["Remoto","Rápido"],
+    entrega: "2–4 dias úteis", modalidade: "Remoto",
+    inclui: ["Margens, tipo de letra e espaçamento normalizados", "Paginação e índice automático", "Capa e folha de rosto académicas", "Cabeçalhos e rodapés"],
+    ganhas: ["Trabalho com aspecto profissional", "Conformidade com as normas da instituição", "Tempo poupado em formatação manual"],
+    internalHref: "/academico/ferramentas",
+  },
+  {
+    category: "Monografias & Académico", Icon: FileCheck2, iconBg: "bg-orange-50", iconColor: "text-orange-600",
+    title: "Revisão Científica", desc: "Revisão linguística, gramatical e de coerência científica do teu trabalho já escrito.",
+    price: "A partir de 3.000 MT", tags: ["Remoto","Licenciatura","Mestrado"],
+    entrega: "3–6 dias úteis", modalidade: "Remoto",
+    inclui: ["Correcção gramatical e ortográfica", "Revisão de coerência e coesão textual", "Verificação de terminologia científica", "Comentários e sugestões de melhoria"],
+    ganhas: ["Texto claro, correcto e academicamente sólido", "Maior confiança na apresentação", "Redução de erros antes da entrega"],
+    internalHref: "/academico/ferramentas",
+  },
+  {
+    category: "Monografias & Académico", Icon: ListChecks, iconBg: "bg-orange-50", iconColor: "text-orange-600",
+    title: "Normalização APA / Vancouver / Harvard", desc: "Formatação de citações e referências bibliográficas segundo a norma exigida pelo teu curso.",
+    price: "A partir de 1.500 MT", tags: ["Remoto","Rápido"],
+    entrega: "1–3 dias úteis", modalidade: "Remoto",
+    inclui: ["Formatação de citações no texto", "Lista de referências normalizada", "Verificação de consistência", "Norma à escolha (APA, Vancouver ou Harvard)"],
+    ganhas: ["Referências correctas e consistentes", "Conformidade com a norma exigida", "Menos pontos perdidos por formatação"],
+    internalHref: "/academico/ferramentas",
+  },
+  {
+    category: "Monografias & Académico", Icon: Compass, iconBg: "bg-orange-50", iconColor: "text-orange-600",
+    title: "Orientação de Monografias", desc: "Acompanhamento próximo e contínuo, sessão a sessão, do início à defesa da tua monografia.",
+    price: "A partir de 4.000 MT / mês", tags: ["Remoto","Contínuo"],
+    entrega: "Acompanhamento mensal", modalidade: "Remoto",
+    inclui: ["Sessões semanais ou quinzenais", "Acompanhamento da escrita capítulo a capítulo", "Apoio na preparação da defesa", "Disponibilidade para dúvidas entre sessões"],
+    ganhas: ["Acompanhamento humano constante", "Menos ansiedade ao longo do processo", "Maior probabilidade de aprovação"],
   },
   {
     category: "Monografias & Académico", Icon: GraduationCap, iconBg: "bg-orange-50", iconColor: "text-orange-600",
@@ -167,6 +284,30 @@ const services: Service[] = [
     ganhas: ["Vendas online 24/7", "Pagamentos locais sem complicações", "Expansão do negócio para o digital"],
   },
   {
+    category: "Plataformas Digitais", Icon: Bot, iconBg: "bg-teal-50", iconColor: "text-teal-600",
+    title: "Automação & Chatbots", desc: "Chatbots para WhatsApp e website, automatizando respostas e captação de leads 24/7.",
+    price: "Sob consulta", tags: ["Remoto","WhatsApp","Automação"], badge: { label: "Novo", color: "bg-green-100 text-green-800" },
+    entrega: "10–20 dias úteis", modalidade: "Remoto",
+    inclui: ["Chatbot configurado para WhatsApp/website", "Fluxos de conversa personalizados", "Integração com o teu CRM", "Suporte pós-lançamento (30 dias)"],
+    ganhas: ["Atendimento 24 horas por dia", "Redução de carga na equipa de suporte", "Mais leads captados automaticamente"],
+  },
+  {
+    category: "Plataformas Digitais", Icon: Cloud, iconBg: "bg-teal-50", iconColor: "text-teal-600",
+    title: "Hospedagem & Domínios", desc: "Configuração e gestão de hospedagem, domínio e email profissional para o teu negócio.",
+    price: "A partir de 2.000 MT / ano", tags: ["Remoto","Técnico"],
+    entrega: "1–3 dias úteis", modalidade: "Remoto",
+    inclui: ["Registo e configuração de domínio", "Hospedagem com SSL incluído", "Email profissional (@teudominio.com)", "Suporte técnico contínuo"],
+    ganhas: ["Presença online profissional e segura", "Email com o nome da tua marca", "Site sempre disponível"],
+  },
+  {
+    category: "Plataformas Digitais", Icon: Megaphone, iconBg: "bg-teal-50", iconColor: "text-teal-600",
+    title: "Gestão de Redes Sociais", desc: "Criação e publicação de conteúdo, resposta a comentários e crescimento das tuas redes sociais.",
+    price: "A partir de 4.000 MT / mês", tags: ["Remoto","Social Media"], badge: { label: "Popular", color: "bg-amber-100 text-amber-800" },
+    entrega: "Contínuo (mensal)", modalidade: "Remoto",
+    inclui: ["Criação de conteúdo (12–16 publicações/mês)", "Gestão de comentários e mensagens", "Relatório mensal de desempenho", "Design gráfico incluído"],
+    ganhas: ["Redes sociais activas e consistentes", "Crescimento orgânico de seguidores", "Mais tempo livre para focar no negócio"],
+  },
+  {
     category: "Comunicação & Marca", Icon: Palette, iconBg: "bg-pink-50", iconColor: "text-pink-600",
     title: "Branding Completo", desc: "Identidade visual, logotipo, paleta de cores, tipografia e manual de marca para empresas.",
     price: "A partir de 8.000 MT", tags: ["Remoto","Design"], badge: { label: "Destaque", color: "bg-purple-100 text-purple-800" },
@@ -181,6 +322,30 @@ const services: Service[] = [
     entrega: "5–7 dias úteis", modalidade: "Remoto",
     inclui: ["Plano editorial mensal", "Calendário de publicações", "Guia de tom e voz da marca", "Templates para redes sociais"],
     ganhas: ["Presença digital consistente e profissional", "Mais engagement com o público-alvo", "Estratégia clara sem improvisar"],
+  },
+  {
+    category: "Comunicação & Marca", Icon: Camera, iconBg: "bg-pink-50", iconColor: "text-pink-600",
+    title: "Fotografia Profissional", desc: "Sessões fotográficas para produtos, equipa e eventos empresariais com edição incluída.",
+    price: "A partir de 4.000 MT", tags: ["Presencial","Produto"],
+    entrega: "3–5 dias úteis (após sessão)", modalidade: "Presencial",
+    inclui: ["Sessão fotográfica no local", "Edição profissional das fotos", "Entrega em alta resolução", "Direitos de uso comercial"],
+    ganhas: ["Imagens profissionais para marketing", "Maior credibilidade visual da marca", "Conteúdo pronto para redes sociais"],
+  },
+  {
+    category: "Comunicação & Marca", Icon: Newspaper, iconBg: "bg-pink-50", iconColor: "text-pink-600",
+    title: "Assessoria de Imprensa", desc: "Gestão de relações com media, comunicados de imprensa e posicionamento público da marca.",
+    price: "Sob consulta", tags: ["Remoto","PR"],
+    entrega: "Contínuo", modalidade: "Remoto",
+    inclui: ["Redacção de comunicados de imprensa", "Contacto com meios de comunicação locais", "Gestão de entrevistas", "Monitorização de menções à marca"],
+    ganhas: ["Maior visibilidade mediática", "Reputação pública fortalecida", "Relações duradouras com a imprensa"],
+  },
+  {
+    category: "Comunicação & Marca", Icon: Video, iconBg: "bg-pink-50", iconColor: "text-pink-600",
+    title: "Vídeo Institucional", desc: "Produção de vídeos de apresentação da empresa, testemunhos e conteúdo promocional.",
+    price: "A partir de 6.000 MT", tags: ["Presencial","Vídeo"],
+    entrega: "7–12 dias úteis", modalidade: "Presencial",
+    inclui: ["Roteiro e planeamento de gravação", "Filmagem no local", "Edição profissional com motion graphics", "Versões para redes sociais"],
+    ganhas: ["Vídeo profissional para o site e redes", "Comunicação mais envolvente da marca", "Conteúdo reutilizável em várias campanhas"],
   },
   {
     category: "Networking Lusófono", Icon: Globe, iconBg: "bg-indigo-50", iconColor: "text-indigo-600",
@@ -198,16 +363,68 @@ const services: Service[] = [
     inclui: ["Mapeamento de parceiros potenciais", "Due diligence básica", "Facilitação de reuniões iniciais", "Apoio na negociação do acordo"],
     ganhas: ["Parceiro internacional validado e alinhado", "Expansão do negócio além-fronteiras", "Processo de parceria seguro e estruturado"],
   },
+  {
+    category: "Networking Lusófono", Icon: MapPinned, iconBg: "bg-indigo-50", iconColor: "text-indigo-600",
+    title: "Missões Empresariais", desc: "Organização de viagens de negócios a Portugal, África do Sul e outros mercados lusófonos.",
+    price: "Sob consulta", tags: ["Internacional","Grupo"],
+    entrega: "Planeado com 60+ dias de antecedência", modalidade: "Presencial",
+    inclui: ["Planeamento de agenda de reuniões", "Logística de viagem e alojamento", "Acompanhamento durante a missão", "Relatório de contactos estabelecidos"],
+    ganhas: ["Contactos qualificados em novos mercados", "Experiência estruturada e sem imprevistos", "Oportunidades de negócio reais"],
+  },
+  {
+    category: "Networking Lusófono", Icon: Presentation, iconBg: "bg-indigo-50", iconColor: "text-indigo-600",
+    title: "Feiras & Eventos Internacionais", desc: "Representação e apoio na participação em feiras e conferências internacionais lusófonas.",
+    price: "Sob consulta", tags: ["Internacional","Eventos"],
+    entrega: "Conforme calendário do evento", modalidade: "Presencial",
+    inclui: ["Inscrição e preparação do stand/material", "Representação no evento", "Networking activo com participantes", "Relatório pós-evento"],
+    ganhas: ["Presença de marca em eventos relevantes", "Novos contactos e parcerias", "Visibilidade internacional"],
+  },
+  {
+    category: "Networking Lusófono", Icon: Rocket, iconBg: "bg-indigo-50", iconColor: "text-indigo-600",
+    title: "Consultoria de Expansão Internacional", desc: "Estratégia e apoio prático para expandir o teu negócio para outros mercados lusófonos.",
+    price: "Sob consulta", tags: ["Internacional","Estratégia"], badge: { label: "Destaque", color: "bg-purple-100 text-purple-800" },
+    entrega: "Conforme âmbito do projecto", modalidade: "Remoto e Presencial",
+    inclui: ["Análise de viabilidade do mercado alvo", "Estratégia de entrada", "Apoio em questões legais e fiscais básicas", "Acompanhamento nos primeiros passos"],
+    ganhas: ["Expansão estruturada e com menor risco", "Conhecimento local do mercado alvo", "Presença internacional sustentável"],
+  },
 ];
 
 const categories = Array.from(new Set(services.map((s) => s.category)));
 
 export default function ServicosPage() {
+  return (
+    <Suspense fallback={null}>
+      <ServicosContent />
+    </Suspense>
+  );
+}
+
+function ServicosContent() {
+  const searchParams = useSearchParams();
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [form, setForm] = useState({ nome: "", contacto: "", servico: "", orcamento: "", descricao: "" });
   const [selected, setSelected] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [detailService, setDetailService] = useState<Service | null>(null);
+
+  // Chegada a partir de um card da homepage: abre o detalhe certo automaticamente
+  useEffect(() => {
+    const ver = searchParams.get("ver");
+    const categoria = searchParams.get("categoria");
+    if (ver) {
+      const match = services.find((s) => s.title === ver);
+      if (match) {
+        setDetailService(match);
+        setActiveCategory(match.category);
+        return;
+      }
+    }
+    if (categoria) {
+      const match = categories.find((c) => c === categoria);
+      if (match) setActiveCategory(match);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = activeCategory === "Todos" ? services : services.filter((s) => s.category === activeCategory);
 
@@ -230,10 +447,19 @@ export default function ServicosPage() {
     <div className="bg-white min-h-screen">
 
       {/* ── MODAL DE DETALHES ── */}
+      <AnimatePresence>
       {detailService && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDetailService(null)} />
-          <div className="relative bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl max-h-[92vh] flex flex-col">
+          <motion.div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setDetailService(null)}
+          />
+          <motion.div
+            className="relative bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl max-h-[92vh] flex flex-col"
+            initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
             {/* Header */}
             <div className="flex items-start justify-between p-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -308,13 +534,20 @@ export default function ServicosPage() {
 
             {/* Footer com CTA */}
             <div className="p-4 border-t border-gray-100 bg-white">
-              <button onClick={() => solicitar(detailService.title)} className="btn-primary w-full justify-center py-4 text-base rounded-2xl">
-                Solicitar este Serviço →
-              </button>
+              {detailService.internalHref ? (
+                <Link href={detailService.internalHref} className="btn-primary w-full justify-center py-4 text-base rounded-2xl">
+                  Começar agora →
+                </Link>
+              ) : (
+                <button onClick={() => solicitar(detailService.title)} className="btn-primary w-full justify-center py-4 text-base rounded-2xl">
+                  Solicitar este Serviço →
+                </button>
+              )}
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
+      </AnimatePresence>
 
       {/* ── HEADER ── */}
       <section className="pt-28 sm:pt-32 pb-10 bg-white border-b border-gray-100">
@@ -344,11 +577,21 @@ export default function ServicosPage() {
 
       {/* ── CARDS ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+          initial="hidden"
+          animate="show"
+          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
+        >
           {filtered.map((service) => {
             const { Icon, iconBg, iconColor, title, desc, price, tags, badge, category } = service;
             return (
-              <div key={title} className="service-card group cursor-pointer" onClick={() => setDetailService(service)}>
+              <motion.div
+                key={title}
+                variants={{ hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transition: { duration: 0.38 } } } as Variants}
+                layout
+              >
+              <div className="service-card group cursor-pointer h-full" onClick={() => setDetailService(service)}>
                 <div className="flex items-start justify-between">
                   <div className={`w-11 h-11 ${iconBg} rounded-xl flex items-center justify-center`}>
                     <Icon size={20} className={iconColor} />
@@ -370,9 +613,10 @@ export default function ServicosPage() {
                   </span>
                 </div>
               </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
 
         <div className="mt-10 bg-[#0D0D0D] rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-5">
           <div>
