@@ -21,25 +21,33 @@ type ServiceCard = {
   href: string;        // liga directamente ao detalhe certo em /servicos
 };
 
+// Sistema de 2 tons — dourado (destaque) e grafite (neutro) — alternados para
+// distinguir os cards sem sair da identidade da marca. "Novo" mantém-se verde
+// por ser uma cor semântica universal (não faz parte do sistema "vivid" antigo).
+const GOLD_ICON = "bg-gradient-to-br from-[#E8C766] to-[#A87C2E]";
+const GRAPHITE_ICON = "bg-gradient-to-br from-[#2A2A2A] to-[#0D0D0D]";
+const GOLD_TAG = "bg-[#C9A84C]/15 text-[#8B6F1E]";
+const NOVO_TAG = "bg-emerald-100 text-emerald-700";
+
 const services: ServiceCard[] = [
-  { Icon: FileText,      iconBg: "bg-gradient-to-br from-orange-400 to-red-500",     iconColor: "text-white", title: "Plano de Negócio",
+  { Icon: FileText,      iconBg: GOLD_ICON,     iconColor: "text-[#1A1408]", title: "Plano de Negócio",
     desc: "Análise de mercado, projecções financeiras e estratégia — pronto para apresentar a bancos e investidores.",
-    tag: "Popular",  tagColor: "bg-orange-500 text-white", href: "/servicos?ver=" + encodeURIComponent("Plano de Negócio") },
-  { Icon: Mic,           iconBg: "bg-gradient-to-br from-purple-500 to-fuchsia-500", iconColor: "text-white", title: "Palestra Motivacional",
+    tag: "Popular",  tagColor: GOLD_TAG, href: "/servicos?ver=" + encodeURIComponent("Plano de Negócio") },
+  { Icon: Mic,           iconBg: GRAPHITE_ICON, iconColor: "text-white", title: "Palestra Motivacional",
     desc: "Palestras de impacto para empresas, universidades e eventos — liderança, empreendedorismo, lusofonia.",
-    tag: "Destaque", tagColor: "bg-fuchsia-500 text-white", href: "/servicos?ver=" + encodeURIComponent("Palestra Motivacional") },
-  { Icon: Monitor,       iconBg: "bg-gradient-to-br from-cyan-400 to-blue-500",      iconColor: "text-white", title: "Aulas de Informática",
+    tag: "Destaque", tagColor: GOLD_TAG, href: "/servicos?ver=" + encodeURIComponent("Palestra Motivacional") },
+  { Icon: Monitor,       iconBg: GOLD_ICON,     iconColor: "text-[#1A1408]", title: "Aulas de Informática",
     desc: "Do básico ao avançado, para crianças, adultos e profissionais — presencial, com certificado.",
-    tag: "Novo",     tagColor: "bg-emerald-500 text-white", href: "/servicos?categoria=" + encodeURIComponent("Aulas de Informática") },
-  { Icon: FileUser,      iconBg: "bg-gradient-to-br from-blue-500 to-indigo-600",    iconColor: "text-white", title: "CV & Candidaturas",
+    tag: "Novo",     tagColor: NOVO_TAG, href: "/servicos?categoria=" + encodeURIComponent("Aulas de Informática") },
+  { Icon: FileUser,      iconBg: GRAPHITE_ICON, iconColor: "text-white", title: "CV & Candidaturas",
     desc: "CV profissional, carta de motivação e LinkedIn — feito para te destacares na pilha de candidaturas.",
-    tag: "Rápido",   tagColor: "bg-cyan-500 text-white", href: "/servicos?ver=" + encodeURIComponent("CV & Candidaturas") },
-  { Icon: GraduationCap, iconBg: "bg-gradient-to-br from-amber-400 to-orange-500",   iconColor: "text-white", title: "Apoio a Monografias",
+    tag: "Rápido",   tagColor: GOLD_TAG, href: "/servicos?ver=" + encodeURIComponent("CV & Candidaturas") },
+  { Icon: GraduationCap, iconBg: GOLD_ICON,     iconColor: "text-[#1A1408]", title: "Apoio a Monografias",
     desc: "Orientação metodológica, revisão de capítulos e formatação — para uma monografia aprovada com qualidade.",
-    tag: "Popular",  tagColor: "bg-orange-500 text-white", href: "/servicos?ver=" + encodeURIComponent("Apoio a Monografias") },
-  { Icon: Palette,       iconBg: "bg-gradient-to-br from-pink-500 to-rose-500",      iconColor: "text-white", title: "Branding Completo",
+    tag: "Popular",  tagColor: GOLD_TAG, href: "/servicos?ver=" + encodeURIComponent("Apoio a Monografias") },
+  { Icon: Palette,       iconBg: GRAPHITE_ICON, iconColor: "text-white", title: "Branding Completo",
     desc: "Logótipo, paleta de cores, tipografia e manual de marca — identidade visual profissional e memorável.",
-    tag: "Destaque", tagColor: "bg-fuchsia-500 text-white", href: "/servicos?ver=" + encodeURIComponent("Branding Completo") },
+    tag: "Destaque", tagColor: GOLD_TAG, href: "/servicos?ver=" + encodeURIComponent("Branding Completo") },
 ];
 
 
@@ -51,9 +59,9 @@ const trust = [
 ];
 
 const whyUs = [
-  { Icon: Zap,    bg: "from-orange-100 to-pink-100",    iconBg: "bg-gradient-to-br from-orange-400 to-pink-500",  iconColor: "text-white",  border: "border-orange-300",  title: "Rápido & Acessível",  desc: "Solicita online, recebe proposta em 24h e começa em dias. Sem burocracia." },
-  { Icon: Globe,  bg: "from-cyan-100 to-emerald-100",   iconBg: "bg-gradient-to-br from-cyan-400 to-emerald-500", iconColor: "text-white", border: "border-cyan-300", title: "Rede PALOP & Lusofonia", desc: "Presente em MZ, Angola, Cabo Verde, Brasil e Portugal. O teu talento sem fronteiras lusófonas." },
-  { Icon: Trophy, bg: "from-purple-100 to-fuchsia-100", iconBg: "bg-gradient-to-br from-purple-500 to-fuchsia-500", iconColor: "text-white", border: "border-purple-300", title: "Qualidade Garantida", desc: "Mais de 200 projectos entregues com excelência. Satisfação ou devolvemos." },
+  { Icon: Zap,    bg: "from-[#FBF7EC] to-[#F5EBCC]", iconBg: GOLD_ICON,     iconColor: "text-[#1A1408]", border: "border-[#E8C766]/40", title: "Rápido & Acessível",  desc: "Solicita online, recebe proposta em 24h e começa em dias. Sem burocracia." },
+  { Icon: Globe,  bg: "from-gray-50 to-gray-100",     iconBg: GRAPHITE_ICON, iconColor: "text-white",     border: "border-gray-200",    title: "Rede PALOP & Lusofonia", desc: "Presente em MZ, Angola, Cabo Verde, Brasil e Portugal. O teu talento sem fronteiras lusófonas." },
+  { Icon: Trophy, bg: "from-[#FBF7EC] to-[#F5EBCC]", iconBg: GOLD_ICON,     iconColor: "text-[#1A1408]", border: "border-[#E8C766]/40", title: "Qualidade Garantida", desc: "Mais de 200 projectos entregues com excelência. Satisfação ou devolvemos." },
 ];
 
 const testimonials = [
@@ -331,7 +339,7 @@ export default function HomePage() {
                   O que podes solicitar<br /><span className="text-[#C9A84C]">hoje mesmo</span>
                 </h2>
               </div>
-              <Link href="/servicos" className="btn-dark shrink-0 self-start sm:self-auto">Ver todos (21+) →</Link>
+              <Link href="/servicos" className="btn-dark shrink-0 self-start sm:self-auto">Ver todos os serviços →</Link>
             </motion.div>
 
             <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" variants={stagger}>
@@ -469,7 +477,7 @@ export default function HomePage() {
                 Ver todos os Serviços →
               </Link>
               <Link href="/emprego" className="inline-flex items-center justify-center gap-2 bg-[#0D0D0D]/20 backdrop-blur text-white font-bold px-8 py-4 rounded-2xl text-base hover:bg-[#0D0D0D]/30 transition-all border border-white/30">
-                Ver Boladas
+                Ver Vagas de Emprego →
               </Link>
             </div>
           </div>
