@@ -66,7 +66,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Dados do CV e texto da vaga são necessários." }, { status: 400 });
     }
 
-    const resumoCv = buildCvSummary(body.cvData);
+    // Cap defensivo — body.cvData não tem limite de tamanho por campo (só no cliente);
+    // sem isto um payload gigante custaria tokens Groq sem limite.
+    const resumoCv = buildCvSummary(body.cvData).slice(0, 6000);
 
     const systemPrompt = `És um especialista em recrutamento que compara currículos com vagas de emprego.
 

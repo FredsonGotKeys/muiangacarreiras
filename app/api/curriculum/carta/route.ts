@@ -62,7 +62,9 @@ export async function POST(req: NextRequest) {
 
     const empresa = str(body.empresa, 200);
     const cargo = str(body.cargo, 200);
-    const resumo = buildCandidatoSummary(body.cvData);
+    // Cap defensivo — body.cvData não tem limite de tamanho nos campos individuais
+    // (só validados no cliente); sem isto um payload gigante custaria tokens Groq sem limite.
+    const resumo = buildCandidatoSummary(body.cvData).slice(0, 6000);
 
     const contexto = empresa || cargo
       ? `A carta é para a candidatura ao cargo de "${cargo ?? "(não especificado)"}" na empresa "${empresa ?? "(não especificada)"}".`

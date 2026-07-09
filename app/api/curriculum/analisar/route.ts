@@ -15,7 +15,7 @@ interface AnaliseResult {
     pontuacao: number;
     comentario: string;
   }[];
-  pontosFortesx: string[];
+  pontosFortes: string[];
   pontosFracos: string[];
   recomendacoes: string[];
 }
@@ -84,7 +84,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Dados do CV em falta." }, { status: 400 });
     }
 
-    const resumo = buildCvSummary(body.cvData);
+    // Cap defensivo — body.cvData não tem limite de tamanho por campo (só no cliente);
+    // sem isto um payload gigante custaria tokens Groq sem limite.
+    const resumo = buildCvSummary(body.cvData).slice(0, 6000);
 
     const systemPrompt = `És um consultor sénior de Recursos Humanos moçambicano, especialista em recrutamento e sistemas ATS (Applicant Tracking System).
 

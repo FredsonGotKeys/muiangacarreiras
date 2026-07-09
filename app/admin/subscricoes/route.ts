@@ -1,6 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { timingSafeEqual } from "crypto";
 import { rateLimit, getIp } from "@/lib/api-utils";
+
+/** Comparação em tempo constante — evita timing attack na password do admin. */
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,7 +54,7 @@ export async function POST(req: NextRequest) {
     if (!rateLimit(getIp(req), 5)) {
       return NextResponse.json({ error: "Demasiadas tentativas." }, { status: 429 });
     }
-    if (!process.env.ADMIN_PASSWORD || body.password !== process.env.ADMIN_PASSWORD) {
+    if (!process.env.ADMIN_PASSWORD || typeof body.password !== "string" || !safeEqual(body.password, process.env.ADMIN_PASSWORD)) {
       return NextResponse.json({ error: "Código incorrecto." }, { status: 401 });
     }
     const token = process.env.ADMIN_SESSION_TOKEN;
@@ -73,6 +82,13 @@ export async function POST(req: NextRequest) {
   const { action, id, userId, notas } = body as {
     action: string; id?: string; userId?: string; notas?: string;
   };
+  const ACOES_VALIDAS = new Set([
+    "aprovar", "rejeitar", "revogar", "bloquear", "desbloquear",
+    "list_candidaturas", "cand_tratada", "cand_eliminar", "cand_cv_url",
+  ]);
+  if (!ACOES_VALIDAS.has(action)) {
+    return NextResponse.json({ error: "Acção desconhecida." }, { status: 400 });
+  }
 
   if (action === "aprovar" && id) {
     const inicio = new Date();
