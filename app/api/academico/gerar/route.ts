@@ -89,7 +89,8 @@ Cada secção deve ter entre 2 a 5 parágrafos, excepto Objectivo Geral/Hipótes
 async function construirDocx(
   form: FormData,
   conteudoIA: Record<string, string>,
-  logoBuffer: Buffer | null
+  logoBuffer: Buffer | null,
+  logoType: "png" | "jpg" | null
 ): Promise<Buffer> {
   const {
     Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType,
@@ -123,11 +124,11 @@ async function construirDocx(
   if (form.faculdade) capaChildren.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: form.faculdade, font: FONT, size: 24 })] }));
   if (form.curso) capaChildren.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: form.curso, font: FONT, size: 24 })], spacing: { after: 400 } }));
 
-  if (logoBuffer && form.mostrarLogo) {
+  if (logoBuffer && logoType && form.mostrarLogo) {
     capaChildren.push(new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 200, after: 400 },
-      children: [new ImageRun({ data: logoBuffer, transformation: { width: 110, height: 110 }, type: "png" })],
+      children: [new ImageRun({ data: logoBuffer, transformation: { width: 110, height: 110 }, type: logoType })],
     }));
   } else {
     capaChildren.push(new Paragraph({ children: [], spacing: { after: 800 } }));
@@ -270,10 +271,17 @@ export async function POST(req: NextRequest) {
     };
 
     let logoBuffer: Buffer | null = null;
+    let logoType: "png" | "jpg" | null = null;
     const logoFile = formData.get("logo") as File | null;
     if (logoFile && form.mostrarLogo) {
       if (logoFile.size > MAX_LOGO_BYTES) {
         return NextResponse.json({ error: "Logótipo demasiado grande (máx 3 MB)." }, { status: 400 });
+      }
+      // O tipo declarado no docx tem de bater certo com os bytes reais — nunca assumir PNG
+      if (logoFile.type === "image/png") logoType = "png";
+      else if (logoFile.type === "image/jpeg") logoType = "jpg";
+      else {
+        return NextResponse.json({ error: "Logótipo deve ser PNG ou JPEG." }, { status: 400 });
       }
       logoBuffer = Buffer.from(await logoFile.arrayBuffer());
     }
@@ -288,7 +296,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Erro ao gerar o conteúdo com IA. Tenta novamente." }, { status: 502 });
     }
 
-    const docxBuffer = await construirDocx(form, conteudoIA, logoBuffer);
+    const docxBuffer = await construirDocx(form, conteudoIA, logoBuffer, logoType);
 
     return new NextResponse(new Uint8Array(docxBuffer), {
       status: 200,

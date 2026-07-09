@@ -43,10 +43,25 @@ export function adminEmail(): string | null {
   return process.env.ADMIN_NOTIFY_EMAIL ?? null;
 }
 
+/**
+ * Escapa entidades HTML — todo texto de origem do utilizador (nome, mensagem,
+ * descrição, etc.) tem de passar por aqui antes de entrar num template de
+ * email. Sem isto, um "<img src=x onerror=...>" numa mensagem de contacto
+ * chegaria tal e qual ao HTML do email do admin.
+ */
+function esc(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const WRAP = (title: string, body: string) => `
 <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#faf9f6">
   <p style="color:#C9A84C;font-weight:bold;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 16px">MUIANGA CARREIRAS</p>
-  <h1 style="font-size:20px;color:#0D0D0D;margin:0 0 16px">${title}</h1>
+  <h1 style="font-size:20px;color:#0D0D0D;margin:0 0 16px">${esc(title)}</h1>
   <div style="color:#444;font-size:14px;line-height:1.6">${body}</div>
   <p style="color:#999;font-size:11px;margin-top:32px;border-top:1px solid #eee;padding-top:16px">MUIANGA Carreiras — Maputo, Moçambique</p>
 </div>`;
@@ -54,22 +69,22 @@ const WRAP = (title: string, body: string) => `
 export const templates = {
   subscricaoActiva: (nome: string, diasValidos = 30) => WRAP(
     "Acesso activado!",
-    `<p>Olá ${nome || "candidato"},</p><p>A tua subscrição está activa — tens acesso completo às vagas por ${diasValidos} dias.</p><p><strong>Boa sorte na procura!</strong></p>`
+    `<p>Olá ${esc(nome) || "candidato"},</p><p>A tua subscrição está activa — tens acesso completo às vagas por ${diasValidos} dias.</p><p><strong>Boa sorte na procura!</strong></p>`
   ),
   candidaturaRecebida: (nome: string, vaga: string) => WRAP(
     "Candidatura recebida",
-    `<p>Olá ${nome || "candidato"},</p><p>A tua candidatura para <strong>${vaga}</strong> foi recebida com sucesso. Vamos encaminhá-la e aguardamos feedback da empresa.</p>`
+    `<p>Olá ${esc(nome) || "candidato"},</p><p>A tua candidatura para <strong>${esc(vaga)}</strong> foi recebida com sucesso. Vamos encaminhá-la e aguardamos feedback da empresa.</p>`
   ),
   pedidoServicoRecebido: (nome: string, servico: string) => WRAP(
     "Pedido recebido",
-    `<p>Olá ${nome || ""},</p><p>Recebemos o teu pedido de <strong>${servico}</strong>. A nossa equipa entra em contacto em breve.</p>`
+    `<p>Olá ${esc(nome) || ""},</p><p>Recebemos o teu pedido de <strong>${esc(servico)}</strong>. A nossa equipa entra em contacto em breve.</p>`
   ),
   novaVagaAlerta: (titulo: string, empresa: string, url: string) => WRAP(
     "Nova vaga para ti",
-    `<p><strong>${titulo}</strong> — ${empresa}</p><p><a href="${url}" style="color:#C9A84C">Ver vaga →</a></p>`
+    `<p><strong>${esc(titulo)}</strong> — ${esc(empresa)}</p><p><a href="${esc(url)}" style="color:#C9A84C">Ver vaga →</a></p>`
   ),
   adminNotificacao: (assunto: string, detalhe: string) => WRAP(
     assunto,
-    `<pre style="white-space:pre-wrap;font-family:monospace;font-size:12px;background:#fff;padding:12px;border-radius:8px;border:1px solid #eee">${detalhe}</pre>`
+    `<pre style="white-space:pre-wrap;font-family:monospace;font-size:12px;background:#fff;padding:12px;border-radius:8px;border:1px solid #eee">${esc(detalhe)}</pre>`
   ),
 };
