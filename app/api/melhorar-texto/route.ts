@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { rateLimit, getIp, rateLimitedResponse, str } from "@/lib/api-utils";
+import { chatCompletion } from "@/lib/llm";
 
 async function getUser(req: NextRequest) {
   const auth = req.headers.get("authorization")?.replace("Bearer ", "");
@@ -19,9 +20,6 @@ export async function POST(req: NextRequest) {
 
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
-
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "Servidor mal configurado." }, { status: 500 });
 
   try {
     const body = await req.json().catch(() => null);
@@ -50,30 +48,20 @@ REGRAS:
       ? `Campo do CV: ${contexto}\n\nTexto original:\n${texto}`
       : `Texto original:\n${texto}`;
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        max_tokens: 500,
-        temperature: 0.4,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMsg },
-        ],
-      }),
+    const result = await chatCompletion({
+      maxTokens: 500,
+      temperature: 0.4,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMsg },
+      ],
     });
 
-    if (!res.ok) {
+    if (!result.ok) {
       return NextResponse.json({ error: "Erro ao processar texto." }, { status: 502 });
     }
 
-    const data = await res.json();
-    const melhorado = data.choices?.[0]?.message?.content ?? "";
-    return NextResponse.json({ texto: melhorado });
+    return NextResponse.json({ texto: result.content });
   } catch {
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }

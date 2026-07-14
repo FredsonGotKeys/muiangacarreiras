@@ -3,8 +3,6 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/lib/auth-context";
-import ScrollProgress from "@/components/ScrollProgress";
-import Preloader from "@/components/premium/Preloader";
 import BottomNav from "@/components/premium/BottomNav";
 
 const BASE = "https://muiangaconsultores.co.mz";
@@ -12,7 +10,7 @@ const BASE = "https://muiangaconsultores.co.mz";
 export const metadata: Metadata = {
   metadataBase: new URL(BASE),
   title: {
-    default: "MUIANGA CARREIRAS — Emprego, CV e Oportunidades em Moçambique",
+    default: "MUIANGA CARREIRAS: Emprego, CV e Oportunidades em Moçambique",
     template: "%s | MUIANGA CARREIRAS",
   },
   description: "Plataforma moçambicana de empregabilidade: vagas em Moçambique e Europa, criação de CV profissional, orientação de carreira e conexão com empresas.",
@@ -22,14 +20,14 @@ export const metadata: Metadata = {
     locale: "pt_MZ",
     url: BASE,
     siteName: "MUIANGA CARREIRAS",
-    title: "MUIANGA CARREIRAS — Emprego, CV e Oportunidades em Moçambique",
+    title: "MUIANGA CARREIRAS: Emprego, CV e Oportunidades em Moçambique",
     description: "Plataforma moçambicana de empregabilidade: vagas, CV profissional e orientação de carreira.",
     images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "MUIANGA CARREIRAS" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "MUIANGA CARREIRAS",
-    description: "Empregabilidade e carreiras em Moçambique — vagas, CV e oportunidades.",
+    description: "Empregabilidade e carreiras em Moçambique: vagas, CV e oportunidades.",
     images: ["/og-image.jpg"],
   },
   robots: { index: true, follow: true },
@@ -47,7 +45,7 @@ export default function RootLayout({
     url: BASE,
     logo: `${BASE}/og-image.jpg`,
     description:
-      "Plataforma de empregabilidade em Moçambique — vagas, criação de CV e orientação de carreira.",
+      "Plataforma de empregabilidade em Moçambique: vagas, criação de CV e orientação de carreira.",
     address: {
       "@type": "PostalAddress",
       addressLocality: "Maputo",
@@ -59,13 +57,11 @@ export default function RootLayout({
 
   return (
     <html lang="pt">
-      <body className="antialiased bg-white text-[#0D0D0D]">
+      <body className="antialiased bg-white text-[#2A0001]">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}
         />
-        <Preloader />
-        <ScrollProgress />
         <AuthProvider>
           <Navbar />
           <main className="pb-24 lg:pb-0">{children}</main>

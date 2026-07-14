@@ -51,7 +51,7 @@ function diasRestantes(fim: string | null): number | null {
 }
 
 function formatDate(d: string | null) {
-  if (!d) return "—";
+  if (!d) return "-";
   return new Date(d).toLocaleDateString("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
@@ -154,12 +154,12 @@ export default function AdminPage() {
     : subs;
 
   if (!authed) return (
-    <div className="min-h-screen bg-[#F8F5EF] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#FFF8F8] flex items-center justify-center px-4">
       <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-sm">
-        <div className="w-12 h-12 bg-[#C9A84C]/10 rounded-2xl flex items-center justify-center mb-4">
-          <LogIn size={22} className="text-[#C9A84C]" />
+        <div className="w-12 h-12 bg-[#D20001]/10 rounded-2xl flex items-center justify-center mb-4">
+          <LogIn size={22} className="text-[#D20001]" />
         </div>
-        <h1 className="text-2xl font-bold text-[#0D0D0D] mb-1">Admin</h1>
+        <h1 className="text-2xl font-bold text-[#2A0001] mb-1">Admin</h1>
         <p className="text-sm text-gray-400 mb-6">MUIANGA Carreiras · Gestão de subscrições</p>
         <form onSubmit={login} className="space-y-3">
           <input
@@ -167,10 +167,10 @@ export default function AdminPage() {
             placeholder="Código de acesso"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/10 tracking-widest"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D20001] focus:ring-2 focus:ring-[#D20001]/10 tracking-widest"
           />
           {authErr && <p className="text-xs text-red-500">{authErr}</p>}
-          <button type="submit" className="w-full bg-[#C9A84C] hover:bg-[#B8943E] text-white font-bold py-3.5 rounded-xl transition-all text-sm">
+          <button type="submit" className="w-full bg-[#D20001] hover:bg-[#B40001] text-white font-bold py-3.5 rounded-xl transition-all text-sm">
             Entrar →
           </button>
         </form>
@@ -179,18 +179,18 @@ export default function AdminPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8F5EF] pt-8 pb-16 px-4">
+    <div className="min-h-screen bg-[#FFF8F8] pt-8 pb-16 px-4">
       <div className="max-w-4xl mx-auto">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-[#0D0D0D]">Painel Admin</h1>
+            <h1 className="text-2xl font-bold text-[#2A0001]">Painel Admin</h1>
             <p className="text-sm text-gray-400">MUIANGA Carreiras</p>
           </div>
           <div className="flex gap-2">
             <button onClick={() => { adminTab === "subscricoes" ? carregar() : carregarCandidaturas(); }} disabled={loading || candLoading}
-              className="flex items-center gap-1.5 text-xs font-semibold text-[#C9A84C] bg-[#C9A84C]/10 hover:bg-[#C9A84C]/20 px-3 py-2 rounded-xl border border-[#C9A84C]/20 transition-all">
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#D20001] bg-[#D20001]/10 hover:bg-[#D20001]/20 px-3 py-2 rounded-xl border border-[#D20001]/20 transition-all">
               <RefreshCw size={13} className={(loading || candLoading) ? "animate-spin" : ""} /> Actualizar
             </button>
             <button onClick={logout}
@@ -203,11 +203,11 @@ export default function AdminPage() {
         {/* Admin tabs */}
         <div className="flex gap-2 mb-6 p-1 bg-gray-100 rounded-xl w-fit">
           <button onClick={() => setAdminTab("subscricoes")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${adminTab === "subscricoes" ? "bg-white text-[#0D0D0D] shadow-sm" : "text-gray-500"}`}>
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${adminTab === "subscricoes" ? "bg-white text-[#2A0001] shadow-sm" : "text-gray-500"}`}>
             <Zap size={14} /> Subscrições
           </button>
           <button onClick={() => { setAdminTab("candidaturas"); if (candidaturas.length === 0) carregarCandidaturas(); }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${adminTab === "candidaturas" ? "bg-white text-[#0D0D0D] shadow-sm" : "text-gray-500"}`}>
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${adminTab === "candidaturas" ? "bg-white text-[#2A0001] shadow-sm" : "text-gray-500"}`}>
             <Globe2 size={14} /> Candidaturas Europa
             {candidaturas.filter(c => c.status === "nova").length > 0 && (
               <span className="w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -223,7 +223,7 @@ export default function AdminPage() {
         {/* Stats cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
-            { label: "Activos", value: ativos.length, icon: <Zap size={16} className="text-[#C9A84C]" />, cls: "border-[#C9A84C]/20" },
+            { label: "Activos", value: ativos.length, icon: <Zap size={16} className="text-[#D20001]" />, cls: "border-[#D20001]/20" },
             { label: "Pendentes", value: pendentes.length, icon: <Clock size={16} className="text-amber-500" />, cls: pendentes.length > 0 ? "border-amber-200 bg-amber-50" : "" },
             { label: "Total", value: subs.length, icon: <Users size={16} className="text-blue-500" />, cls: "" },
             { label: "Bloqueados", value: bloqueados.length, icon: <Ban size={16} className="text-red-500" />, cls: bloqueados.length > 0 ? "border-red-200 bg-red-50" : "" },
@@ -231,7 +231,7 @@ export default function AdminPage() {
             <div key={label} className={`bg-white rounded-2xl border border-gray-100 ${cls} p-4 flex items-center gap-3`}>
               <div className="w-9 h-9 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">{icon}</div>
               <div>
-                <p className="text-2xl font-black text-[#0D0D0D] leading-none">{value}</p>
+                <p className="text-2xl font-black text-[#2A0001] leading-none">{value}</p>
                 <p className="text-xs text-gray-400 mt-0.5">{label}</p>
               </div>
             </div>
@@ -247,7 +247,7 @@ export default function AdminPage() {
             { key: "bloqueados",label: `Bloqueados (${bloqueados.length})` },
           ] as { key: Filtro; label: string }[]).map(f => (
             <button key={f.key} onClick={() => setFiltro(f.key)}
-              className={`text-xs font-semibold px-4 py-2 rounded-xl transition-all ${filtro === f.key ? "bg-[#0D0D0D] text-white" : "bg-white text-gray-500 border border-gray-200"}`}>
+              className={`text-xs font-semibold px-4 py-2 rounded-xl transition-all ${filtro === f.key ? "bg-[#4F0101] text-white" : "bg-white text-gray-500 border border-gray-200"}`}>
               {f.label}
             </button>
           ))}
@@ -265,7 +265,7 @@ export default function AdminPage() {
             const st   = STATUS_LABEL[s.status] ?? STATUS_LABEL.pendente;
             const dias = diasRestantes(s.fim);
             const bloqueado = s.perfis?.bloqueado ?? false;
-            const metLabel = s.metodo_pag === "emola" ? "e-Mola" : s.metodo_pag === "mpesa" ? "M-Pesa" : s.metodo_pag === "card" ? "Cartão" : s.metodo_pag === "paysuite" ? "PaySuite (legado)" : (s.metodo_pag ?? "—");
+            const metLabel = s.metodo_pag === "emola" ? "e-Mola" : s.metodo_pag === "mpesa" ? "M-Pesa" : s.metodo_pag === "card" ? "Cartão" : s.metodo_pag === "paysuite" ? "PaySuite (legado)" : (s.metodo_pag ?? "-");
 
             return (
               <div key={s.id} className={`bg-white rounded-2xl border shadow-sm p-5 ${bloqueado ? "border-red-200 bg-red-50/30" : "border-gray-100"}`}>
@@ -273,13 +273,13 @@ export default function AdminPage() {
                 {/* Linha topo */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${bloqueado ? "bg-red-100" : "bg-[#C9A84C]/10"}`}>
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${bloqueado ? "bg-red-100" : "bg-[#D20001]/10"}`}>
                       {bloqueado
                         ? <Ban size={18} className="text-red-500" />
-                        : <span className="text-[#C9A84C] font-black text-sm">{(s.perfis?.nome ?? "?")[0]?.toUpperCase()}</span>}
+                        : <span className="text-[#D20001] font-black text-sm">{(s.perfis?.nome ?? "?")[0]?.toUpperCase()}</span>}
                     </div>
                     <div>
-                      <p className="font-bold text-[#0D0D0D]">{s.perfis?.nome ?? "—"}</p>
+                      <p className="font-bold text-[#2A0001]">{s.perfis?.nome ?? "-"}</p>
                       <p className="text-xs text-gray-400 font-mono">{s.email ?? "sem email"}</p>
                     </div>
                   </div>
@@ -293,34 +293,34 @@ export default function AdminPage() {
 
                 {/* Grid info */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-                  <div className="bg-[#F8F5EF] rounded-xl p-3">
+                  <div className="bg-[#FFF8F8] rounded-xl p-3">
                     <p className="text-xs text-gray-400 mb-0.5">Método</p>
-                    <p className="text-sm font-semibold text-[#0D0D0D]">{metLabel}</p>
+                    <p className="text-sm font-semibold text-[#2A0001]">{metLabel}</p>
                   </div>
-                  <div className="bg-[#F8F5EF] rounded-xl p-3">
+                  <div className="bg-[#FFF8F8] rounded-xl p-3">
                     <p className="text-xs text-gray-400 mb-0.5">Valor</p>
-                    <p className="text-sm font-semibold text-[#C9A84C]">{s.valor_mt} MT</p>
+                    <p className="text-sm font-semibold text-[#D20001]">{s.valor_mt} MT</p>
                   </div>
-                  <div className="bg-[#F8F5EF] rounded-xl p-3">
+                  <div className="bg-[#FFF8F8] rounded-xl p-3">
                     <p className="text-xs text-gray-400 mb-0.5">Início</p>
-                    <p className="text-sm font-semibold text-[#0D0D0D]">{formatDate(s.inicio ?? s.created_at)}</p>
+                    <p className="text-sm font-semibold text-[#2A0001]">{formatDate(s.inicio ?? s.created_at)}</p>
                   </div>
-                  <div className={`rounded-xl p-3 ${s.status === "ativa" && dias !== null && dias <= 5 ? "bg-amber-50 border border-amber-100" : "bg-[#F8F5EF]"}`}>
+                  <div className={`rounded-xl p-3 ${s.status === "ativa" && dias !== null && dias <= 5 ? "bg-amber-50 border border-amber-100" : "bg-[#FFF8F8]"}`}>
                     <p className="text-xs text-gray-400 mb-0.5">Dias restantes</p>
                     {s.status === "ativa" && dias !== null ? (
-                      <p className={`text-sm font-black ${dias <= 5 ? "text-amber-600" : dias <= 10 ? "text-orange-500" : "text-[#1D9E75]"}`}>
+                      <p className={`text-sm font-black ${dias <= 5 ? "text-amber-600" : dias <= 10 ? "text-orange-500" : "text-[#D20001]"}`}>
                         {dias}d {dias <= 5 && <AlertTriangle size={11} className="inline" />}
                       </p>
                     ) : (
-                      <p className="text-sm font-semibold text-gray-400">—</p>
+                      <p className="text-sm font-semibold text-gray-400">-</p>
                     )}
                   </div>
                 </div>
 
                 {/* Referência */}
                 {s.referencia && (
-                  <div className="bg-[#F8F5EF] rounded-xl px-3 py-2.5 mb-4">
-                    <p className="text-xs text-gray-400">Referência: <span className="font-mono font-semibold text-[#0D0D0D]">{s.referencia}</span></p>
+                  <div className="bg-[#FFF8F8] rounded-xl px-3 py-2.5 mb-4">
+                    <p className="text-xs text-gray-400">Referência: <span className="font-mono font-semibold text-[#2A0001]">{s.referencia}</span></p>
                     {s.numero_pag && <p className="text-xs text-gray-400 mt-0.5">De: {s.numero_pag}</p>}
                   </div>
                 )}
@@ -340,12 +340,12 @@ export default function AdminPage() {
                         placeholder="Notas (opcional)"
                         value={notas[s.id] ?? ""}
                         onChange={e => setNotas(n => ({ ...n, [s.id]: e.target.value }))}
-                        className="w-full border border-gray-200 rounded-xl text-xs px-3 py-2.5 mb-1 focus:outline-none focus:border-[#C9A84C]"
+                        className="w-full border border-gray-200 rounded-xl text-xs px-3 py-2.5 mb-1 focus:outline-none focus:border-[#D20001]"
                       />
                       <button
                         onClick={() => agir("aprovar", s.id)}
                         disabled={!!actionLoading}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-[#1D9E75] hover:bg-[#178a64] disabled:opacity-60 text-white font-bold text-xs py-2.5 rounded-xl transition-all"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-[#D20001] hover:bg-[#B40001] disabled:opacity-60 text-white font-bold text-xs py-2.5 rounded-xl transition-all"
                       >
                         <CheckCircle2 size={13} />
                         {actionLoading === `aprovar-${s.id}` ? "..." : "Aprovar (+30 dias)"}
@@ -411,7 +411,7 @@ export default function AdminPage() {
               { key: "todas",   label: "Todas" },
             ] as { key: typeof candFiltro; label: string }[]).map(f => (
               <button key={f.key} onClick={() => setCandFiltro(f.key)}
-                className={`text-xs font-semibold px-4 py-2 rounded-xl transition-all ${candFiltro === f.key ? "bg-[#0D0D0D] text-white" : "bg-white text-gray-500 border border-gray-200"}`}>
+                className={`text-xs font-semibold px-4 py-2 rounded-xl transition-all ${candFiltro === f.key ? "bg-[#4F0101] text-white" : "bg-white text-gray-500 border border-gray-200"}`}>
                 {f.label}
               </button>
             ))}
@@ -434,7 +434,7 @@ export default function AdminPage() {
                       <Globe2 size={18} className="text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-bold text-[#0D0D0D]">{c.nome}</p>
+                      <p className="font-bold text-[#2A0001]">{c.nome}</p>
                       <p className="text-xs text-gray-400 font-mono">{c.email}</p>
                     </div>
                   </div>
@@ -444,13 +444,13 @@ export default function AdminPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-                  <div className="bg-[#F8F5EF] rounded-xl p-3">
+                  <div className="bg-[#FFF8F8] rounded-xl p-3">
                     <p className="text-xs text-gray-400 mb-0.5">Vaga</p>
-                    <p className="text-sm font-semibold text-[#0D0D0D]">{c.vaga_titulo}</p>
+                    <p className="text-sm font-semibold text-[#2A0001]">{c.vaga_titulo}</p>
                   </div>
-                  <div className="bg-[#F8F5EF] rounded-xl p-3">
+                  <div className="bg-[#FFF8F8] rounded-xl p-3">
                     <p className="text-xs text-gray-400 mb-0.5">Empresa</p>
-                    <p className="text-sm font-semibold text-[#0D0D0D]">{c.vaga_empresa ?? "—"}</p>
+                    <p className="text-sm font-semibold text-[#2A0001]">{c.vaga_empresa ?? "-"}</p>
                   </div>
                 </div>
 
@@ -484,7 +484,7 @@ export default function AdminPage() {
                   )}
                   {c.status === "nova" && (
                     <button onClick={() => agirCand(c.id, "tratada")} disabled={!!actionLoading}
-                      className="flex items-center gap-1.5 bg-[#1D9E75]/10 hover:bg-[#1D9E75]/20 text-[#1D9E75] font-bold text-xs px-4 py-2.5 rounded-xl transition-all border border-[#1D9E75]/30">
+                      className="flex items-center gap-1.5 bg-[#D20001]/10 hover:bg-[#D20001]/20 text-[#D20001] font-bold text-xs px-4 py-2.5 rounded-xl transition-all border border-[#D20001]/30">
                       <CheckCircle2 size={13} /> {actionLoading === `cand-${c.id}` ? "..." : "Marcar como tratada"}
                     </button>
                   )}

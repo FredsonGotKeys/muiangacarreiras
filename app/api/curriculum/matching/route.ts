@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { rateLimit, getIp, rateLimitedResponse, str } from "@/lib/api-utils";
+import { chatCompletion } from "@/lib/llm";
 
 /**
  * Compara o CV do utilizador com o texto de uma vaga de emprego e calcula
@@ -56,9 +57,6 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
-
   try {
     const body = await req.json().catch(() => null);
     const vagaTexto = str(body?.vagaTexto, 6000);
@@ -86,29 +84,21 @@ Devolve APENAS JSON válido neste formato:
   "sugestoes": ["<sugestão accionável para melhor destacar o que já tem>", "..."]
 }`;
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        max_tokens: 900,
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `CURRÍCULO:\n${resumoCv}\n\nVAGA:\n${vagaTexto}` },
-        ],
-      }),
+    const result = await chatCompletion({
+      maxTokens: 900,
+      temperature: 0.2,
+      jsonMode: true,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `CURRÍCULO:\n${resumoCv}\n\nVAGA:\n${vagaTexto}` },
+      ],
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      console.error("Groq matching error:", err);
+    if (!result.ok) {
       return NextResponse.json({ error: "Erro ao comparar com a vaga." }, { status: 502 });
     }
 
-    const data = await res.json();
-    const raw = data.choices?.[0]?.message?.content ?? "{}";
+    const raw = result.content || "{}";
 
     let parsed: MatchResult;
     try {

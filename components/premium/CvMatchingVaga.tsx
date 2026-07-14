@@ -1,8 +1,12 @@
 "use client";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Target, Loader2, AlertTriangle, CheckCircle2, XCircle, Lightbulb } from "lucide-react";
+import { Target, Loader2, AlertTriangle, CheckCircle2, XCircle, Lightbulb, Download, Lock } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
+import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
+import { guardarDocumento } from "@/lib/documentos-client";
+import { useEntitlement } from "@/lib/use-entitlement";
+import CompraGate from "@/components/premium/CompraGate";
+import BlocoBloqueado from "@/components/premium/BlocoBloqueado";
 
 interface MatchResult {
   compatibilidade: number;
@@ -12,17 +16,20 @@ interface MatchResult {
 }
 
 function matchColor(v: number) {
-  if (v >= 75) return "#10B981";
-  if (v >= 45) return "#FF6B35";
-  return "#EC4899";
+  if (v >= 75) return "#D20001";
+  if (v >= 45) return "#D20001";
+  return "#FE0000";
 }
 
 export default function CvMatchingVaga({ cvData }: { cvData: Record<string, unknown> }) {
+  const ent = useEntitlement("cv-matching-vaga");
   const [vagaTexto, setVagaTexto] = useState("");
   const [result, setResult] = useState<MatchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [compraPendente, setCompraPendente] = useState(false);
 
+  // Comparar é livre e imediato — a cobrança acontece ao descarregar o relatório completo.
   async function comparar() {
     if (!vagaTexto.trim() || vagaTexto.trim().length < 30) {
       setError("Cola o texto completo da vaga (requisitos, descrição) para uma comparação fiável.");
@@ -46,20 +53,46 @@ export default function CvMatchingVaga({ cvData }: { cvData: Record<string, unkn
     }
   }
 
+  async function baixarDeFacto() {
+    if (!result) return;
+    const linhas = [
+      `Compatibilidade com a vaga: ${result.compatibilidade}%`,
+      "",
+      "COMPETÊNCIAS ENCONTRADAS",
+      ...result.competenciasEncontradas.map((c) => `- ${c}`),
+      "",
+      "COMPETÊNCIAS EM FALTA",
+      ...result.competenciasEmFalta.map((c) => `- ${c}`),
+      "",
+      "COMO DESTACAR O QUE JÁ TENS",
+      ...result.sugestoes.map((s, i) => `${i + 1}. ${s}`),
+    ];
+    const blob = await gerarTextoDocx("Relatório de Compatibilidade com Vaga", linhas.join("\n"));
+    const nomeFicheiro = "CV_Match_Vaga.docx";
+    downloadBlob(blob, nomeFicheiro);
+    guardarDocumento("cv-matching-vaga", nomeFicheiro, blob);
+  }
+
+  function baixar() {
+    if (ent.checking) return;
+    if (!ent.unlocked) { setCompraPendente(true); return; }
+    baixarDeFacto();
+  }
+
   return (
     <div
       className="rounded-2xl p-6 md:p-7 print:hidden"
       style={{
-        background: "linear-gradient(135deg, rgba(16,185,129,0.04) 0%, rgba(6,182,212,0.04) 100%)",
-        border: "1px solid rgba(16,185,129,0.15)",
+        background: "linear-gradient(135deg, rgba(210,0,1,0.04) 0%, rgba(254,0,0,0.04) 100%)",
+        border: "1px solid rgba(210,0,1,0.15)",
       }}
     >
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #10B981, #06B6D4)" }}>
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #D20001, #FE0000)" }}>
           <Target className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-[#0D0D0D]">Compatibilidade com uma Vaga</h3>
+          <h3 className="text-sm font-bold text-[#2A0001]">CV Match com MUIANGA IA</h3>
           <p className="text-[11px] text-gray-400">Cola a descrição da vaga e compara com o teu CV</p>
         </div>
       </div>
@@ -84,35 +117,41 @@ export default function CvMatchingVaga({ cvData }: { cvData: Record<string, unkn
         </div>
       )}
 
-      <AnimatePresence>
-        {result && !loading && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
-            <div className="flex items-center gap-4 mb-5 pb-5 border-b border-gray-200/60">
-              <div className="relative w-16 h-16 shrink-0 flex items-center justify-center rounded-2xl" style={{ background: `${matchColor(result.compatibilidade)}14` }}>
-                <span className="text-xl font-extrabold" style={{ color: matchColor(result.compatibilidade) }}>{result.compatibilidade}%</span>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-[#0D0D0D]">Compatibilidade com a vaga</p>
-                <p className="text-xs text-gray-400">
-                  {result.compatibilidade >= 75 ? "Excelente correspondência — candidata-te com confiança." :
-                   result.compatibilidade >= 45 ? "Boa base — reforça os pontos em falta se possível." :
-                   "Compatibilidade baixa — considera vagas mais alinhadas ao teu perfil."}
-                </p>
-              </div>
+      {result && !loading && (
+        <div className="mt-6">
+          <div className="flex items-center gap-4 mb-5 pb-5 border-b border-gray-200/60">
+            <div className="relative w-16 h-16 shrink-0 flex items-center justify-center rounded-2xl" style={{ background: `${matchColor(result.compatibilidade)}14` }}>
+              <span className="text-xl font-extrabold" style={{ color: matchColor(result.compatibilidade) }}>{result.compatibilidade}%</span>
             </div>
+            <div>
+              <p className="text-sm font-bold text-[#2A0001]">Compatibilidade com a vaga</p>
+              <p className="text-xs text-gray-400">
+                {result.compatibilidade >= 75 ? "Excelente correspondência, candidata-te com confiança." :
+                 result.compatibilidade >= 45 ? "Boa base, reforça os pontos em falta se possível." :
+                 "Compatibilidade baixa, considera vagas mais alinhadas ao teu perfil."}
+              </p>
+            </div>
+          </div>
 
+          <div className="mb-4">
+            <p className="text-xs font-bold text-emerald-600 mb-2 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Competências Encontradas
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {result.competenciasEncontradas.map((c, i) => (
+                <span key={i} className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-medium">{c}</span>
+              ))}
+              {result.competenciasEncontradas.length === 0 && <span className="text-[11px] text-gray-400">Nenhuma correspondência directa encontrada.</span>}
+            </div>
+          </div>
+
+          <BlocoBloqueado
+            unlocked={ent.unlocked}
+            onDesbloquear={() => setCompraPendente(true)}
+            precoMt={ent.servico?.preco_mt}
+            minHeight={160}
+          >
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-xs font-bold text-emerald-600 mb-2 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Competências Encontradas
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {result.competenciasEncontradas.map((c, i) => (
-                    <span key={i} className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-medium">{c}</span>
-                  ))}
-                  {result.competenciasEncontradas.length === 0 && <span className="text-[11px] text-gray-400">Nenhuma correspondência directa encontrada.</span>}
-                </div>
-              </div>
               <div>
                 <p className="text-xs font-bold text-pink-600 mb-2 flex items-center gap-1.5">
                   <XCircle className="w-3.5 h-3.5" /> Em Falta
@@ -124,25 +163,38 @@ export default function CvMatchingVaga({ cvData }: { cvData: Record<string, unkn
                   {result.competenciasEmFalta.length === 0 && <span className="text-[11px] text-gray-400">Nenhuma lacuna identificada.</span>}
                 </div>
               </div>
-            </div>
 
-            {result.sugestoes.length > 0 && (
-              <div className="rounded-xl p-4" style={{ background: "rgba(6,182,212,0.06)", border: "1px solid rgba(6,182,212,0.18)" }}>
-                <p className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: "#0891B2" }}>
-                  <Lightbulb className="w-3.5 h-3.5" /> Como destacar o que já tens
-                </p>
-                <ul className="space-y-1.5">
-                  {result.sugestoes.map((s, i) => (
-                    <li key={i} className="text-xs text-gray-600 flex items-start gap-1.5">
-                      <span className="font-bold shrink-0" style={{ color: "#06B6D4" }}>{i + 1}.</span> {s}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {result.sugestoes.length > 0 && (
+                <div className="rounded-xl p-4" style={{ background: "rgba(254,0,0,0.06)", border: "1px solid rgba(254,0,0,0.18)" }}>
+                  <p className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: "#9A0000" }}>
+                    <Lightbulb className="w-3.5 h-3.5" /> Como destacar o que já tens
+                  </p>
+                  <ul className="space-y-1.5">
+                    {result.sugestoes.map((s, i) => (
+                      <li key={i} className="text-xs text-gray-600 flex items-start gap-1.5">
+                        <span className="font-bold shrink-0" style={{ color: "#FE0000" }}>{i + 1}.</span> {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </BlocoBloqueado>
+
+          <button onClick={baixar} className="btn-vivid-outline text-xs px-4 py-2.5 mt-2">
+            {!ent.checking && !ent.unlocked ? <Lock className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
+            {!ent.checking && !ent.unlocked ? `Descarregar relatório — ${ent.servico?.preco_mt ?? "..."} MT` : "Descarregar relatório (.docx)"}
+          </button>
+        </div>
+      )}
+
+      {compraPendente && (
+        <div className="mt-4">
+          <CompraGate servicoSlug="cv-matching-vaga" servicoNome="Descarregar relatório de compatibilidade" onUnlock={() => { setCompraPendente(false); baixarDeFacto(); }}>
+            {null}
+          </CompraGate>
+        </div>
+      )}
     </div>
   );
 }

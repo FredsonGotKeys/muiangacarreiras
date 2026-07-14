@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { rateLimit, getIp, rateLimitedResponse, str } from "@/lib/api-utils";
 import { logError } from "@/lib/logger";
 import { SECOES, type SecaoId, type NivelAcademico } from "@/lib/academico-sections";
+import { chatCompletion } from "@/lib/llm";
 
 export const runtime = "nodejs";
 
@@ -24,7 +25,7 @@ const NIVEL_LABEL: Record<NivelAcademico, string> = {
 };
 
 /** Chama o Groq uma única vez para gerar o conteúdo de todas as secções IA seleccionadas. */
-async function gerarConteudoIA(form: FormData, secoesIA: SecaoId[], apiKey: string): Promise<Record<string, string>> {
+async function gerarConteudoIA(form: FormData, secoesIA: SecaoId[]): Promise<Record<string, string>> {
   if (secoesIA.length === 0) return {};
 
   const nivelLabel = NIVEL_LABEL[form.nivel];
@@ -58,29 +59,21 @@ As chaves devem ser exactamente estas (nesta grafia): ${secoesIA.join(", ")}
 Secções a desenvolver: ${secaoLabels.join(", ")}.
 Cada secção deve ter entre 2 a 5 parágrafos, excepto Objectivo Geral/Hipóteses que podem ser mais curtas (1 parágrafo ou lista).`;
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
-      max_tokens: 6000,
-      temperature: 0.4,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `Gera o conteúdo académico para o trabalho descrito.` },
-      ],
-    }),
+  const result = await chatCompletion({
+    maxTokens: 6000,
+    temperature: 0.4,
+    jsonMode: true,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Gera o conteúdo académico para o trabalho descrito.` },
+    ],
   });
 
-  if (!res.ok) {
-    const errBody = await res.text().catch(() => "");
-    throw new Error(`Groq falhou: HTTP ${res.status} — ${errBody.slice(0, 300)}`);
+  if (!result.ok) {
+    throw new Error(`Geração falhou: HTTP ${result.status}`);
   }
-  const data = await res.json();
-  const raw = data.choices?.[0]?.message?.content ?? "{}";
   try {
-    return JSON.parse(raw);
+    return JSON.parse(result.content || "{}");
   } catch {
     throw new Error("Resposta da IA não é JSON válido.");
   }
@@ -239,9 +232,6 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await sbUser.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
-
   try {
     const formData = await req.formData();
     const raw = formData.get("dados") as string | null;
@@ -290,7 +280,7 @@ export async function POST(req: NextRequest) {
 
     let conteudoIA: Record<string, string> = {};
     try {
-      conteudoIA = await gerarConteudoIA(form, secoesIA, apiKey);
+      conteudoIA = await gerarConteudoIA(form, secoesIA);
     } catch (e) {
       await logError({ route: "/api/academico/gerar", message: "Falha na geração IA", detail: String(e), userId: user.id });
       return NextResponse.json({ error: "Erro ao gerar o conteúdo com IA. Tenta novamente." }, { status: 502 });

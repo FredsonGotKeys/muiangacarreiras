@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { rateLimit, getIp, rateLimitedResponse } from "@/lib/api-utils";
+import { chatCompletion } from "@/lib/llm";
 
 /**
  * Analisa um CV (dados estruturados, não ficheiro) com IA e devolve pontuação
@@ -75,9 +76,6 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
-
   try {
     const body = await req.json().catch(() => null);
     if (!body?.cvData || typeof body.cvData !== "object") {
@@ -115,32 +113,21 @@ Responde APENAS com um JSON válido neste formato exacto, sem markdown, sem text
   "recomendacoes": ["<recomendação accionável 1>", "<recomendação accionável 2>", "..."]
 }`;
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        max_tokens: 1200,
-        temperature: 0.3,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Resumo do currículo:\n\n${resumo}` },
-        ],
-      }),
+    const result = await chatCompletion({
+      maxTokens: 1200,
+      temperature: 0.3,
+      jsonMode: true,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Resumo do currículo:\n\n${resumo}` },
+      ],
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      console.error("Groq analise error:", err);
+    if (!result.ok) {
       return NextResponse.json({ error: "Erro ao analisar CV." }, { status: 502 });
     }
 
-    const data = await res.json();
-    const raw = data.choices?.[0]?.message?.content ?? "{}";
+    const raw = result.content || "{}";
 
     let parsed: AnaliseResult;
     try {

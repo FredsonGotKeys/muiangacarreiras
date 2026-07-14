@@ -54,7 +54,7 @@ export default function AuthModal({ onClose, onSuccess }: { onClose: () => void;
           {/* Header */}
           <div className="flex items-start justify-between px-6 pt-5 pb-2">
             <div>
-              <h2 className="text-xl font-bold text-[#0D0D0D]">Entrar na conta</h2>
+              <h2 className="text-xl font-bold text-[#2A0001]">Entrar na conta</h2>
               <p className="text-sm text-gray-400 mt-0.5">Para te candidatares a vagas de emprego</p>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors shrink-0 mt-0.5">
@@ -64,8 +64,8 @@ export default function AuthModal({ onClose, onSuccess }: { onClose: () => void;
 
           <div className="px-6 pb-10 pt-6">
             {/* Logo / ícone */}
-            <div className="w-16 h-16 bg-[#C9A84C]/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <span className="font-syne text-2xl font-black text-[#C9A84C]">M</span>
+            <div className="w-16 h-16 bg-[#D20001]/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <span className="font-syne text-2xl font-black text-[#D20001]">M</span>
             </div>
 
             {error && (
@@ -78,7 +78,7 @@ export default function AuthModal({ onClose, onSuccess }: { onClose: () => void;
             <button
               onClick={handleGoogle}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 disabled:opacity-60 text-[#0D0D0D] font-semibold text-sm py-4 rounded-2xl transition-all shadow-sm active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-3 border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 disabled:opacity-60 text-[#2A0001] font-semibold text-sm py-4 rounded-2xl transition-all shadow-sm active:scale-[0.98]"
             >
               <GoogleIcon />
               {loading ? "A redirecionar..." : "Continuar com Google"}
@@ -86,9 +86,9 @@ export default function AuthModal({ onClose, onSuccess }: { onClose: () => void;
 
             <p className="text-xs text-center text-gray-400 mt-5 leading-relaxed">
               Ao entrares aceitas os nossos{" "}
-              <a href="/termos" className="text-[#C9A84C] hover:underline">termos de uso</a>
+              <a href="/termos" className="text-[#D20001] hover:underline">termos de uso</a>
               {" "}e a nossa{" "}
-              <a href="/privacidade" className="text-[#C9A84C] hover:underline">política de privacidade</a>.
+              <a href="/privacidade" className="text-[#D20001] hover:underline">política de privacidade</a>.
             </p>
           </div>
         </div>

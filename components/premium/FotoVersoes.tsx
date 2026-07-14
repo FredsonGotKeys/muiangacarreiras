@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { Wand2, Loader2, Circle, Square, RectangleVertical, AlertTriangle } from "lucide-react";
 import { autoCenterSquare, enhanceLighting, makeCircular, makeRectangular } from "@/lib/photo-enhance";
 
@@ -53,7 +52,7 @@ export default function FotoVersoes({
       )}
 
       <p className="text-[11px] font-semibold text-gray-500 mb-2 flex items-center gap-1.5">
-        <Wand2 className="w-3.5 h-3.5" style={{ color: "#8B5CF6" }} /> Ajuste automático — enquadramento, luz e nitidez
+        <Wand2 className="w-3.5 h-3.5" style={{ color: "#ED1D1D" }} /> Ajuste automático: enquadramento, luz e nitidez
       </p>
 
       <div className="grid grid-cols-3 gap-2">
@@ -63,13 +62,13 @@ export default function FotoVersoes({
             onClick={() => gerar(tipo)}
             disabled={loading !== null}
             className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all disabled:opacity-60 ${
-              selecionada === tipo ? "border-[#8B5CF6] bg-[#8B5CF6]/5" : "border-gray-100 hover:border-gray-300"
+              selecionada === tipo ? "border-[#ED1D1D] bg-[#ED1D1D]/5" : "border-gray-100 hover:border-gray-300"
             }`}
           >
             {versoes[tipo] ? (
               <img src={versoes[tipo]!} alt={label} className={`w-12 h-12 object-cover ${tipo === "circular" ? "rounded-full" : "rounded-lg"}`} />
             ) : loading === tipo ? (
-              <Loader2 className="w-5 h-5 animate-spin" style={{ color: "#8B5CF6" }} />
+              <Loader2 className="w-5 h-5 animate-spin" style={{ color: "#ED1D1D" }} />
             ) : (
               <Icon className="w-5 h-5 text-gray-300" />
             )}

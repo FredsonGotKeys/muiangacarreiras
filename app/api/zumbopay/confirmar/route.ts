@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { rateLimit, getIp, rateLimitedResponse } from "@/lib/api-utils";
+import { rateLimit, getIp, rateLimitedResponse, str } from "@/lib/api-utils";
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,11 +8,11 @@ const sb = createClient(
 );
 
 /**
- * Consulta o estado da subscrição do utilizador.
- * NÃO cria subscrição — isso é responsabilidade exclusiva do webhook ZumboPay
- * (que verifica HMAC + re-confirma server-to-server). Apenas leitura.
- *
- * O frontend faz polling depois de iniciar o pagamento (STK push ou redirect).
+ * Consulta o estado de uma compra avulsa (serviço ou pacote) do
+ * utilizador. NÃO activa nada — isso é responsabilidade exclusiva do
+ * webhook ZumboPay (que verifica HMAC + re-confirma server-to-server).
+ * Apenas leitura. O frontend faz polling depois de iniciar o pagamento
+ * (STK push ou redirect).
  */
 export async function POST(req: NextRequest) {
   if (!rateLimit(getIp(req), 30)) return rateLimitedResponse();
@@ -37,20 +37,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "blocked", error: "Conta bloqueada." }, { status: 403 });
   }
 
-  const { data: sub } = await sb
-    .from("subscricoes")
-    .select("status, fim")
+  const body = await req.json().catch(() => null);
+  const tipo = str(body?.tipo, 30);
+  const itemId = str(body?.itemId, 100);
+
+  if ((tipo !== "servico" && tipo !== "pacote") || !itemId) {
+    return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
+  }
+
+  const { data: compra } = await sb
+    .from("compras")
+    .select("status")
     .eq("user_id", user.id)
+    .eq("item_id", itemId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  const now = Date.now();
-  const fim = (sub as { fim: string | null } | null)?.fim;
-  const ativa =
-    (sub as { status: string } | null)?.status === "ativa" &&
-    (!fim || new Date(fim).getTime() > now);
-
-  if (ativa) return NextResponse.json({ status: "active", fim });
+  const status = (compra as { status: string } | null)?.status;
+  if (status === "concluida") return NextResponse.json({ status: "active" });
   return NextResponse.json({ status: "pending" });
 }

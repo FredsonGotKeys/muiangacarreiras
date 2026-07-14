@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { rateLimit, getIp, rateLimitedResponse } from "@/lib/api-utils";
 import { logError } from "@/lib/logger";
+import { chatCompletion } from "@/lib/llm";
 
 /**
  * Importa um CV existente (PDF, DOCX ou foto) e estrutura os campos via IA,
@@ -46,10 +47,14 @@ async function extractDocText(file: File): Promise<string> {
   const name = file.name.toLowerCase();
 
   if (name.endsWith(".pdf")) {
-    const mod = await import("pdf-parse");
-    const pdfParse = (mod as unknown as { default?: typeof mod }).default ?? mod;
-    const result = await (pdfParse as unknown as (b: Buffer) => Promise<{ text: string }>)(buffer);
-    return result.text;
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: buffer });
+    try {
+      const result = await parser.getText();
+      return result.text;
+    } finally {
+      await parser.destroy();
+    }
   }
   if (name.endsWith(".docx")) {
     const mammoth = await import("mammoth");
@@ -59,35 +64,27 @@ async function extractDocText(file: File): Promise<string> {
   throw new Error("Formato não suportado");
 }
 
-async function extrairViaGroq(texto: string, apiKey: string): Promise<Record<string, unknown>> {
+async function extrairViaGroq(texto: string): Promise<Record<string, unknown>> {
   const systemPrompt = `És um assistente especializado em extrair dados estruturados de currículos.
 
 Vais receber o texto bruto extraído de um CV. O texto pode ter formatação irregular por vir de PDF/DOCX.
 
 ${REGRAS}`;
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
-      max_tokens: 2000,
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `Texto do CV:\n\n${texto.slice(0, 8000)}` },
-      ],
-    }),
+  const result = await chatCompletion({
+    maxTokens: 2000,
+    temperature: 0.1,
+    jsonMode: true,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Texto do CV:\n\n${texto.slice(0, 8000)}` },
+    ],
   });
 
-  if (!res.ok) {
-    const err = await res.text().catch(() => "");
-    throw new Error(`Groq falhou: HTTP ${res.status} — ${err.slice(0, 300)}`);
+  if (!result.ok) {
+    throw new Error(`Geração falhou: HTTP ${result.status}`);
   }
-  const data = await res.json();
-  const raw = data.choices?.[0]?.message?.content ?? "{}";
-  return JSON.parse(raw);
+  return JSON.parse(result.content || "{}");
 }
 
 async function extrairViaGeminiVision(file: File, apiKey: string): Promise<Record<string, unknown>> {
@@ -174,14 +171,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Formato não suportado. Usa PDF ou DOCX." }, { status: 400 });
       }
 
-      const groqKey = process.env.GROQ_API_KEY;
-      if (!groqKey) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
-
       let texto: string;
       try {
         texto = await extractDocText(docFile);
       } catch (e) {
-        console.error("extractDocText:", e);
+        await logError({ route: "/api/curriculum/importar", message: "extractDocText falhou", detail: String(e), userId: user.id });
         return NextResponse.json({ error: "Não foi possível ler o ficheiro. Verifica se não está protegido ou corrompido." }, { status: 422 });
       }
       if (!texto || texto.trim().length < 40) {
@@ -189,7 +183,7 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        extraido = await extrairViaGroq(texto, groqKey);
+        extraido = await extrairViaGroq(texto);
       } catch (e) {
         await logError({ route: "/api/curriculum/importar", message: "Groq falhou", detail: String(e), userId: user.id });
         return NextResponse.json({ error: "Erro ao processar o CV." }, { status: 502 });

@@ -1,6 +1,5 @@
 "use client";
 import { useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { UploadCloud, Loader2, AlertTriangle, CheckCircle2, FileText, Sparkles } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 
@@ -60,8 +59,8 @@ export default function ImportarCv({
     <div
       className="rounded-2xl p-6 text-center border-2 border-dashed transition-colors"
       style={{
-        borderColor: loading ? "#06B6D4" : "rgba(6,182,212,0.35)",
-        background: "rgba(6,182,212,0.04)",
+        borderColor: loading ? "#FE0000" : "rgba(254,0,0,0.35)",
+        background: "rgba(254,0,0,0.04)",
       }}
     >
       <input
@@ -72,41 +71,38 @@ export default function ImportarCv({
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); if (inputRef.current) inputRef.current.value = ""; }}
       />
 
-      <AnimatePresence mode="wait">
-        {loading ? (
-          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2 py-3">
-            {isImageFlow ? <Sparkles className="w-7 h-7 animate-pulse" style={{ color: "#06B6D4" }} /> : <Loader2 className="w-7 h-7 animate-spin" style={{ color: "#06B6D4" }} />}
+      {loading ? (
+          <div key="loading" className="flex flex-col items-center gap-2 py-3">
+            {isImageFlow ? <Sparkles className="w-7 h-7 animate-pulse" style={{ color: "#FE0000" }} /> : <Loader2 className="w-7 h-7 animate-spin" style={{ color: "#FE0000" }} />}
             <p className="text-xs text-gray-500">
-              {isImageFlow ? "A IA está a ler a foto do teu CV..." : <>A estruturar dados de <span className="font-semibold">{fileName}</span> com IA...</>}
+              {isImageFlow ? "A ler a foto do teu CV..." : <>A estruturar dados de <span className="font-semibold">{fileName}</span>...</>}
             </p>
-          </motion.div>
+          </div>
         ) : success ? (
-          <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-2 py-3">
+          <div key="success" className="flex flex-col items-center gap-2 py-3">
             <CheckCircle2 className="w-7 h-7 text-emerald-500" />
             <p className="text-xs text-gray-600">
-              <span className="font-semibold">{fileName}</span> importado — revê os dados nos campos abaixo.
+              <span className="font-semibold">{fileName}</span> importado, revê os dados nos campos abaixo.
             </p>
-            <button onClick={() => inputRef.current?.click()} className="text-[11px] font-semibold text-gray-400 hover:text-[#06B6D4] mt-1">
+            <button onClick={() => inputRef.current?.click()} className="text-[11px] font-semibold text-gray-400 hover:text-[#FE0000] mt-1">
               Importar outro ficheiro
             </button>
-          </motion.div>
+          </div>
         ) : (
-          <motion.button
+          <button
             key="idle"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             onClick={() => inputRef.current?.click()}
             className="w-full flex flex-col items-center gap-2 py-3"
           >
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "rgba(6,182,212,0.12)" }}>
-              <UploadCloud className="w-6 h-6" style={{ color: "#06B6D4" }} />
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "rgba(254,0,0,0.12)" }}>
+              <UploadCloud className="w-6 h-6" style={{ color: "#FE0000" }} />
             </div>
-            <p className="text-sm font-semibold text-[#0D0D0D]">Já tens um CV? Importa e continua a partir dele</p>
+            <p className="text-sm font-semibold text-[#2A0001]">Já tens um CV? Importa e continua a partir dele</p>
             <p className="text-[11px] text-gray-400 flex items-center gap-1">
-              <FileText className="w-3 h-3" /> PDF, DOCX ou foto (JPG/PNG) — a IA lê e estrutura tudo
+              <FileText className="w-3 h-3" /> PDF, DOCX ou foto (JPG/PNG): lemos e estruturamos tudo automaticamente
             </p>
-          </motion.button>
+          </button>
         )}
-      </AnimatePresence>
 
       {error && (
         <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5 mt-3 text-left">

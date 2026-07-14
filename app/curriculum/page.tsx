@@ -1,7 +1,6 @@
 "use client";
 import { useState, useRef, useLayoutEffect, type ChangeEvent } from "react";
 import { authFetch } from "@/lib/auth-fetch";
-import { motion, type Variants } from "framer-motion";
 import {
   FileUser, Camera, Plus, Trash2, ChevronRight, ChevronLeft,
   Download, Eye, Lightbulb, Upload, Loader2, Globe2, Flag,
@@ -14,6 +13,13 @@ import DocumentosGerados from "@/components/premium/DocumentosGerados";
 import ImportarCv from "@/components/premium/ImportarCv";
 import CvMatchingVaga from "@/components/premium/CvMatchingVaga";
 import FotoVersoes from "@/components/premium/FotoVersoes";
+import CompraGate from "@/components/premium/CompraGate";
+import { useEntitlement } from "@/lib/use-entitlement";
+import { guardarDocumento } from "@/lib/documentos-client";
+import MeusDocumentos from "@/components/premium/MeusDocumentos";
+import ConversaoATS from "@/components/premium/ConversaoATS";
+import TraducaoCv from "@/components/premium/TraducaoCv";
+import SimulacaoEntrevista from "@/components/premium/SimulacaoEntrevista";
 import { checkPhotoQuality } from "@/lib/photo-enhance";
 import { gerarCvDocx, downloadBlob } from "@/lib/export-docx";
 
@@ -209,16 +215,11 @@ const niveisCEFR = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const stepsNacional = ["Dados Pessoais", "Formação", "Experiência", "Competências", "Info Adicional", "Pré-visualização"];
 const stepsEuropeu = ["Dados Pessoais", "Formação", "Experiência", "Competências", "Info Adicional", "Pré-visualização"];
 
-const fadeIn: Variants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
-
 /* ─── Tip Component ─── */
 function Tip({ text }: { text: string }) {
   return (
     <div className="flex items-start gap-2 mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-      <Lightbulb className="w-4 h-4 text-[#C9A84C] mt-0.5 shrink-0" />
+      <Lightbulb className="w-4 h-4 text-[#D20001] mt-0.5 shrink-0" />
       <p className="text-xs text-gray-600 leading-relaxed">{text}</p>
     </div>
   );
@@ -233,7 +234,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
       textTransform: "uppercase",
       letterSpacing: "2px",
       color: "#0D0D0D",
-      borderBottom: "0.5pt solid #C9A84C",
+      borderBottom: "0.5pt solid #D20001",
       paddingBottom: "1.5mm",
       marginBottom: "3.5mm",
       marginTop: 0,
@@ -262,8 +263,8 @@ function Card({ children, title, icon: Icon }: { children: React.ReactNode; titl
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 md:p-8 shadow-sm">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#C9A84C]/10 flex items-center justify-center">
-          <Icon className="w-5 h-5 text-[#C9A84C]" />
+        <div className="w-10 h-10 rounded-xl bg-[#D20001]/10 flex items-center justify-center">
+          <Icon className="w-5 h-5 text-[#D20001]" />
         </div>
         <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>{title}</h2>
       </div>
@@ -278,6 +279,8 @@ function AiTextarea({ value, onChange, contexto, placeholder, rows = 3 }: {
   const [loading, setLoading] = useState(false);
   const [original, setOriginal] = useState<string | null>(null);
 
+  // Melhorar com IA é livre e imediato — a cobrança acontece no download do
+  // CV final (que já inclui o texto melhorado), não em cada acção intermédia.
   async function melhorar() {
     if (!value.trim()) return;
     setLoading(true);
@@ -312,9 +315,9 @@ function AiTextarea({ value, onChange, contexto, placeholder, rows = 3 }: {
           disabled={loading || !value.trim()}
           className="flex items-center gap-1.5 text-xs font-bold disabled:opacity-40 px-4 py-2 rounded-xl transition-all active:scale-95"
           style={{
-            background: loading ? "#e9d5ff" : "linear-gradient(135deg, #7C3AED 0%, #A855F7 50%, #C084FC 100%)",
-            color: loading ? "#7C3AED" : "#fff",
-            boxShadow: loading ? "none" : "0 2px 8px rgba(124,58,237,0.3)",
+            background: loading ? "#FFE3E3" : "linear-gradient(135deg, #D20001 0%, #ED1D1D 50%, #FFD6D6 100%)",
+            color: loading ? "#D20001" : "#fff",
+            boxShadow: loading ? "none" : "0 2px 8px rgba(210,0,1,0.3)",
           }}
         >
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (
@@ -322,7 +325,7 @@ function AiTextarea({ value, onChange, contexto, placeholder, rows = 3 }: {
               <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
             </svg>
           )}
-          {loading ? "A optimizar..." : "Optimizar com IA"}
+          {loading ? "A optimizar..." : "Optimizar"}
         </button>
         {original && (
           <button
@@ -351,6 +354,8 @@ export default function CurriculumPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const scrollPosRef = useRef(0);
+  const criarCvEnt = useEntitlement("criar-cv-ia");
+  const [compraPendenteCv, setCompraPendenteCv] = useState(false);
 
   // Preserve scroll position on re-renders
   useLayoutEffect(() => {
@@ -438,17 +443,23 @@ export default function CurriculumPage() {
   };
 
   const handlePrint = () => {
+    if (criarCvEnt.checking) return;
+    if (!criarCvEnt.unlocked) { setCompraPendenteCv(true); return; }
     window.print();
   };
 
   const [gerandoDocx, setGerandoDocx] = useState(false);
   const handleDownloadWord = async () => {
+    if (criarCvEnt.checking) return;
+    if (!criarCvEnt.unlocked) { setCompraPendenteCv(true); return; }
     setGerandoDocx(true);
     try {
       const modelo = MODELOS.find(m => m.id === cvModelo) ?? MODELOS[0];
       const accentHex = modelo.accentColor.replace("#", "");
       const blob = await gerarCvDocx(data, accentHex);
-      downloadBlob(blob, `CV_${(data.nome || "curriculo").replace(/\s+/g, "_")}.docx`);
+      const nomeFicheiro = `CV_${(data.nome || "curriculo").replace(/\s+/g, "_")}.docx`;
+      downloadBlob(blob, nomeFicheiro);
+      guardarDocumento("cv", nomeFicheiro, blob);
     } catch {
       alert("Erro ao gerar o ficheiro Word. Tenta novamente.");
     } finally {
@@ -490,15 +501,21 @@ export default function CurriculumPage() {
   if (!cvType) {
     return (
       <main className="min-h-screen bg-gray-50 py-20 px-4">
-        <motion.div initial="hidden" animate="visible" variants={fadeIn} className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#C9A84C]/10 text-[#C9A84C] text-xs font-semibold mb-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D20001]/10 text-[#D20001] text-xs font-semibold mb-6">
             <FileUser className="w-4 h-4" /> CRIADOR DE CV
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-[#0D0D0D] mb-4" style={{ fontFamily: "var(--font-display)" }}>
-            Cria o teu Curriculum Vitae
+          <h1 className="text-3xl md:text-4xl font-bold text-[#2A0001] mb-4" style={{ fontFamily: "var(--font-display)" }}>
+            Um CV melhor dá mais chances de aceitação
           </h1>
-          <p className="text-gray-500 mb-8 max-w-xl mx-auto">
-            Escolhe o formato que melhor se adapta ao teu objectivo. Preenche os dados e descarrega um CV profissional em minutos.
+          <p className="text-gray-500 mb-3 max-w-xl mx-auto">
+            É por isso que a MUIANGA existe: aqui não encontras só vagas, crias, melhoras e adaptas o teu CV para te destacares na candidatura. Experimenta grátis; só pagas <span className="font-semibold text-[#2A0001]">200 MT</span> quando quiseres descarregar o resultado.
+          </p>
+          <p className="text-gray-300 text-xs mb-8 max-w-xl mx-auto">
+            Motor: MUIANGA IA, sistema dedicado a carreiras, desenvolvido por Fredson Muianga.
+          </p>
+          <p className="text-gray-400 text-sm mb-8 max-w-xl mx-auto">
+            Escolhe o formato que melhor se adapta ao teu objectivo. Preenche os dados em minutos e sai com um CV pronto a enviar.
           </p>
 
           <div className="max-w-md mx-auto mb-10">
@@ -509,14 +526,14 @@ export default function CurriculumPage() {
             {/* Nacional */}
             <button
               onClick={() => setCvType("nacional")}
-              className="group bg-white rounded-2xl border border-gray-100 p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#1D9E75]/30"
+              className="group bg-white rounded-2xl border border-gray-100 p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#D20001]/30"
             >
-              <div className="w-14 h-14 rounded-2xl bg-[#1D9E75]/10 flex items-center justify-center mb-4 group-hover:bg-[#1D9E75]/20 transition-colors">
-                <Flag className="w-7 h-7 text-[#1D9E75]" />
+              <div className="w-14 h-14 rounded-2xl bg-[#D20001]/10 flex items-center justify-center mb-4 group-hover:bg-[#D20001]/20 transition-colors">
+                <Flag className="w-7 h-7 text-[#D20001]" />
               </div>
               <h3 className="text-xl font-bold mb-2" style={{ fontFamily: "var(--font-display)" }}>Nacional (Moçambique)</h3>
               <p className="text-sm text-gray-500 mb-4">
-                Formato tradicional moçambicano, ideal para candidaturas em empresas nacionais, ONGs e instituições públicas.
+                Formato que os recrutadores em Moçambique esperam ver, ideal para candidaturas em empresas nacionais, ONGs e instituições públicas.
               </p>
               <div className="flex flex-wrap gap-2">
                 <span className="badge bg-emerald-50 text-emerald-700">Foto</span>
@@ -529,14 +546,14 @@ export default function CurriculumPage() {
             {/* Europeu */}
             <button
               onClick={() => setCvType("europeu")}
-              className="group bg-white rounded-2xl border border-gray-100 p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#C9A84C]/30"
+              className="group bg-white rounded-2xl border border-gray-100 p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#D20001]/30"
             >
-              <div className="w-14 h-14 rounded-2xl bg-[#C9A84C]/10 flex items-center justify-center mb-4 group-hover:bg-[#C9A84C]/20 transition-colors">
-                <Globe2 className="w-7 h-7 text-[#C9A84C]" />
+              <div className="w-14 h-14 rounded-2xl bg-[#D20001]/10 flex items-center justify-center mb-4 group-hover:bg-[#D20001]/20 transition-colors">
+                <Globe2 className="w-7 h-7 text-[#D20001]" />
               </div>
               <h3 className="text-xl font-bold mb-2" style={{ fontFamily: "var(--font-display)" }}>Europeu (Europass)</h3>
               <p className="text-sm text-gray-500 mb-4">
-                Formato Europass, reconhecido em toda a União Europeia. Ideal para quem quer trabalhar ou estudar na Europa.
+                Formato Europass, reconhecido em toda a União Europeia, aumenta as tuas hipóteses ao candidatares-te para trabalhar ou estudar na Europa.
               </p>
               <div className="flex flex-wrap gap-2">
                 <span className="badge bg-amber-50 text-amber-700">Europass</span>
@@ -545,7 +562,7 @@ export default function CurriculumPage() {
               </div>
             </button>
           </div>
-        </motion.div>
+        </div>
       </main>
     );
   }
@@ -559,9 +576,9 @@ export default function CurriculumPage() {
             onClick={() => setStep(i)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
               i === step
-                ? "bg-[#C9A84C] text-white"
+                ? "bg-[#D20001] text-white"
                 : i < step
-                ? "bg-[#1D9E75]/10 text-[#1D9E75]"
+                ? "bg-[#D20001]/10 text-[#D20001]"
                 : "bg-gray-100 text-gray-400"
             }`}
           >
@@ -633,13 +650,13 @@ export default function CurriculumPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => set("foto", data.fotoOriginal)}
-                    className={`text-xs px-3 py-1 rounded-lg border transition-all ${data.foto === data.fotoOriginal ? "border-[#C9A84C] bg-[#C9A84C]/10 text-[#C9A84C]" : "border-gray-200 text-gray-500"}`}
+                    className={`text-xs px-3 py-1 rounded-lg border transition-all ${data.foto === data.fotoOriginal ? "border-[#D20001] bg-[#D20001]/10 text-[#D20001]" : "border-gray-200 text-gray-500"}`}
                   >
                     Original
                   </button>
                   <button
                     onClick={() => set("foto", data.fotoProcessada)}
-                    className={`text-xs px-3 py-1 rounded-lg border transition-all ${data.foto === data.fotoProcessada ? "border-[#C9A84C] bg-[#C9A84C]/10 text-[#C9A84C]" : "border-gray-200 text-gray-500"}`}
+                    className={`text-xs px-3 py-1 rounded-lg border transition-all ${data.foto === data.fotoProcessada ? "border-[#D20001] bg-[#D20001]/10 text-[#D20001]" : "border-gray-200 text-gray-500"}`}
                   >
                     Transparente
                   </button>
@@ -660,7 +677,7 @@ export default function CurriculumPage() {
                     { color: "#0D0D0D", label: "Preto" },
                   ].map(({ color, label }) => (
                     <button key={color} onClick={() => applyBgColor(color)} title={label}
-                      className="w-7 h-7 rounded-full border-2 border-gray-200 hover:border-[#C9A84C] transition-all hover:scale-110"
+                      className="w-7 h-7 rounded-full border-2 border-gray-200 hover:border-[#D20001] transition-all hover:scale-110"
                       style={{ backgroundColor: color }}
                     />
                   ))}
@@ -903,7 +920,7 @@ export default function CurriculumPage() {
             </div>
             <div className="sm:col-span-2">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={exp.actualmente} onChange={e => updateExperiencia(i, "actualmente", e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#C9A84C] focus:ring-[#C9A84C]" />
+                <input type="checkbox" checked={exp.actualmente} onChange={e => updateExperiencia(i, "actualmente", e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#D20001] focus:ring-[#D20001]" />
                 <span className="text-sm text-gray-600">Actualmente nesta posição</span>
               </label>
             </div>
@@ -1244,12 +1261,12 @@ export default function CurriculumPage() {
             {data.experiencia.map((e, i) => (
               <div key={i} className="cv-entry" style={{ marginBottom: "5mm", display: "flex", gap: "6mm" }}>
                 <div style={{ width: "28mm", flexShrink: 0, fontSize: "9pt", color: accent, fontWeight: 700, paddingTop: "1pt", letterSpacing: "0.3px" }}>
-                  {e.dataInicio}{e.actualmente ? " — Presente" : e.dataFim ? ` — ${e.dataFim}` : ""}
+                  {e.dataInicio}{e.actualmente ? " - Presente" : e.dataFim ? ` - ${e.dataFim}` : ""}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: "11pt", color: "#0D0D0D" }}>{e.cargo}</div>
                   <div style={{ fontSize: "10pt", color: "#555", fontStyle: "italic", marginBottom: "1mm" }}>
-                    {e.empresa}{e.local ? ` — ${e.local}` : ""}
+                    {e.empresa}{e.local ? `, ${e.local}` : ""}
                   </div>
                   {e.descricao && (
                     <div style={{ margin: 0, color: "#333" }}>
@@ -1272,7 +1289,7 @@ export default function CurriculumPage() {
             {data.formacao.map((f, i) => (
               <div key={i} className="cv-entry" style={{ marginBottom: "4mm", display: "flex", gap: "6mm" }}>
                 <div style={{ width: "28mm", flexShrink: 0, fontSize: "9pt", color: accent, fontWeight: 700, paddingTop: "1pt", letterSpacing: "0.3px" }}>
-                  {f.anoInicio}{f.anoFim ? ` — ${f.anoFim}` : ""}
+                  {f.anoInicio}{f.anoFim ? ` - ${f.anoFim}` : ""}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: "11pt", color: "#0D0D0D" }}>
@@ -1555,11 +1572,11 @@ export default function CurriculumPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.5mm" }}>
                       <strong style={{ fontSize: "10.5pt", color: "#0D0D0D" }}>{e.cargo}</strong>
                       <span style={{ fontSize: "9pt", color: accent, fontWeight: 700, whiteSpace: "nowrap", marginLeft: "4mm" }}>
-                        {e.dataInicio}{e.actualmente ? " — Presente" : e.dataFim ? ` — ${e.dataFim}` : ""}
+                        {e.dataInicio}{e.actualmente ? " - Presente" : e.dataFim ? ` - ${e.dataFim}` : ""}
                       </span>
                     </div>
                     <div style={{ fontSize: "9.5pt", color: "#555", fontStyle: "italic", marginBottom: "1mm" }}>
-                      {e.empresa}{e.local ? ` — ${e.local}` : ""}
+                      {e.empresa}{e.local ? `, ${e.local}` : ""}
                     </div>
                     {e.descricao && (
                       <div style={{ color: "#333" }}>
@@ -1583,7 +1600,7 @@ export default function CurriculumPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.5mm" }}>
                       <strong style={{ fontSize: "10.5pt", color: "#0D0D0D" }}>{f.curso}{f.grau ? ` (${f.grau})` : ""}</strong>
                       <span style={{ fontSize: "9pt", color: accent, fontWeight: 700, whiteSpace: "nowrap", marginLeft: "4mm" }}>
-                        {f.anoInicio}{f.anoFim ? ` — ${f.anoFim}` : ""}
+                        {f.anoInicio}{f.anoFim ? ` - ${f.anoFim}` : ""}
                       </span>
                     </div>
                     <div style={{ fontSize: "9.5pt", color: "#555", fontStyle: "italic" }}>{f.instituicao}</div>
@@ -1649,11 +1666,11 @@ export default function CurriculumPage() {
   const modeloActual = MODELOS.find(m => m.id === cvModelo) ?? MODELOS[0];
 
   const stepPreview = (
-    <motion.div initial="hidden" animate="visible" variants={fadeIn}>
+    <div>
       <div className="flex items-center justify-between mb-6 print:hidden">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1D9E75]/10 flex items-center justify-center">
-            <Eye className="w-5 h-5 text-[#1D9E75]" />
+          <div className="w-10 h-10 rounded-xl bg-[#D20001]/10 flex items-center justify-center">
+            <Eye className="w-5 h-5 text-[#D20001]" />
           </div>
           <div>
             <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>Pré-visualização</h2>
@@ -1673,11 +1690,11 @@ export default function CurriculumPage() {
       {/* Selector de modelo */}
       <div className="bg-white border border-gray-100 rounded-2xl p-5 mb-5 print:hidden">
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-7 h-7 rounded-lg bg-[#C9A84C]/10 flex items-center justify-center">
-            <FileUser className="w-3.5 h-3.5 text-[#C9A84C]" />
+          <div className="w-7 h-7 rounded-lg bg-[#D20001]/10 flex items-center justify-center">
+            <FileUser className="w-3.5 h-3.5 text-[#D20001]" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-[#0D0D0D]">Escolhe o modelo</h3>
+            <h3 className="text-sm font-bold text-[#2A0001]">Escolhe o modelo</h3>
             <p className="text-[11px] text-gray-400">{MODELOS.length} designs profissionais para diferentes contextos</p>
           </div>
         </div>
@@ -1686,11 +1703,11 @@ export default function CurriculumPage() {
             <button
               key={m.id}
               onClick={() => setCvModelo(m.id)}
-              className={`text-left p-3 rounded-xl border-2 transition-all ${cvModelo === m.id ? "border-[#C9A84C] bg-[#C9A84C]/5" : "border-gray-100 hover:border-gray-300"}`}
+              className={`text-left p-3 rounded-xl border-2 transition-all ${cvModelo === m.id ? "border-[#D20001] bg-[#D20001]/5" : "border-gray-100 hover:border-gray-300"}`}
             >
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: m.accentColor }} />
-                <span className="text-sm font-bold text-[#0D0D0D]">{m.nome}</span>
+                <span className="text-sm font-bold text-[#2A0001]">{m.nome}</span>
               </div>
               <p className="text-[10px] text-gray-500 leading-tight">{m.descricao}</p>
             </button>
@@ -1703,18 +1720,51 @@ export default function CurriculumPage() {
         <CvAnaliseIA cvData={data as unknown as Record<string, unknown>} />
       </div>
 
+      {compraPendenteCv && (
+        <div className="mb-5 print:hidden">
+          <CompraGate servicoSlug="criar-cv-ia" servicoNome="Criar CV" onUnlock={() => setCompraPendenteCv(false)}>
+            {null}
+          </CompraGate>
+        </div>
+      )}
+
       {/* Compatibilidade com uma vaga específica */}
       <div className="mb-5 print:hidden">
         <CvMatchingVaga cvData={data as unknown as Record<string, unknown>} />
       </div>
 
-      {/* Carta de Apresentação + Requerimento */}
+      {/* Carta de Apresentação + Carta de Motivação + Requerimento */}
       <div className="mb-5 print:hidden">
         <DocumentosGerados cvData={data as unknown as Record<string, unknown>} />
       </div>
 
+      {/* Conversão para ATS */}
+      <div className="mb-5 print:hidden">
+        <ConversaoATS cvData={data as unknown as Record<string, unknown>} />
+      </div>
+
+      {/* Tradução de CV */}
+      <div className="mb-5 print:hidden">
+        <TraducaoCv cvData={data as unknown as Record<string, unknown>} />
+      </div>
+
+      {/* Simulação de Entrevista */}
+      <div className="mb-5 print:hidden">
+        <SimulacaoEntrevista cvData={data as unknown as Record<string, unknown>} />
+      </div>
+
+      {/* Os teus documentos já pagos/gerados */}
+      <div className="mb-5 print:hidden">
+        <MeusDocumentos />
+      </div>
+
       {/* Sidebar layout só se modelo "moderno"; outros modelos usam layout single mesmo para Europeu */}
-      {modeloActual.layout === "sidebar" ? <PreviewEuropeu /> : <PreviewNacional />}
+      {/* O documento tem largura real de A4 (210mm) — em ecrãs estreitos isso
+          teria de "sair" da página; contém-se o overflow aqui, num scroll
+          horizontal só desta caixa, para a página nunca ganhar scroll lateral. */}
+      <div className="overflow-x-auto max-w-full print:overflow-visible">
+        {modeloActual.layout === "sidebar" ? <PreviewEuropeu /> : <PreviewNacional />}
+      </div>
       <div className="text-center mt-6 print:hidden flex flex-wrap justify-center gap-3">
         <button onClick={handlePrint} className="btn-green">
           <Download className="w-4 h-4" /> Descarregar / Imprimir CV
@@ -1723,7 +1773,7 @@ export default function CurriculumPage() {
           {gerandoDocx ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Word (.docx)
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 
   /* ─── RENDER ─── */
@@ -1766,11 +1816,11 @@ export default function CurriculumPage() {
         <div className="max-w-3xl mx-auto print:max-w-none">
           {/* Header */}
           <div className="text-center mb-8 print:hidden">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#C9A84C]/10 text-[#C9A84C] text-xs font-semibold mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D20001]/10 text-[#D20001] text-xs font-semibold mb-4">
               <FileUser className="w-4 h-4" />
               {cvType === "nacional" ? "CV NACIONAL" : "CV EUROPASS"}
             </div>
-            <h1 className="text-2xl font-bold text-[#0D0D0D]" style={{ fontFamily: "var(--font-display)" }}>
+            <h1 className="text-2xl font-bold text-[#2A0001]" style={{ fontFamily: "var(--font-display)" }}>
               Criador de Curriculum Vitae
             </h1>
           </div>

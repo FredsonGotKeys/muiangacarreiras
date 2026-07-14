@@ -14,7 +14,6 @@
     "clsx": "^2.1.1",
     "docx": "^9.7.1",
     "eslint-config-next": "^15.5.20",
-    "framer-motion": "^11.18.2",
     "lucide-react": "^1.18.0",
     "mammoth": "^1.12.0",
     "next": "^15.5.20",

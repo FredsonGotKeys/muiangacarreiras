@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Boladas & Emprego",
+  title: "Vagas de Emprego",
   description: "Vagas de emprego em Moçambique actualizadas diariamente. Candidate-se de forma simples e rápida com a MUIANGA CARREIRAS.",
   openGraph: {
-    title: "Boladas & Emprego | MUIANGA CARREIRAS",
+    title: "Vagas de Emprego | MUIANGA CARREIRAS",
     description: "Vagas de emprego em Moçambique actualizadas diariamente.",
     url: "https://muiangaconsultores.co.mz/emprego",
   },

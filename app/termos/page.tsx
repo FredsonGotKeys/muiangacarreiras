@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Termos de Uso — MUIANGA CARREIRAS",
+  title: "Termos de Uso: MUIANGA CARREIRAS",
   description: "Termos e condições de utilização da plataforma MUIANGA CARREIRAS.",
 };
 
@@ -8,8 +8,8 @@ const YEAR = new Date().getFullYear();
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-10">
-      <h2 className="text-lg font-bold text-[#0D0D0D] mb-3 flex items-center gap-2">
-        <span className="w-1 h-5 bg-[#C9A84C] rounded-full inline-block shrink-0" />
+      <h2 className="text-lg font-bold text-[#2A0001] mb-3 flex items-center gap-2">
+        <span className="w-1 h-5 bg-[#D20001] rounded-full inline-block shrink-0" />
         {title}
       </h2>
       <div className="text-gray-600 text-sm leading-relaxed space-y-2">{children}</div>
@@ -21,12 +21,12 @@ export default function TermosPage() {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero */}
-      <section className="pt-24 sm:pt-32 pb-8 border-b border-gray-100 bg-[#F8F5EF]">
+      <section className="pt-24 sm:pt-32 pb-8 border-b border-gray-100 bg-[#FFF8F8]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#C9A84C]/10 text-[#C9A84C] border border-[#C9A84C]/20 mb-4">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#D20001]/10 text-[#D20001] border border-[#D20001]/20 mb-4">
             Legal
           </span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#0D0D0D] mb-3">Termos de Uso</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#2A0001] mb-3">Termos de Uso</h1>
           <p className="text-gray-400 text-sm">Última actualização: Janeiro de {YEAR}</p>
         </div>
       </section>
@@ -34,17 +34,17 @@ export default function TermosPage() {
       {/* Conteúdo */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
 
-        <div className="bg-[#F8F5EF] border border-amber-100 rounded-2xl p-5 mb-10 text-sm text-gray-600 leading-relaxed">
-          Ao aceder e utilizar a plataforma <strong className="text-[#0D0D0D]">MUIANGA CARREIRAS</strong> (disponível em muiangaconsultores.co.mz), declara que leu, compreendeu e aceita os presentes Termos de Uso na íntegra. Caso não concorde com alguma das condições, deverá cessar imediatamente a utilização da plataforma.
+        <div className="bg-[#FFF8F8] border border-amber-100 rounded-2xl p-5 mb-10 text-sm text-gray-600 leading-relaxed">
+          Ao aceder e utilizar a plataforma <strong className="text-[#2A0001]">MUIANGA CARREIRAS</strong> (disponível em muiangaconsultores.co.mz), declara que leu, compreendeu e aceita os presentes Termos de Uso na íntegra. Caso não concorde com alguma das condições, deverá cessar imediatamente a utilização da plataforma.
         </div>
 
         <Section title="1. Identificação da Empresa">
-          <p><strong className="text-[#0D0D0D]">MUIANGA CARREIRAS</strong> é uma empresa de consultoria multifuncional sediada em Maputo, Moçambique, que opera uma plataforma digital de serviços de consultoria, boladas (micro-trabalhos) e vagas de emprego destinada ao mercado Moçambicano e à lusofonia (Angola, Brasil, Portugal e PALOP).</p>
+          <p><strong className="text-[#2A0001]">MUIANGA CARREIRAS</strong> é uma empresa de consultoria multifuncional sediada em Maputo, Moçambique, que opera uma plataforma digital de serviços de consultoria, boladas (micro-trabalhos) e vagas de emprego destinada ao mercado Moçambicano e à lusofonia (Angola, Brasil, Portugal e PALOP).</p>
           <p>Contactos oficiais:</p>
           <ul className="list-disc pl-5 space-y-1">
-            <li>Email: <a href="mailto:minville@outlook.pt" className="text-[#C9A84C] hover:underline">minville@outlook.pt</a></li>
-            <li>E-Mola: <strong className="text-[#0D0D0D]">876 252 006</strong> (Fredson Muianga)</li>
-            <li>M-Pesa: <strong className="text-[#0D0D0D]">846 283 051</strong> (Fredson Muianga)</li>
+            <li>Email: <a href="mailto:minville@outlook.pt" className="text-[#D20001] hover:underline">minville@outlook.pt</a></li>
+            <li>E-Mola: <strong className="text-[#2A0001]">876 252 006</strong> (Fredson Muianga)</li>
+            <li>M-Pesa: <strong className="text-[#2A0001]">846 283 051</strong> (Fredson Muianga)</li>
             <li>Localização: Maputo, Moçambique</li>
           </ul>
         </Section>
@@ -60,16 +60,16 @@ export default function TermosPage() {
           <p>A MUIANGA CARREIRAS reserva-se o direito de suspender ou eliminar contas que violem os presentes termos, sem aviso prévio.</p>
         </Section>
 
-        <Section title="3. Plano Premium — Subscrição Mensal">
-          <p>O acesso às funcionalidades de candidatura a vagas de emprego requer uma subscrição activa no valor de <strong className="text-[#0D0D0D]">199 MT por mês</strong> (trinta dias corridos).</p>
-          <p><strong className="text-[#0D0D0D]">Métodos de pagamento aceites:</strong></p>
+        <Section title="3. Plano Premium: Subscrição Mensal">
+          <p>O acesso às funcionalidades de candidatura a vagas de emprego requer uma subscrição activa no valor de <strong className="text-[#2A0001]">199 MT por mês</strong> (trinta dias corridos).</p>
+          <p><strong className="text-[#2A0001]">Métodos de pagamento aceites:</strong></p>
           <ul className="list-disc pl-5 space-y-1">
-            <li>E-Mola: <strong>876 252 006</strong> — em nome de Fredson Muianga</li>
-            <li>M-Pesa: <strong>846 283 051</strong> — em nome de Fredson Muianga</li>
+            <li>E-Mola: <strong>876 252 006</strong>, em nome de Fredson Muianga</li>
+            <li>M-Pesa: <strong>846 283 051</strong>, em nome de Fredson Muianga</li>
           </ul>
-          <p>Após o pagamento, o utilizador deve submeter a referência da transacção na plataforma. A activação é efectuada manualmente em até <strong className="text-[#0D0D0D]">24 horas úteis</strong>.</p>
+          <p>Após o pagamento, o utilizador deve submeter a referência da transacção na plataforma. A activação é efectuada manualmente em até <strong className="text-[#2A0001]">24 horas úteis</strong>.</p>
           <p>A subscrição não é renovada automaticamente. O utilizador é responsável por renovar o acesso antes do término do período contratado. A expiração da subscrição implica a desactivação imediata das funcionalidades premium.</p>
-          <p><strong className="text-[#0D0D0D]">Política de reembolso:</strong> Não são efectuados reembolsos após a activação do período de acesso, salvo em casos de erro comprovado da parte da MUIANGA CARREIRAS.</p>
+          <p><strong className="text-[#2A0001]">Política de reembolso:</strong> Não são efectuados reembolsos após a activação do período de acesso, salvo em casos de erro comprovado da parte da MUIANGA CARREIRAS.</p>
         </Section>
 
         <Section title="4. Boladas (Micro-trabalhos)">
@@ -100,7 +100,7 @@ export default function TermosPage() {
         </Section>
 
         <Section title="7. Propriedade Intelectual">
-          <p>Todo o conteúdo da plataforma — incluindo textos, logótipos, design, código-fonte e identidade visual — é propriedade exclusiva da MUIANGA CARREIRAS e está protegido pela legislação moçambicana e internacional de propriedade intelectual.</p>
+          <p>Todo o conteúdo da plataforma, incluindo textos, logótipos, design, código-fonte e identidade visual, é propriedade exclusiva da MUIANGA CARREIRAS e está protegido pela legislação moçambicana e internacional de propriedade intelectual.</p>
           <p>É proibida a reprodução, distribuição ou utilização comercial de qualquer elemento sem autorização prévia e escrita da MUIANGA CARREIRAS.</p>
         </Section>
 
@@ -112,7 +112,7 @@ export default function TermosPage() {
             <li>Comunicações relacionadas com o serviço.</li>
           </ul>
           <p>Os dados são armazenados de forma segura através da plataforma Supabase (servidores na Europa) e não são vendidos nem partilhados com terceiros sem consentimento, excepto quando exigido por lei.</p>
-          <p>O utilizador tem o direito de solicitar a eliminação dos seus dados a qualquer momento, contactando <a href="mailto:minville@outlook.pt" className="text-[#C9A84C] hover:underline">minville@outlook.pt</a>.</p>
+          <p>O utilizador tem o direito de solicitar a eliminação dos seus dados a qualquer momento, contactando <a href="mailto:minville@outlook.pt" className="text-[#D20001] hover:underline">minville@outlook.pt</a>.</p>
         </Section>
 
         <Section title="9. Limitação de Responsabilidade">
@@ -137,8 +137,8 @@ export default function TermosPage() {
 
         <div className="border-t border-gray-100 pt-8 mt-4">
           <p className="text-xs text-gray-400 leading-relaxed">
-            Para qualquer questão relativa a estes termos, contacte-nos em <a href="mailto:minville@outlook.pt" className="text-[#C9A84C] hover:underline">minville@outlook.pt</a> ou através dos nossos números de pagamento móvel.<br/>
-            &copy; {YEAR} MUIANGA CARREIRAS — Todos os direitos reservados. Maputo, Moçambique.
+            Para qualquer questão relativa a estes termos, contacte-nos em <a href="mailto:minville@outlook.pt" className="text-[#D20001] hover:underline">minville@outlook.pt</a> ou através dos nossos números de pagamento móvel.<br/>
+            &copy; {YEAR} MUIANGA CARREIRAS. Todos os direitos reservados. Maputo, Moçambique.
           </p>
         </div>
       </div>

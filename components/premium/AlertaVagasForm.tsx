@@ -39,27 +39,27 @@ export default function AlertaVagasForm() {
   if (ok) {
     return (
       <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-3 text-sm text-emerald-700">
-        <CheckCircle2 className="w-4 h-4 shrink-0" /> Alerta criado — vamos avisar-te por email quando surgir uma vaga compatível.
+        <CheckCircle2 className="w-4 h-4 shrink-0" /> Alerta criado. Vamos avisar-te por email quando surgir uma vaga compatível.
       </div>
     );
   }
 
   return (
-    <div className="bg-[#F8F5EF] border border-gray-100 rounded-2xl p-4">
+    <div className="bg-[#FFF8F8] border border-gray-100 rounded-2xl p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Bell className="w-4 h-4 text-[#C9A84C]" />
-        <p className="text-sm font-bold text-[#0D0D0D]">Recebe alertas de novas vagas por email</p>
+        <Bell className="w-4 h-4 text-[#D20001]" />
+        <p className="text-sm font-bold text-[#2A0001]">Recebe alertas de novas vagas por email</p>
       </div>
       <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
         <input
           type="email" value={email} onChange={(e) => setEmail(e.target.value)}
           placeholder="O teu email"
-          className="border border-gray-200 rounded-xl text-sm px-3 py-2.5 focus:outline-none focus:border-[#C9A84C]"
+          className="border border-gray-200 rounded-xl text-sm px-3 py-2.5 focus:outline-none focus:border-[#D20001]"
         />
         <input
           value={palavrasChave} onChange={(e) => setPalavrasChave(e.target.value)}
           placeholder="Palavras-chave (ex: TI, Maputo)"
-          className="border border-gray-200 rounded-xl text-sm px-3 py-2.5 focus:outline-none focus:border-[#C9A84C]"
+          className="border border-gray-200 rounded-xl text-sm px-3 py-2.5 focus:outline-none focus:border-[#D20001]"
         />
         <button onClick={subscrever} disabled={loading} className="btn-primary text-sm px-4 py-2.5 disabled:opacity-60">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar alerta"}

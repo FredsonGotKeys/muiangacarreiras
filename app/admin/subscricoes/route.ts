@@ -1,25 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { timingSafeEqual } from "crypto";
 import { rateLimit, getIp } from "@/lib/api-utils";
-
-/** Comparação em tempo constante — evita timing attack na password do admin. */
-function safeEqual(a: string, b: string): boolean {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return timingSafeEqual(bufA, bufB);
-}
+import { safeEqual, isAdminAuthed } from "@/lib/admin-auth";
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-function isAdminAuthed(req: NextRequest): boolean {
-  const cookie = req.cookies.get("admin_session")?.value;
-  return cookie === process.env.ADMIN_SESSION_TOKEN;
-}
 
 // GET — listar subscrições com email dos utilizadores
 export async function GET(req: NextRequest) {

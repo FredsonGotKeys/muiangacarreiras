@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { X, CheckCircle2, Loader2, AlertCircle, ExternalLink, Smartphone } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
+import { getCatalogoItem, type TipoCatalogo, type CatalogoItem } from "@/lib/catalogo-client";
 
 type Fase = "metodo" | "aguardando" | "sucesso";
 type Metodo = "mpesa" | "emola" | "card";
@@ -17,10 +18,18 @@ export default function ZumboPayModal({
   initialFase = "metodo",
   onClose,
   onSuccess,
+  tipo,
+  slug,
+  tituloSucesso,
+  subtituloSucesso,
 }: {
   initialFase?: Fase;
   onClose: () => void;
   onSuccess: () => void;
+  tipo: TipoCatalogo;
+  slug: string;
+  tituloSucesso?: string;
+  subtituloSucesso?: string;
 }) {
   const [fase, setFase] = useState<Fase>(initialFase);
   const [metodo, setMetodo] = useState<Metodo>("mpesa");
@@ -28,6 +37,14 @@ export default function ZumboPayModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aguardandoMsg, setAguardandoMsg] = useState("");
+  const [item, setItem] = useState<CatalogoItem | null>(null);
+  const [itemErro, setItemErro] = useState(false);
+
+  useEffect(() => {
+    getCatalogoItem(tipo, slug).then((i) => {
+      if (i) setItem(i); else setItemErro(true);
+    });
+  }, [tipo, slug]);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -58,7 +75,11 @@ export default function ZumboPayModal({
 
   async function checkStatus(): Promise<"active" | "pending" | "blocked" | "error"> {
     try {
-      const res = await authFetch("/api/zumbopay/confirmar", { method: "POST" });
+      const res = await authFetch("/api/zumbopay/confirmar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo, itemId: item?.id }),
+      });
       if (res.status === 403) return "blocked";
       if (!res.ok) return "error";
       const d = await res.json();
@@ -91,6 +112,10 @@ export default function ZumboPayModal({
 
   async function iniciarPagamento() {
     setError(null);
+    if (!item) {
+      setError("Item indisponível de momento. Tenta novamente.");
+      return;
+    }
     if ((metodo === "mpesa" || metodo === "emola") && !/^\d{9}$/.test(telefone.replace(/\D/g, ""))) {
       setError("Indica um número de telefone válido (9 dígitos).");
       return;
@@ -100,7 +125,7 @@ export default function ZumboPayModal({
       const res = await authFetch("/api/zumbopay/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ metodo, telefone: telefone.replace(/\D/g, "") }),
+        body: JSON.stringify({ tipo, itemId: item.id, metodo, telefone: telefone.replace(/\D/g, "") }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -130,15 +155,17 @@ export default function ZumboPayModal({
     }
   }
 
+  const precoLabel = item ? `${item.preco_mt} MT` : "...";
+
   const headerTitle =
-    fase === "sucesso"    ? "Acesso Activado!" :
+    fase === "sucesso"    ? (tituloSucesso ?? "Compra confirmada!") :
     fase === "aguardando" ? "A confirmar pagamento..." :
     "Escolhe o método de pagamento";
 
   const headerSub =
-    fase === "sucesso"    ? "30 dias de acesso completo às vagas" :
+    fase === "sucesso"    ? (subtituloSucesso ?? `Já podes usar: ${item?.nome ?? ""}`) :
     fase === "aguardando" ? "Não feches esta janela" :
-    "199 MT/mês · pagamento seguro";
+    itemErro ? "Item indisponível" : `${precoLabel} · pagamento seguro`;
 
   return (
     <>
@@ -154,7 +181,7 @@ export default function ZumboPayModal({
 
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
             <div>
-              <h2 className="text-lg font-bold text-[#0D0D0D]">{headerTitle}</h2>
+              <h2 className="text-lg font-bold text-[#2A0001]">{headerTitle}</h2>
               <p className="text-xs text-gray-400 mt-0.5">{headerSub}</p>
             </div>
             {fase !== "aguardando" && (
@@ -176,13 +203,13 @@ export default function ZumboPayModal({
                       key={m.id}
                       onClick={() => setMetodo(m.id)}
                       className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all min-h-[92px] ${
-                        metodo === m.id ? "border-[#C9A84C] bg-[#C9A84C]/5" : "border-gray-100 hover:border-gray-300"
+                        metodo === m.id ? "border-[#D20001] bg-[#D20001]/5" : "border-gray-100 hover:border-gray-300"
                       }`}
                     >
                       <div className="h-7 flex items-center justify-center">
                         <Image src={m.logo} alt={m.label} width={64} height={28} className="h-7 w-auto object-contain" />
                       </div>
-                      <span className="text-xs font-bold text-[#0D0D0D]">{m.label}</span>
+                      <span className="text-xs font-bold text-[#2A0001]">{m.label}</span>
                       <span className="text-[10px] text-gray-400 text-center leading-tight">{m.hint}</span>
                     </button>
                   ))}
@@ -198,7 +225,7 @@ export default function ZumboPayModal({
                       value={telefone}
                       onChange={(e) => setTelefone(e.target.value.replace(/\D/g, "").slice(0, 9))}
                       placeholder="84 123 4567"
-                      className="w-full border border-gray-200 rounded-xl text-sm px-4 py-3 focus:outline-none focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/10 transition-all"
+                      className="w-full border border-gray-200 rounded-xl text-sm px-4 py-3 focus:outline-none focus:border-[#D20001] focus:ring-2 focus:ring-[#D20001]/10 transition-all"
                     />
                   </div>
                 )}
@@ -212,14 +239,16 @@ export default function ZumboPayModal({
 
                 <button
                   onClick={iniciarPagamento}
-                  disabled={loading}
-                  className="w-full bg-[#C9A84C] hover:bg-[#B8943E] disabled:opacity-60 text-white font-bold py-4 rounded-2xl transition-all text-sm flex items-center justify-center gap-2 active:scale-[0.98]"
+                  disabled={loading || !item}
+                  className="w-full bg-[#D20001] hover:bg-[#B40001] disabled:opacity-60 text-white font-bold py-4 rounded-2xl transition-all text-sm flex items-center justify-center gap-2 active:scale-[0.98]"
                 >
                   {loading
                     ? <><Loader2 size={16} className="animate-spin" /> A iniciar...</>
+                    : !item
+                    ? <><Loader2 size={16} className="animate-spin" /> A carregar...</>
                     : metodo === "card"
                     ? <><ExternalLink size={16} /> Continuar para pagamento</>
-                    : <><Smartphone size={16} /> Pagar 199 MT com {metodo === "mpesa" ? "M-Pesa" : "e-Mola"}</>}
+                    : <><Smartphone size={16} /> Pagar {precoLabel} com {metodo === "mpesa" ? "M-Pesa" : "e-Mola"}</>}
                 </button>
               </div>
             )}
@@ -227,12 +256,12 @@ export default function ZumboPayModal({
             {/* FASE: aguardando confirmação (STK push) */}
             {fase === "aguardando" && (
               <div className="p-8 flex flex-col items-center justify-center gap-5 text-center flex-1">
-                <div className="w-16 h-16 bg-[#C9A84C]/10 rounded-2xl flex items-center justify-center">
-                  <Loader2 size={32} className="text-[#C9A84C] animate-spin" />
+                <div className="w-16 h-16 bg-[#D20001]/10 rounded-2xl flex items-center justify-center">
+                  <Loader2 size={32} className="text-[#D20001] animate-spin" />
                 </div>
                 <div>
-                  <p className="font-bold text-[#0D0D0D] text-base">{aguardandoMsg}</p>
-                  <p className="text-sm text-gray-400 mt-1">A confirmação é automática — aguarda um momento</p>
+                  <p className="font-bold text-[#2A0001] text-base">{aguardandoMsg}</p>
+                  <p className="text-sm text-gray-400 mt-1">A confirmação é automática, aguarda um momento</p>
                 </div>
                 {error && (
                   <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-3 w-full">
@@ -247,16 +276,16 @@ export default function ZumboPayModal({
             {fase === "sucesso" && (
               <div className="p-6 flex flex-col gap-5">
                 <div className="text-center pt-2">
-                  <div className="w-16 h-16 bg-[#1D9E75]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle2 size={36} className="text-[#1D9E75]" />
+                  <div className="w-16 h-16 bg-[#D20001]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 size={36} className="text-[#D20001]" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#0D0D0D] mb-1">Acesso activado!</h3>
-                  <p className="text-sm text-gray-400">30 dias de acesso completo às vagas.</p>
+                  <h3 className="text-xl font-bold text-[#2A0001] mb-1">Compra confirmada!</h3>
+                  <p className="text-sm text-gray-400">{`Já podes usar: ${item?.nome ?? "o serviço"}.`}</p>
                 </div>
 
                 <button onClick={() => { onSuccess(); onClose(); }}
-                  className="w-full bg-[#C9A84C] hover:bg-[#B8943E] text-white font-bold py-4 rounded-2xl transition-all text-sm active:scale-[0.98]">
-                  Ver vagas →
+                  className="w-full bg-[#D20001] hover:bg-[#B40001] text-white font-bold py-4 rounded-2xl transition-all text-sm active:scale-[0.98]">
+                  Continuar →
                 </button>
               </div>
             )}

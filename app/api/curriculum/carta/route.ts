@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { rateLimit, getIp, rateLimitedResponse, str } from "@/lib/api-utils";
+import { chatCompletion } from "@/lib/llm";
 
 /**
  * Gera Carta de Apresentação personalizada a partir dos dados do CV.
@@ -51,9 +52,6 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
-
   try {
     const body = await req.json().catch(() => null);
     if (!body?.cvData || typeof body.cvData !== "object") {
@@ -82,28 +80,20 @@ REGRAS ABSOLUTAS:
 
     const userMsg = `${contexto}\n\nDados do candidato:\n${resumo}`;
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        max_tokens: 700,
-        temperature: 0.5,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMsg },
-        ],
-      }),
+    const result = await chatCompletion({
+      maxTokens: 700,
+      temperature: 0.5,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMsg },
+      ],
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      console.error("Groq carta error:", err);
+    if (!result.ok) {
       return NextResponse.json({ error: "Erro ao gerar carta." }, { status: 502 });
     }
 
-    const data = await res.json();
-    const carta = data.choices?.[0]?.message?.content ?? "";
+    const carta = result.content;
     if (!carta.trim()) return NextResponse.json({ error: "Não foi possível gerar a carta." }, { status: 502 });
 
     return NextResponse.json({ carta });

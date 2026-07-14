@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { rateLimit, getIp, rateLimitedResponse, str } from "@/lib/api-utils";
 import { logError } from "@/lib/logger";
+import { chatCompletion } from "@/lib/llm";
 
 /** Revisão científica: corrige gramática, ortografia e coerência de um texto já escrito pelo utilizador. */
 export async function POST(req: NextRequest) {
@@ -16,9 +17,6 @@ export async function POST(req: NextRequest) {
   );
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
-
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
 
   const body = await req.json().catch(() => null);
   const texto = str(body?.texto, 12000);
@@ -35,28 +33,20 @@ REGRAS:
 Devolve APENAS JSON válido: { "textoCorrigido": "...", "alteracoes": ["resumo curto de cada alteração relevante feita", "..."] }`;
 
   try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        max_tokens: 4000,
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: texto },
-        ],
-      }),
+    const result = await chatCompletion({
+      maxTokens: 4000,
+      temperature: 0.2,
+      jsonMode: true,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: texto },
+      ],
     });
-    if (!res.ok) {
-      const err = await res.text().catch(() => "");
-      await logError({ route: "/api/academico/revisao", message: "Groq falhou", detail: err, userId: user.id, statusCode: res.status });
+    if (!result.ok) {
+      await logError({ route: "/api/academico/revisao", message: "Geração falhou", detail: `HTTP ${result.status}`, userId: user.id, statusCode: result.status });
       return NextResponse.json({ error: "Erro ao rever o texto." }, { status: 502 });
     }
-    const data = await res.json();
-    const raw = data.choices?.[0]?.message?.content ?? "{}";
-    return NextResponse.json(JSON.parse(raw));
+    return NextResponse.json(JSON.parse(result.content || "{}"));
   } catch (e) {
     await logError({ route: "/api/academico/revisao", message: "Erro interno", detail: String(e), userId: user.id });
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });

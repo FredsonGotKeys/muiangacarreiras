@@ -5,8 +5,8 @@ export default function NotFound() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
       <div className="text-center max-w-md">
-        <p className="text-[120px] font-black text-[#C9A84C] leading-none mb-2" style={{ fontFamily: "var(--font-display)" }}>404</p>
-        <h1 className="text-2xl font-bold text-[#0D0D0D] mb-3">Página não encontrada</h1>
+        <p className="text-[120px] font-black text-[#D20001] leading-none mb-2" style={{ fontFamily: "var(--font-display)" }}>404</p>
+        <h1 className="text-2xl font-bold text-[#2A0001] mb-3">Página não encontrada</h1>
         <p className="text-gray-400 text-sm leading-relaxed mb-8">
           A página que procuras não existe ou foi movida. Verifica o endereço ou volta ao início.
         </p>

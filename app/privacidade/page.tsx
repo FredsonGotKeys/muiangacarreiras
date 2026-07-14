@@ -1,7 +1,7 @@
 ﻿import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidade — MUIANGA Carreiras",
+  title: "Política de Privacidade: MUIANGA Carreiras",
   description: "Como recolhemos, usamos e protegemos os teus dados pessoais.",
 };
 
@@ -52,16 +52,16 @@ export default function PrivacidadePage() {
   return (
     <div className="bg-white min-h-screen">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24 sm:py-32">
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#C9A84C]/10 text-[#C9A84C] border border-[#C9A84C]/20 mb-4">
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#D20001]/10 text-[#D20001] border border-[#D20001]/20 mb-4">
           Legal
         </span>
-        <h1 className="text-3xl sm:text-4xl font-bold text-[#0D0D0D] mb-3">Política de Privacidade</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-[#2A0001] mb-3">Política de Privacidade</h1>
         <p className="text-gray-400 text-sm mb-10">Última actualização: Junho de 2026</p>
 
         <div className="space-y-8">
           {sections.map(({ title, body }) => (
             <div key={title}>
-              <h2 className="text-base font-bold text-[#0D0D0D] mb-2">{title}</h2>
+              <h2 className="text-base font-bold text-[#2A0001] mb-2">{title}</h2>
               <p className="text-gray-500 text-sm leading-relaxed">{body}</p>
             </div>
           ))}
