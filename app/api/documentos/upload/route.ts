@@ -32,7 +32,7 @@ const SERVICO_POR_TIPO: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
-  if (!rateLimit(getIp(req), 10)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 10))) return rateLimitedResponse();
 
   const auth = req.headers.get("authorization")?.replace("Bearer ", "");
   if (!auth) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });

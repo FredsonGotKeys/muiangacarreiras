@@ -9,7 +9,7 @@ const sbAdmin = createClient(
 
 /** Gera uma URL assinada (5 min) para re-descarregar um documento já pago. */
 export async function POST(req: NextRequest) {
-  if (!rateLimit(getIp(req), 20)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 20))) return rateLimitedResponse();
 
   const auth = req.headers.get("authorization")?.replace("Bearer ", "");
   if (!auth) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });

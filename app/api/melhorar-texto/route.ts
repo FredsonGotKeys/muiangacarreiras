@@ -16,7 +16,7 @@ async function getUser(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!rateLimit(getIp(req), 12)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 12))) return rateLimitedResponse();
 
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });

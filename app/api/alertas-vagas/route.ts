@@ -8,7 +8,7 @@ import { rateLimit, getIp, str, email as emailV, rateLimitedResponse, validation
  * (substring no título/categoria da vaga) em vez de correspondência de perfil completo.
  */
 export async function POST(req: NextRequest) {
-  if (!rateLimit(getIp(req), 5)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 5))) return rateLimitedResponse();
 
   const body = await req.json().catch(() => null);
   if (!body) return validationError();

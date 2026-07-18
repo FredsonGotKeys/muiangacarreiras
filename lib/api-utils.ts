@@ -1,18 +1,43 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-// ── Rate limiting em memória (por IP, reset a cada minuto)
-const rateLimitMap = new Map<string, { count: number; reset: number }>();
+const sbRateLimit = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 
-export function rateLimit(ip: string, maxPerMinute = 10): boolean {
+// ── Fallback em memória — só usado se a base de dados estiver indisponível,
+// para uma falha transitória da BD nunca derrubar o site inteiro.
+const rateLimitFallback = new Map<string, { count: number; reset: number }>();
+function rateLimitEmMemoria(ip: string, maxPerMinute: number): boolean {
   const now = Date.now();
-  const entry = rateLimitMap.get(ip);
+  const entry = rateLimitFallback.get(ip);
   if (!entry || now > entry.reset) {
-    rateLimitMap.set(ip, { count: 1, reset: now + 60_000 });
-    return true; // permitido
+    rateLimitFallback.set(ip, { count: 1, reset: now + 60_000 });
+    return true;
   }
-  if (entry.count >= maxPerMinute) return false; // bloqueado
+  if (entry.count >= maxPerMinute) return false;
   entry.count++;
   return true;
+}
+
+/**
+ * Rate limiting persistente (tabela `rate_limits` + função `rate_limit_check`
+ * atómica no Postgres) — ao contrário de um Map em memória, funciona
+ * correctamente entre instâncias serverless da Vercel, que não partilham
+ * processo nem memória entre pedidos.
+ */
+export async function rateLimit(ip: string, maxPerMinute = 10): Promise<boolean> {
+  const { data, error } = await sbRateLimit.rpc("rate_limit_check", {
+    p_chave: ip,
+    p_max: maxPerMinute,
+    p_janela_seg: 60,
+  });
+  if (error) {
+    console.error("rate_limit_check falhou, a usar fallback em memória:", error.message);
+    return rateLimitEmMemoria(ip, maxPerMinute);
+  }
+  return Boolean(data);
 }
 
 export function getIp(req: Request): string {

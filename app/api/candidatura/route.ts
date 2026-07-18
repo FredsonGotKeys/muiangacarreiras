@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { sendEmail, templates } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
-  if (!rateLimit(getIp(req), 5)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 5))) return rateLimitedResponse();
 
   // Exige utilizador autenticado
   const authHeader = req.headers.get("authorization");

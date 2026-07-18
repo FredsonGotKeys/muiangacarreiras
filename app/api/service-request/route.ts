@@ -4,7 +4,7 @@ import { rateLimit, getIp, str, rateLimitedResponse, validationError } from "@/l
 import { sendEmail, templates, adminEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
-  if (!rateLimit(getIp(req), 5)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 5))) return rateLimitedResponse();
 
   const body = await req.json().catch(() => null);
   if (!body) return validationError();

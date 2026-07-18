@@ -28,7 +28,7 @@ interface Pergunta { pergunta: string; dica: string; }
 interface EntrevistaResult { perguntas: Pergunta[]; }
 
 export async function POST(req: NextRequest) {
-  if (!rateLimit(getIp(req), 6)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 6))) return rateLimitedResponse();
 
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
   if (!token) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });

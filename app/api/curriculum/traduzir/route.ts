@@ -11,7 +11,7 @@ const IDIOMAS: Record<string, string> = { en: "inglês", fr: "francês" };
  * informação — só traduz o que já existe.
  */
 export async function POST(req: NextRequest) {
-  if (!rateLimit(getIp(req), 6)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 6))) return rateLimitedResponse();
 
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
   if (!token) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });

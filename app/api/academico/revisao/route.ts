@@ -6,7 +6,7 @@ import { chatCompletion } from "@/lib/llm";
 
 /** Revisão científica: corrige gramática, ortografia e coerência de um texto já escrito pelo utilizador. */
 export async function POST(req: NextRequest) {
-  if (!rateLimit(getIp(req), 6)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 6))) return rateLimitedResponse();
 
   const auth = req.headers.get("authorization")?.replace("Bearer ", "");
   if (!auth) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });

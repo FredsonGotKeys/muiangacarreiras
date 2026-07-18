@@ -23,7 +23,7 @@ function isPdfMagic(buffer: Buffer): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  if (!rateLimit(getIp(req), 3)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 3))) return rateLimitedResponse();
 
   try {
     const formData = await req.formData();

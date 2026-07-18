@@ -63,7 +63,7 @@ function buildCvSummary(data: Record<string, unknown>): string {
 }
 
 export async function POST(req: NextRequest) {
-  if (!rateLimit(getIp(req), 6)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 6))) return rateLimitedResponse();
 
   // Auth obrigatória — análise consome tokens Groq
   const token = req.headers.get("authorization")?.replace("Bearer ", "");

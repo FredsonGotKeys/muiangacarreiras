@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   // Login
   if (body.action === "login") {
-    if (!rateLimit(getIp(req), 5)) {
+    if (!(await rateLimit(getIp(req), 5))) {
       return NextResponse.json({ error: "Demasiadas tentativas." }, { status: 429 });
     }
     if (!process.env.ADMIN_PASSWORD || typeof body.password !== "string" || !safeEqual(body.password, process.env.ADMIN_PASSWORD)) {

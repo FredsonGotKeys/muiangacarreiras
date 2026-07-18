@@ -20,7 +20,7 @@ async function getUser(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   // Rate limit primeiro — protege key paga mesmo antes de auth check
-  if (!rateLimit(getIp(req), 8)) return rateLimitedResponse();
+  if (!(await rateLimit(getIp(req), 8))) return rateLimitedResponse();
 
   // Auth obrigatória — endpoint custa $ por chamada
   const user = await getUser(req);
