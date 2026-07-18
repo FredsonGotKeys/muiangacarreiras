@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/lib/auth-context";
 import BottomNav from "@/components/premium/BottomNav";
+import InstallPrompt from "@/components/premium/InstallPrompt";
 
 const BASE = "https://muiangaconsultores.co.mz";
 
@@ -31,6 +32,20 @@ export const metadata: Metadata = {
     images: ["/og-image.jpg"],
   },
   robots: { index: true, follow: true },
+  manifest: "/manifest.json",
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "MUIANGA",
+  },
+};
+
+export const viewport = {
+  themeColor: "#D20001",
 };
 
 export default function RootLayout({
@@ -67,6 +82,7 @@ export default function RootLayout({
           <main className="pb-24 lg:pb-0">{children}</main>
           <Footer />
           <BottomNav />
+          <InstallPrompt />
         </AuthProvider>
       </body>
     </html>

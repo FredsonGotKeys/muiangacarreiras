@@ -96,7 +96,7 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
       w.document.write(`
         <html><head><title>${activeDoc ? NOME_POR_DOC[activeDoc] : ""}</title>
         <style>
-          body { font-family: Georgia, serif; font-size: 12pt; line-height: 1.7; padding: 25mm 22mm; white-space: pre-wrap; color: #111; }
+          body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.7; padding: 25mm 22mm; white-space: pre-wrap; color: #111; }
           @page { size: A4; margin: 0; }
         </style></head>
         <body>${texto.replace(/</g, "&lt;")}</body></html>
@@ -242,12 +242,12 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
                 onChange={(e) => setTexto(e.target.value)}
                 rows={14}
                 className="w-full text-sm leading-relaxed border border-gray-200 rounded-xl p-4 focus:outline-none focus:border-[#ED1D1D] focus:ring-2 focus:ring-[#ED1D1D]/10 transition-all"
-                style={{ fontFamily: "Georgia, serif" }}
+                style={{ fontFamily: "'Times New Roman', Times, serif" }}
               />
             ) : (
               <div
                 className="bg-white border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-gray-700"
-                style={{ fontFamily: "Georgia, serif" }}
+                style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
                 {texto.slice(0, 140)}
                 {texto.length > 140 && "…"}

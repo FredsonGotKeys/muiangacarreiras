@@ -2,42 +2,46 @@
 import { useState, useEffect, useCallback } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { useAuth } from "@/lib/auth-context";
-import { getCatalogoItem, listPacotesComServico, type CatalogoItem } from "@/lib/catalogo-client";
+import { getCatalogoItem, type CatalogoItem } from "@/lib/catalogo-client";
 
 /**
- * Verifica se o utilizador já tem direito a usar um serviço de IA:
- * - comprou o serviço avulso (compras.status = 'concluida'); ou
- * - comprou um pacote que inclui este serviço.
+ * Acesso é agora um passe único global — "Acesso Total", 59 MT, desbloqueia
+ * tudo no site por 8 horas — em vez de compras por serviço. O parâmetro
+ * `servicoSlug` é ignorado; mantido só para não obrigar a reescrever todos
+ * os componentes que já chamam `useEntitlement(slug)`.
  */
-export function useEntitlement(servicoSlug: string) {
+export function useEntitlement(_servicoSlug?: string) {
   const { user } = useAuth();
   const [checking, setChecking] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
+  const [expiraEm, setExpiraEm] = useState<string | null>(null);
   const [servico, setServico] = useState<CatalogoItem | null>(null);
-  const [pacotes, setPacotes] = useState<CatalogoItem[]>([]);
 
   const verificar = useCallback(async () => {
     setChecking(true);
-    const item = await getCatalogoItem("servico", servicoSlug);
+    const item = await getCatalogoItem("servico", "acesso-total");
     setServico(item);
-    if (!item) { setChecking(false); return; }
 
-    const pacotesRelacionados = await listPacotesComServico(item.id);
-    setPacotes(pacotesRelacionados);
-
-    if (!user) { setUnlocked(false); setChecking(false); return; }
+    if (!user) { setUnlocked(false); setExpiraEm(null); setChecking(false); return; }
 
     const sb = getSupabaseBrowser();
-    const idsRelevantes = [item.id, ...pacotesRelacionados.map((p) => p.id)];
+    const { data } = await sb
+      .from("compras")
+      .select("expira_em")
+      .eq("user_id", user.id)
+      .eq("status", "concluida")
+      .gt("expira_em", new Date().toISOString())
+      .order("expira_em", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    const { data: compra } = await sb
-      .from("compras").select("id").eq("status", "concluida").in("item_id", idsRelevantes).limit(1).maybeSingle();
-
-    setUnlocked(!!compra);
+    const row = data as { expira_em: string } | null;
+    setUnlocked(!!row);
+    setExpiraEm(row?.expira_em ?? null);
     setChecking(false);
-  }, [servicoSlug, user]);
+  }, [user]);
 
   useEffect(() => { verificar(); }, [verificar]);
 
-  return { checking, unlocked, servico, pacotes, refresh: verificar };
+  return { checking, unlocked, servico, pacotes: [] as CatalogoItem[], expiraEm, refresh: verificar };
 }

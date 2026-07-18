@@ -51,7 +51,15 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
   const [categoria, setCategoria] = useState<CategoriaDocumento>("emprego");
   const [tipoSlug, setTipoSlug] = useState<string | null>(null);
   const [nome, setNome] = useState(nomeUser);
+  const [bi, setBi] = useState("");
+  const [dataNascimento, setDataNascimento] = useState("");
+  const [naturalidade, setNaturalidade] = useState("");
+  const [estadoCivil, setEstadoCivil] = useState("");
+  const [morada, setMorada] = useState("");
   const [contacto, setContacto] = useState("");
+  const [entidade, setEntidade] = useState("");
+  const [segundaPessoaNome, setSegundaPessoaNome] = useState("");
+  const [segundaPessoaBi, setSegundaPessoaBi] = useState("");
   const [detalhes, setDetalhes] = useState("");
   const [texto, setTexto] = useState("");
   const [loading, setLoading] = useState(false);
@@ -73,13 +81,18 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
     if (!tipo) return;
     if (!nome.trim()) { setError("Indica o teu nome completo."); return; }
     if (!detalhes.trim()) { setError("Descreve os detalhes do pedido."); return; }
+    if (tipo.precisaEntidade && !entidade.trim()) { setError(`Indica ${(tipo.labelEntidade ?? "a entidade").toLowerCase()}.`); return; }
+    if (tipo.precisaSegundaPessoa && !segundaPessoaNome.trim()) { setError("Indica o nome da segunda pessoa envolvida."); return; }
     setLoading(true);
     setError(null);
     try {
       const res = await authFetch("/api/documentos/gerar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipo: tipo.slug, nome, contacto, detalhes }),
+        body: JSON.stringify({
+          tipo: tipo.slug, nome, bi, dataNascimento, naturalidade, estadoCivil, morada, contacto,
+          entidade, segundaPessoaNome, segundaPessoaBi, detalhes,
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Erro ao gerar documento."); return; }
@@ -122,7 +135,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
       w.document.write(`
         <html><head><title>${tipo.titulo}</title>
         <style>
-          body { font-family: Georgia, serif; font-size: 12pt; line-height: 1.7; padding: 25mm 22mm; white-space: pre-wrap; color: #111; }
+          body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.7; padding: 25mm 22mm; white-space: pre-wrap; color: #111; }
           @page { size: A4; margin: 0; }
         </style></head>
         <body>${texto.replace(/</g, "&lt;")}</body></html>
@@ -204,24 +217,44 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
               </button>
             </div>
 
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Os teus dados (como no Bilhete de Identidade)</p>
             <div className="grid sm:grid-cols-2 gap-3 mb-3">
-              <input
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="O teu nome completo"
-                className="input-vivid"
-              />
-              <input
-                value={contacto}
-                onChange={(e) => setContacto(e.target.value)}
-                placeholder="Contacto (telefone ou email, opcional)"
-                className="input-vivid"
-              />
+              <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome completo" className="input-vivid" />
+              <input value={bi} onChange={(e) => setBi(e.target.value)} placeholder="Nº do Bilhete de Identidade" className="input-vivid" />
+              <input value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} placeholder="Data de nascimento" className="input-vivid" />
+              <input value={naturalidade} onChange={(e) => setNaturalidade(e.target.value)} placeholder="Naturalidade (local de nascimento)" className="input-vivid" />
+              <input value={estadoCivil} onChange={(e) => setEstadoCivil(e.target.value)} placeholder="Estado civil" className="input-vivid" />
+              <input value={morada} onChange={(e) => setMorada(e.target.value)} placeholder="Morada/Residência" className="input-vivid" />
+              <input value={contacto} onChange={(e) => setContacto(e.target.value)} placeholder="Contacto (telefone ou email, opcional)" className="input-vivid sm:col-span-2" />
             </div>
+
+            {(tipo.precisaEntidade || tipo.precisaSegundaPessoa) && (
+              <>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Dados adicionais</p>
+                <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                  {tipo.precisaEntidade && (
+                    <input
+                      value={entidade}
+                      onChange={(e) => setEntidade(e.target.value)}
+                      placeholder={tipo.labelEntidade ?? "Entidade"}
+                      className="input-vivid sm:col-span-2"
+                    />
+                  )}
+                  {tipo.precisaSegundaPessoa && (
+                    <>
+                      <input value={segundaPessoaNome} onChange={(e) => setSegundaPessoaNome(e.target.value)} placeholder="Nome completo da segunda pessoa" className="input-vivid" />
+                      <input value={segundaPessoaBi} onChange={(e) => setSegundaPessoaBi(e.target.value)} placeholder="Nº do BI da segunda pessoa" className="input-vivid" />
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Detalhes do pedido</p>
             <textarea
               value={detalhes}
               onChange={(e) => setDetalhes(e.target.value)}
-              placeholder="Detalhes do pedido: entidade a quem se destina, motivo, morada, datas, ou qualquer informação relevante..."
+              placeholder="Motivo, datas, e qualquer informação específica deste documento..."
               rows={4}
               className="input-vivid w-full mb-4 resize-none"
             />
@@ -282,7 +315,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
 
                 <div
                   className="bg-[#FFF8F8] border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-gray-700"
-                  style={{ fontFamily: "Georgia, serif" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif" }}
                 >
                   {texto.slice(0, 140)}
                   {texto.length > 140 && "…"}

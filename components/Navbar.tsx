@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronRight, LogOut, UserCircle2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import AcessoStatus from "@/components/premium/AcessoStatus";
 
 const links = [
   { href: "/", label: "Início" },
@@ -90,6 +91,11 @@ export default function Navbar() {
 
         {/* CTA + user + Hamburger */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {user && (
+            <div className="hidden sm:block">
+              <AcessoStatus />
+            </div>
+          )}
           {user ? (
             <div className="hidden sm:flex items-center gap-2">
               <Link href="/conta" className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 rounded-xl px-3 py-2 transition-colors">

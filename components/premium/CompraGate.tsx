@@ -1,32 +1,31 @@
 "use client";
 import { useState, useEffect, type ReactNode } from "react";
-import { Lock, Loader2 } from "lucide-react";
+import { Lock, Loader2, Zap } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useEntitlement } from "@/lib/use-entitlement";
-import type { TipoCatalogo } from "@/lib/catalogo-client";
 import ZumboPayModal from "@/components/ZumboPayModal";
 import AuthModal from "@/components/AuthModal";
 
 /**
- * Bloqueia o conteúdo de um serviço de IA até o utilizador ter direito a
- * usá-lo (compra do serviço avulso, ou de um pacote que o inclui). Mostra
- * as opções disponíveis, destacando automaticamente a mais barata.
+ * Bloqueia o conteúdo até o utilizador ter um passe de Acesso Total activo
+ * (59 MT, desbloqueia tudo no site por 8 horas — não há mais compras por
+ * serviço individual).
  */
 export default function CompraGate({
-  servicoSlug,
   servicoNome,
   children,
   onUnlock,
 }: {
-  servicoSlug: string;
+  /** Mantido por compatibilidade com chamadores existentes; ignorado. */
+  servicoSlug?: string;
   servicoNome: string;
   children: ReactNode;
-  /** Chamado uma vez quando o utilizador desbloqueia o serviço (compra concluída). */
+  /** Chamado uma vez quando o utilizador desbloqueia o acesso (compra concluída). */
   onUnlock?: () => void;
 }) {
   const { user } = useAuth();
-  const { checking, unlocked, servico, pacotes, refresh } = useEntitlement(servicoSlug);
-  const [compra, setCompra] = useState<{ tipo: TipoCatalogo; slug: string } | null>(null);
+  const { checking, unlocked, servico, refresh } = useEntitlement();
+  const [comprar, setComprar] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [avisado, setAvisado] = useState(false);
 
@@ -46,18 +45,9 @@ export default function CompraGate({
   if (unlocked) return <>{children}</>;
   if (!servico) return null; // catálogo indisponível — não bloquear a página com erro
 
-  const pacoteBarato = pacotes[0] ?? null; // já vem ordenado por preço ascendente
-
-  type Opcao = { key: "avulso" | "pacote"; preco: number };
-  const opcoes: Opcao[] = [
-    { key: "avulso", preco: servico.preco_mt },
-    ...(pacoteBarato ? [{ key: "pacote" as const, preco: pacoteBarato.preco_mt }] : []),
-  ];
-  const maisBarato = opcoes.reduce((a, b) => (b.preco < a.preco ? b : a), opcoes[0]).key;
-
-  function abrir(tipo: TipoCatalogo, slug: string) {
+  function abrir() {
     if (!user) { setShowAuth(true); return; }
-    setCompra({ tipo, slug });
+    setComprar(true);
   }
 
   return (
@@ -66,38 +56,27 @@ export default function CompraGate({
         <Lock size={18} className="text-[#D20001]" />
       </div>
       <p className="font-bold text-[#2A0001] mb-1">{servicoNome}</p>
-      <p className="text-xs text-gray-400 mb-5 max-w-sm mx-auto">Escolhe como queres desbloquear esta funcionalidade:</p>
+      <p className="text-xs text-gray-400 mb-5 max-w-sm mx-auto">Um único pagamento desbloqueia tudo no site — todas as ferramentas, todos os documentos — durante 8 horas.</p>
 
-      <div className="grid sm:grid-cols-2 gap-3 max-w-xl mx-auto">
-        <button
-          onClick={() => abrir("servico", servico.slug)}
-          className={`relative text-left p-4 rounded-2xl border-2 transition-all bg-white ${maisBarato === "avulso" ? "border-[#D20001]" : "border-gray-100 hover:border-gray-300"}`}
-        >
-          {maisBarato === "avulso" && <span className="absolute -top-2.5 left-3 badge bg-[#D20001] text-white text-[10px]">Mais barato</span>}
-          <p className="text-xs font-semibold text-gray-400 mb-1">Só este serviço</p>
-          <p className="text-lg font-black text-[#2A0001]">{servico.preco_mt} MT</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">Pagamento único</p>
-        </button>
+      <button
+        onClick={abrir}
+        className="w-full max-w-xs mx-auto flex flex-col items-center gap-1 p-4 rounded-2xl border-2 border-[#D20001] bg-white transition-all hover:shadow-md active:scale-[0.98]"
+      >
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#D20001] uppercase tracking-wide">
+          <Zap className="w-3 h-3" /> Acesso Total
+        </span>
+        <span className="text-2xl font-black text-[#2A0001]">{servico.preco_mt} MT</span>
+        <span className="text-[11px] text-gray-400">Válido por 8 horas, tudo incluído</span>
+      </button>
 
-        {pacoteBarato && (
-          <button
-            onClick={() => abrir("pacote", pacoteBarato.slug)}
-            className={`relative text-left p-4 rounded-2xl border-2 transition-all bg-white ${maisBarato === "pacote" ? "border-[#D20001]" : "border-gray-100 hover:border-gray-300"}`}
-          >
-            {maisBarato === "pacote" && <span className="absolute -top-2.5 left-3 badge bg-[#D20001] text-white text-[10px]">Melhor poupança</span>}
-            <p className="text-xs font-semibold text-gray-400 mb-1">{pacoteBarato.nome}</p>
-            <p className="text-lg font-black text-[#2A0001]">{pacoteBarato.preco_mt} MT</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">Inclui vários serviços</p>
-          </button>
-        )}
-      </div>
-
-      {compra && (
+      {comprar && (
         <ZumboPayModal
-          tipo={compra.tipo}
-          slug={compra.slug}
-          onClose={() => setCompra(null)}
-          onSuccess={() => { setCompra(null); refresh(); }}
+          tipo="servico"
+          slug={servico.slug}
+          tituloSucesso="Acesso desbloqueado!"
+          subtituloSucesso="Tens acesso total ao site pelas próximas 8 horas."
+          onClose={() => setComprar(false)}
+          onSuccess={() => { setComprar(false); refresh(); }}
         />
       )}
       {showAuth && (

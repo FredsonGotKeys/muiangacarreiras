@@ -77,16 +77,23 @@ export async function gerarCvDocx(data: CvDataLike, accentColorHex = "C9A84C"): 
 }
 
 export async function gerarTextoDocx(titulo: string, texto: string): Promise<Blob> {
-  const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = await import("docx");
+  const { Document, Packer, Paragraph, TextRun, AlignmentType } = await import("docx");
+  // Norma: Times New Roman, tamanho 12 (docx usa "half-points" — 24 = 12pt).
+  const FONTE = "Times New Roman";
+  const TAMANHO = 24;
   const doc = new Document({
     sections: [{
       properties: {},
       children: [
-        new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun(titulo)], alignment: AlignmentType.CENTER }),
-        ...texto.split("\n").map(line => new Paragraph({ children: [new TextRun(line)] })),
+        new Paragraph({
+          children: [new TextRun({ text: titulo, font: FONTE, size: TAMANHO, bold: true })],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 240 },
+        }),
+        ...texto.split("\n").map(line => new Paragraph({ children: [new TextRun({ text: line, font: FONTE, size: TAMANHO })] })),
       ],
     }],
-    styles: { default: { document: { run: { font: "Georgia", size: 22 } } } },
+    styles: { default: { document: { run: { font: FONTE, size: TAMANHO } } } },
   });
   return Packer.toBlob(doc);
 }

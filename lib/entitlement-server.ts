@@ -6,26 +6,19 @@ const sb = createClient(
 );
 
 /**
- * Verificação server-side de direito de uso (compra avulsa ou pacote) —
- * mesma lógica de lib/use-entitlement.ts (client), mas para reforçar em
+ * Verificação server-side do passe de acesso total (59 MT / 8h, desbloqueia
+ * tudo) — mesma lógica de lib/use-entitlement.ts (client), para reforçar em
  * rotas de API que não devem confiar apenas na verificação do browser.
+ * `servicoSlug` é ignorado; mantido só por compatibilidade de assinatura.
  */
-export async function hasEntitlement(userId: string, servicoSlug: string): Promise<boolean> {
-  const { data: servico } = await sb
-    .from("catalogo_itens")
+export async function hasEntitlement(userId: string, _servicoSlug?: string): Promise<boolean> {
+  const { data } = await sb
+    .from("compras")
     .select("id")
-    .eq("tipo", "servico")
-    .eq("slug", servicoSlug)
-    .eq("activo", true)
+    .eq("user_id", userId)
+    .eq("status", "concluida")
+    .gt("expira_em", new Date().toISOString())
+    .limit(1)
     .maybeSingle();
-  if (!servico) return false;
-  const servicoId = (servico as { id: string }).id;
-
-  const { data: links } = await sb.from("pacote_servicos").select("pacote_id").eq("servico_id", servicoId);
-  const idsRelevantes = [servicoId, ...((links ?? []) as { pacote_id: string }[]).map((l) => l.pacote_id)];
-
-  const { data: compra } = await sb
-    .from("compras").select("id").eq("status", "concluida").eq("user_id", userId).in("item_id", idsRelevantes).limit(1).maybeSingle();
-
-  return !!compra;
+  return !!data;
 }

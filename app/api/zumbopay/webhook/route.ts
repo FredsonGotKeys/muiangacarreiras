@@ -184,9 +184,14 @@ export async function POST(req: NextRequest) {
       notas_admin: `ZumboPay: pago e verificado (ref ${reference}, canal ${channel}).`,
     }).eq("id", sub.id);
   } else {
+    // Modelo actual: um único produto vendável ("Acesso Total") — o
+    // pagamento confirmado desbloqueia tudo no site por 8 horas a partir de agora.
+    const agora = new Date();
+    const expiraEm = new Date(agora.getTime() + 8 * 3600000);
     await sb.from("compras").update({
       status: "concluida",
-      concluida_em: new Date().toISOString(),
+      concluida_em: agora.toISOString(),
+      expira_em: expiraEm.toISOString(),
       notas_admin: `ZumboPay: pago e verificado (ref ${reference}, canal ${channel}).`,
     }).eq("id", compra!.id);
   }
