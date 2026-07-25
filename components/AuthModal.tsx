@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, AlertCircle } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
@@ -39,7 +40,7 @@ export default function AuthModal({ onClose, onSuccess }: { onClose: () => void;
     }
   }
 
-  return (
+  return createPortal(
     <>
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60]" onClick={onClose} />
 
@@ -93,6 +94,7 @@ export default function AuthModal({ onClose, onSuccess }: { onClose: () => void;
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

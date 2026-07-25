@@ -21,7 +21,7 @@ const trust = [
 const whyUs = [
   { Icon: Zap,    bg: "from-[#FFF1F1] to-[#FFF1F1]", iconBg: GOLD_ICON,     iconColor: "text-[#FFFFFF]", border: "border-[#FE0000]/40", title: "Rápido & Acessível",  desc: "Vê as vagas, candidata-te em minutos. Cria o teu CV e paga só quando quiseres descarregar." },
   { Icon: Globe,  bg: "from-gray-50 to-gray-100",     iconBg: GRAPHITE_ICON, iconColor: "text-white",     border: "border-gray-200",    title: "Vagas Reais em Moçambique", desc: "Fontes actualizadas todos os dias, candidatura directa por email, sem intermediários." },
-  { Icon: Trophy, bg: "from-[#FFF1F1] to-[#FFF1F1]", iconBg: GOLD_ICON,     iconColor: "text-[#FFFFFF]", border: "border-[#FE0000]/40", title: "Preço Único e Claro", desc: "200 MT por serviço, sempre o mesmo valor. Sem mensalidade, sem surpresas." },
+  { Icon: Trophy, bg: "from-[#FFF1F1] to-[#FFF1F1]", iconBg: GOLD_ICON,     iconColor: "text-[#FFFFFF]", border: "border-[#FE0000]/40", title: "Preço Único e Claro", desc: "59 MT dão acesso total a tudo por 8 horas. Sem mensalidade, sem surpresas." },
 ];
 
 const testimonials = [
@@ -173,7 +173,7 @@ export default function HomePage() {
             </div>
 
             <p className="text-white/60 text-xs mb-10">
-              Candidaturas 100% gratuitas · Experimenta o CV grátis, só pagas <span className="font-semibold" style={{ color: "#FE0000" }}>200 MT</span> quando fores descarregar · Sem mensalidades
+              Candidaturas 100% gratuitas · Experimenta o CV grátis, por <span className="font-semibold" style={{ color: "#FE0000" }}>59 MT</span> desbloqueias tudo por 8 horas · Sem mensalidades
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8 border-t border-white/10">
@@ -219,7 +219,7 @@ export default function HomePage() {
               </span>
               <div>
                 <h3 className="text-2xl sm:text-3xl font-bold text-[#2A0001] mb-2">Precisas de<br />um CV melhor?</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">Cria, melhora e adapta o teu CV. Experimenta grátis, só pagas 200 MT quando fores descarregar.</p>
+                <p className="text-gray-400 text-sm leading-relaxed">Cria, melhora e adapta o teu CV. Experimenta grátis, por 59 MT desbloqueias tudo por 8 horas.</p>
               </div>
               <div className="flex items-center gap-2 text-[#D20001] font-bold text-sm group-hover:gap-3 transition-all">
                 Criar CV <span>→</span>
@@ -268,7 +268,7 @@ export default function HomePage() {
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-white/70 text-xs font-semibold">Candidatura sem custo, todas as vagas</span>
                 <span className="text-white/20 text-xs">·</span>
-                <span className="text-white/35 text-xs">Quer destacar-te? Cria um CV por 200 MT.</span>
+                <span className="text-white/35 text-xs">Quer destacar-te? Acesso total por 59 MT / 8h.</span>
               </div>
             </div>
             <Link href="/emprego" className="shrink-0 btn-primary text-base px-8 py-4 rounded-2xl">Ver Vagas em aberto →</Link>

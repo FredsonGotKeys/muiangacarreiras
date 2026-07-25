@@ -11,8 +11,10 @@ import { resolverPreco, type TipoCompra } from "@/lib/pricing";
  * corpo do pedido.
  *
  * M-Pesa / e-Mola → STK push directo (POST /charges). O cliente nunca sai
- * do site — confirma no telemóvel e o pagamento activa via webhook.
- * Cartão → checkout hospedado (POST /payments), com redirect.
+ * do site — confirma no telemóvel e o pagamento activa via webhook. Sem
+ * cartão: o valor mínimo do checkout de cartão da ZumboPay (100 MT) é
+ * superior ao preço do passe (59 MT), por isso só M-Pesa/e-Mola fazem
+ * sentido aqui.
  *
  * Insere em "compras" (direito permanente, sem janela). A linha nasce
  * "pendente"; o webhook (única fonte que confirma pagamento) promove-a
@@ -24,14 +26,36 @@ const sbAdmin = createClient(
 );
 
 const ZUMBOPAY_API_URL = "https://zumbopay.com/api/public/v1";
-const METODOS = new Set(["mpesa", "emola", "card"]);
+const METODOS = new Set(["mpesa", "emola"]);
 const TIPOS = new Set<TipoCompra>(["servico", "pacote"]);
+
+// Planos de numeração móvel de Moçambique — o STK/USSD só chega se o
+// número pertencer mesmo à rede do método escolhido (e-Mola é Movitel,
+// M-Pesa é Vodacom); validar isto no servidor também, não só no cliente.
+const PREFIXOS_REDE: Record<string, string[]> = {
+  mpesa: ["84", "85"],
+  emola: ["86", "87"],
+};
 
 function walletIdFor(metodo: string): string | undefined {
   if (metodo === "mpesa") return process.env.ZUMBOPAY_WALLET_MPESA;
   if (metodo === "emola") return process.env.ZUMBOPAY_WALLET_EMOLA;
-  if (metodo === "card") return process.env.ZUMBOPAY_WALLET_CARD;
   return undefined;
+}
+
+/**
+ * A ZumboPay às vezes devolve o erro interno em bruto do seu próprio
+ * servidor (ex.: falhas de ligação à base de dados deles) em vez de uma
+ * mensagem para o utilizador final. Nesses casos, mostrar isso tal como
+ * está só confunde — troca-se por uma mensagem honesta e útil.
+ */
+const PADRAO_ERRO_INTERNO = /sqlstate|erro de liga[çc][ãa]o|access denied|database|incorrect database|^http \d+$/i;
+
+function mensagemErroOperador(desc: string, metodo: string): string {
+  if (!PADRAO_ERRO_INTERNO.test(desc)) return desc;
+  const nomeMetodo = metodo === "mpesa" ? "M-Pesa" : "e-Mola";
+  const alternativa = metodo === "mpesa" ? "e-Mola" : "M-Pesa";
+  return `${nomeMetodo} está indisponível de momento (falha no operador de pagamento). Tenta ${alternativa} ou volta a tentar dentro de alguns minutos.`;
 }
 
 export async function POST(req: NextRequest) {
@@ -88,13 +112,16 @@ export async function POST(req: NextRequest) {
   }
 
   const nome = perfilTyped?.nome ?? "Utilizador";
-  let telefone = (str(body?.telefone, 20) ?? perfilTyped?.telefone ?? "").replace(/\D/g, "").slice(-9);
+  const telefone = (str(body?.telefone, 20) ?? perfilTyped?.telefone ?? "").replace(/\D/g, "").slice(-9);
 
-  if ((metodo === "mpesa" || metodo === "emola") && !/^\d{9}$/.test(telefone)) {
+  if (!/^\d{9}$/.test(telefone)) {
     return NextResponse.json({ error: "Indica um número de telefone válido (9 dígitos)." }, { status: 400 });
   }
+  if (!PREFIXOS_REDE[metodo].includes(telefone.slice(0, 2))) {
+    const rede = metodo === "mpesa" ? "Vodacom (M-Pesa) — deve começar por 84 ou 85" : "Movitel (e-Mola) — deve começar por 86 ou 87";
+    return NextResponse.json({ error: `Este número não parece ser ${rede}.` }, { status: 400 });
+  }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
   const sourceId = `mc-${user.id.slice(0, 8)}-${Date.now()}`;
 
   /** Regista a compra pendente/concluída em "compras". */
@@ -118,57 +145,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // M-Pesa / e-Mola → STK push directo, sem redirect
-    if (metodo === "mpesa" || metodo === "emola") {
-      const res = await fetch(`${ZUMBOPAY_API_URL}/charges`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "Idempotency-Key": sourceId,
-        },
-        body: JSON.stringify({
-          wallet_id: walletId,
-          amount: valorMt,
-          msisdn: telefone,
-          customer_name: nome,
-          source_id: sourceId,
-        }),
-      });
-
-      const responseBody = await res.json().catch(() => ({}));
-      const data = responseBody?.data ?? {};
-      const reference: string | undefined = data.reference;
-      const status = String(data.status ?? "").toLowerCase();
-
-      // A ZumboPay pode rejeitar o charge (status "failed") sem gerar referência —
-      // verificar isto primeiro dá uma mensagem específica em vez do "HTTP xxx" genérico.
-      if (status === "failed") {
-        const desc = responseBody?.error?.message ?? data.description ?? data.code ?? "pagamento recusado pelo operador";
-        await logError({ route: "/api/zumbopay/create", message: "charge rejeitado (failed)", detail: responseBody, userId: user.id, statusCode: res.status });
-        return NextResponse.json({ error: `Pagamento recusado: ${desc}` }, { status: 402 });
-      }
-
-      if (!reference) {
-        const errMsg = responseBody?.error?.message ?? responseBody?.error ?? `HTTP ${res.status}`;
-        await logError({ route: "/api/zumbopay/create", message: "charge sem reference", detail: responseBody, userId: user.id, statusCode: res.status });
-        return NextResponse.json({ error: `Não foi possível iniciar o pagamento: ${errMsg}` }, { status: 502 });
-      }
-
-      await registarCompra(status === "success" ? "ativa" : "pendente", reference);
-
-      return NextResponse.json({
-        mode: "direct",
-        status: status === "success" ? "active" : "pending",
-        reference,
-        message: metodo === "emola"
-          ? "Introduz o PIN e-Mola no teu telemóvel para confirmar."
-          : "Confirma o pagamento M-Pesa no teu telemóvel.",
-      });
-    }
-
-    // Cartão → checkout hospedado (3DS)
-    const res = await fetch(`${ZUMBOPAY_API_URL}/payments`, {
+    const res = await fetch(`${ZUMBOPAY_API_URL}/charges`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -177,33 +154,46 @@ export async function POST(req: NextRequest) {
         "Idempotency-Key": sourceId,
       },
       body: JSON.stringify({
-        type: "link",
-        title: preco.item.nome,
-        amount: valorMt,
-        currency: "MZN",
-        channels: ["card"],
         wallet_id: walletId,
-        description: `${preco.item.nome} — ${nome}`,
-        source: "muianga-carreiras",
+        amount: valorMt,
+        msisdn: telefone,
+        customer_name: nome,
         source_id: sourceId,
-        return_url: `${siteUrl}/conta?pagamento=sucesso`,
-        callback_url: `${siteUrl}/conta?pagamento=sucesso`,
       }),
     });
 
     const responseBody = await res.json().catch(() => ({}));
-    const checkoutUrl = responseBody?.checkout_url ?? responseBody?.data?.checkout_url;
-    const reference = responseBody?.data?.reference ?? responseBody?.reference;
+    const data = responseBody?.data ?? {};
+    const reference: string | undefined = data.reference;
+    const status = String(data.status ?? "").toLowerCase();
 
-    if (!checkoutUrl || !reference) {
-      const errMsg = responseBody?.error?.message ?? responseBody?.error ?? `HTTP ${res.status}`;
-      await logError({ route: "/api/zumbopay/create", message: "payment sem checkout_url", detail: responseBody, userId: user.id, statusCode: res.status });
-      return NextResponse.json({ error: `Erro ao criar pagamento: ${errMsg}` }, { status: 502 });
+    // A ZumboPay pode rejeitar o charge (status "failed") sem gerar referência —
+    // verificar isto primeiro dá uma mensagem específica em vez do "HTTP xxx" genérico.
+    if (status === "failed") {
+      const descBruta = responseBody?.error?.message ?? data.description ?? data.code ?? "pagamento recusado pelo operador";
+      await logError({ route: "/api/zumbopay/create", message: "charge rejeitado (failed)", detail: responseBody, userId: user.id, statusCode: res.status });
+      return NextResponse.json({ error: mensagemErroOperador(String(descBruta), metodo) }, { status: 402 });
     }
 
-    await registarCompra("pendente", reference);
+    if (!reference) {
+      const errMsg = String(responseBody?.error?.message ?? responseBody?.error ?? `HTTP ${res.status}`);
+      await logError({ route: "/api/zumbopay/create", message: "charge sem reference", detail: responseBody, userId: user.id, statusCode: res.status });
+      const mensagem = PADRAO_ERRO_INTERNO.test(errMsg)
+        ? mensagemErroOperador(errMsg, metodo)
+        : `Não foi possível iniciar o pagamento: ${errMsg}`;
+      return NextResponse.json({ error: mensagem }, { status: 502 });
+    }
 
-    return NextResponse.json({ mode: "redirect", checkoutUrl, reference });
+    await registarCompra(status === "success" ? "ativa" : "pendente", reference);
+
+    return NextResponse.json({
+      mode: "direct",
+      status: status === "success" ? "active" : "pending",
+      reference,
+      message: metodo === "emola"
+        ? "Introduz o PIN e-Mola no teu telemóvel para confirmar."
+        : "Confirma o pagamento M-Pesa no teu telemóvel.",
+    });
   } catch (e) {
     await logError({ route: "/api/zumbopay/create", message: "erro interno", detail: String(e), userId: user.id });
     return NextResponse.json({ error: "Erro interno. Tenta novamente." }, { status: 500 });

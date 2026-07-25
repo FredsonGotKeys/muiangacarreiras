@@ -1,8 +1,8 @@
 "use client";
-import { useState, useRef, useLayoutEffect, type ChangeEvent } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, type ChangeEvent } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 import {
-  FileUser, Camera, Plus, Trash2, ChevronRight, ChevronLeft,
+  FileUser, Camera, Plus, Trash2, ChevronRight, ChevronLeft, ChevronDown,
   Download, Eye, Lightbulb, Upload, Loader2, Globe2, Flag,
   GraduationCap, Briefcase, Wrench, Info, CheckCircle2, X,
   Languages, Car, Award, Users, Mail, Phone, MapPin, Calendar,
@@ -17,15 +17,30 @@ import CompraGate from "@/components/premium/CompraGate";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { guardarDocumento } from "@/lib/documentos-client";
 import MeusDocumentos from "@/components/premium/MeusDocumentos";
+import MarcaDagua from "@/components/premium/MarcaDagua";
 import ConversaoATS from "@/components/premium/ConversaoATS";
 import TraducaoCv from "@/components/premium/TraducaoCv";
 import SimulacaoEntrevista from "@/components/premium/SimulacaoEntrevista";
 import { checkPhotoQuality } from "@/lib/photo-enhance";
 import { gerarCvDocx, downloadBlob } from "@/lib/export-docx";
+import { recomendarModelo } from "@/lib/cv-modelos-recomendacao";
 
 /* ─── Types ─── */
-type CvType = "nacional" | "europeu" | null;
-type CvModelo = "classico" | "moderno" | "minimalista" | "executivo" | "corporativo" | "elegante" | "ats" | "academico" | "premium";
+type CvType = "nacional" | null;
+type CvModelo = "classico" | "moderno" | "minimalista" | "executivo" | "corporativo" | "elegante" | "ats" | "academico" | "premium" | "criativo";
+
+type CategoriaModelo = "classico" | "corporativo" | "moderno" | "minimalista" | "criativo" | "premium";
+type Densidade = "compacta" | "equilibrada" | "espacosa";
+type NivelExperiencia = "Júnior" | "Pleno" | "Sénior" | "Todos";
+
+interface PaletaCor {
+  nome: string;
+  accentColor: string;
+  sidebarBg?: string;
+  sidebarColor?: string;
+}
+
+type EstiloTitulo = "linha" | "linha-fina" | "caixa" | "numerado" | "centrado" | "simples";
 
 interface ModeloConfig {
   id: CvModelo;
@@ -34,10 +49,29 @@ interface ModeloConfig {
   fontFamily: string;
   accentColor: string;
   textColor: string;
-  layout: "single" | "sidebar";
+  layout: "single" | "sidebar" | "banner";
   sidebarBg?: string;
   sidebarColor?: string;
+  densidade: Densidade;
+  categoria: CategoriaModelo;
+  areaRecomendada: string[];
+  nivelExperiencia: NivelExperiencia;
+  ats: "Alta" | "Média" | "Baixa";
+  justificativa: string;
+  paletas: PaletaCor[];
+  // Parâmetros estruturais — o que faz cada modelo parecer genuinamente
+  // diferente, além de cor/fonte:
+  estiloTitulo: EstiloTitulo;
+  headerAlign?: "esquerda" | "centrado"; // só "single"
+  colunaLateral?: boolean;               // só "single" — corpo em 2 colunas
+  sidebarPos?: "esquerda" | "direita";   // só "sidebar"
 }
+
+const DENSIDADE_ESCALA: Record<Densidade, { fontBase: string; lineHeight: number; secMargin: string; tituloSize: string }> = {
+  compacta:    { fontBase: "9.5pt",  lineHeight: 1.35, secMargin: "4.5mm", tituloSize: "10pt" },
+  equilibrada: { fontBase: "10.5pt", lineHeight: 1.5,  secMargin: "6mm",   tituloSize: "11pt" },
+  espacosa:    { fontBase: "11pt",   lineHeight: 1.65, secMargin: "7.5mm", tituloSize: "12pt" },
+};
 
 const MODELOS: ModeloConfig[] = [
   {
@@ -48,6 +82,19 @@ const MODELOS: ModeloConfig[] = [
     accentColor: "#8B6F1E",
     textColor: "#0D0D0D",
     layout: "single",
+    densidade: "equilibrada",
+    categoria: "classico",
+    areaRecomendada: ["Direito", "Administração Pública", "Educação", "Sector Bancário"],
+    nivelExperiencia: "Todos",
+    ats: "Alta",
+    justificativa: "Formato tradicional e sóbrio, o que recrutadores em instituições formais esperam ver primeiro — transmite seriedade sem distrair do conteúdo.",
+    paletas: [
+      { nome: "Dourado discreto", accentColor: "#8B6F1E" },
+      { nome: "Azul corporativo", accentColor: "#1E3A5F" },
+      { nome: "Cinza institucional", accentColor: "#44403C" },
+    ],
+    estiloTitulo: "centrado",
+    headerAlign: "centrado",
   },
   {
     id: "moderno",
@@ -59,6 +106,19 @@ const MODELOS: ModeloConfig[] = [
     layout: "sidebar",
     sidebarBg: "#0D0D0D",
     sidebarColor: "#fff",
+    densidade: "equilibrada",
+    categoria: "moderno",
+    areaRecomendada: ["Tecnologia", "Marketing Digital", "Produto", "Startups"],
+    nivelExperiencia: "Pleno",
+    ats: "Média",
+    justificativa: "Sidebar escura cria hierarquia visual imediata, agradando a equipas de recrutamento em ambientes rápidos e orientados a produto.",
+    paletas: [
+      { nome: "Dourado", accentColor: "#C9A84C", sidebarBg: "#0D0D0D", sidebarColor: "#fff" },
+      { nome: "Azul tecnológico", accentColor: "#3B82F6", sidebarBg: "#0F172A", sidebarColor: "#fff" },
+      { nome: "Cinza moderno", accentColor: "#94A3B8", sidebarBg: "#1E293B", sidebarColor: "#fff" },
+    ],
+    estiloTitulo: "linha",
+    sidebarPos: "esquerda",
   },
   {
     id: "minimalista",
@@ -68,6 +128,18 @@ const MODELOS: ModeloConfig[] = [
     accentColor: "#0D0D0D",
     textColor: "#0D0D0D",
     layout: "single",
+    densidade: "compacta",
+    categoria: "minimalista",
+    areaRecomendada: ["Qualquer área", "Candidaturas online", "Sistemas de triagem automática"],
+    nivelExperiencia: "Todos",
+    ats: "Alta",
+    justificativa: "Sem elementos gráficos a competir com o texto — maximiza a velocidade de leitura de um recrutador que vê dezenas de CVs por dia.",
+    paletas: [
+      { nome: "Preto sobre branco", accentColor: "#0D0D0D" },
+      { nome: "Cinza-chumbo", accentColor: "#374151" },
+    ],
+    estiloTitulo: "linha-fina",
+    headerAlign: "esquerda",
   },
   {
     id: "executivo",
@@ -77,6 +149,19 @@ const MODELOS: ModeloConfig[] = [
     accentColor: "#1E3A5F",
     textColor: "#0D0D0D",
     layout: "single",
+    densidade: "equilibrada",
+    categoria: "corporativo",
+    areaRecomendada: ["Finanças", "Consultoria", "Gestão", "Auditoria"],
+    nivelExperiencia: "Sénior",
+    ats: "Alta",
+    justificativa: "Azul-marinho é a cor mais associada a confiança e rigor no sector financeiro — comunica maturidade profissional sem exagero visual.",
+    paletas: [
+      { nome: "Azul-marinho", accentColor: "#1E3A5F" },
+      { nome: "Preto executivo", accentColor: "#18181B" },
+      { nome: "Dourado discreto", accentColor: "#8B6F1E" },
+    ],
+    estiloTitulo: "caixa",
+    headerAlign: "esquerda",
   },
   {
     id: "corporativo",
@@ -88,6 +173,19 @@ const MODELOS: ModeloConfig[] = [
     layout: "sidebar",
     sidebarBg: "#1F2937",
     sidebarColor: "#fff",
+    densidade: "equilibrada",
+    categoria: "corporativo",
+    areaRecomendada: ["Multinacionais", "Recursos Humanos", "Operações", "Gestão de Projectos"],
+    nivelExperiencia: "Pleno",
+    ats: "Média",
+    justificativa: "Estrutura em sidebar organiza dados de contacto e competências de forma imediata — facilita triagem rápida em processos com muitos candidatos.",
+    paletas: [
+      { nome: "Azul corporativo", accentColor: "#0EA5E9", sidebarBg: "#1F2937", sidebarColor: "#fff" },
+      { nome: "Cinza-grafite", accentColor: "#9CA3AF", sidebarBg: "#111827", sidebarColor: "#fff" },
+      { nome: "Verde institucional", accentColor: "#059669", sidebarBg: "#1F2937", sidebarColor: "#fff" },
+    ],
+    estiloTitulo: "caixa",
+    sidebarPos: "direita",
   },
   {
     id: "elegante",
@@ -97,6 +195,20 @@ const MODELOS: ModeloConfig[] = [
     accentColor: "#7C2D3E",
     textColor: "#0D0D0D",
     layout: "single",
+    densidade: "espacosa",
+    categoria: "corporativo",
+    areaRecomendada: ["Direcção Geral", "Relações Institucionais", "Diplomacia", "Relações Públicas"],
+    nivelExperiencia: "Sénior",
+    ats: "Alta",
+    justificativa: "Espaçamento generoso e tom bordô transmitem requinte sem soar informal — adequado a quem representa uma instituição perante terceiros.",
+    paletas: [
+      { nome: "Bordô", accentColor: "#7C2D3E" },
+      { nome: "Verde-garrafa", accentColor: "#14532D" },
+      { nome: "Azul-petróleo", accentColor: "#155E63" },
+    ],
+    estiloTitulo: "linha",
+    headerAlign: "esquerda",
+    colunaLateral: true,
   },
   {
     id: "ats",
@@ -106,6 +218,17 @@ const MODELOS: ModeloConfig[] = [
     accentColor: "#000000",
     textColor: "#000000",
     layout: "single",
+    densidade: "compacta",
+    categoria: "minimalista",
+    areaRecomendada: ["Candidaturas a grandes empresas", "Vagas com triagem automática"],
+    nivelExperiencia: "Todos",
+    ats: "Alta",
+    justificativa: "Zero elementos gráficos — o formato que sistemas automáticos de triagem (ATS) conseguem ler sem erros de interpretação.",
+    paletas: [
+      { nome: "Preto e branco", accentColor: "#000000" },
+    ],
+    estiloTitulo: "simples",
+    headerAlign: "esquerda",
   },
   {
     id: "academico",
@@ -115,6 +238,18 @@ const MODELOS: ModeloConfig[] = [
     accentColor: "#14532D",
     textColor: "#0D0D0D",
     layout: "single",
+    densidade: "compacta",
+    categoria: "classico",
+    areaRecomendada: ["Docência", "Investigação", "Bolsas de Estudo", "Organizações Académicas"],
+    nivelExperiencia: "Todos",
+    ats: "Alta",
+    justificativa: "Densidade mais compacta acomoda historiais longos de formação e publicações sem perder legibilidade — comum em perfis académicos.",
+    paletas: [
+      { nome: "Verde-escuro", accentColor: "#14532D" },
+      { nome: "Azul-marinho", accentColor: "#1E3A5F" },
+    ],
+    estiloTitulo: "numerado",
+    headerAlign: "esquerda",
   },
   {
     id: "premium",
@@ -126,13 +261,45 @@ const MODELOS: ModeloConfig[] = [
     layout: "sidebar",
     sidebarBg: "#0A0A0A",
     sidebarColor: "#D4AF37",
+    densidade: "espacosa",
+    categoria: "premium",
+    areaRecomendada: ["Alta Direcção", "C-Level", "Consultoria de Elite", "Conselhos de Administração"],
+    nivelExperiencia: "Sénior",
+    ats: "Baixa",
+    justificativa: "Recomendado para profissionais com experiência de liderança porque transmite autoridade, organização e maturidade profissional.",
+    paletas: [
+      { nome: "Preto e dourado", accentColor: "#D4AF37", sidebarBg: "#0A0A0A", sidebarColor: "#D4AF37" },
+      { nome: "Grafite e prata", accentColor: "#CBD5E1", sidebarBg: "#18181B", sidebarColor: "#E5E7EB" },
+    ],
+    estiloTitulo: "linha",
+    sidebarPos: "esquerda",
+  },
+  {
+    id: "criativo",
+    nome: "Criativo",
+    descricao: "Faixa colorida no topo, tags de competências. Design, comunicação, moda, música, artes.",
+    fontFamily: "'Helvetica Neue', Arial, sans-serif",
+    accentColor: "#7C3AED",
+    textColor: "#18181B",
+    layout: "banner",
+    densidade: "espacosa",
+    categoria: "criativo",
+    areaRecomendada: ["Design", "Comunicação", "Marketing Criativo", "Moda", "Música", "Artes"],
+    nivelExperiencia: "Todos",
+    ats: "Baixa",
+    justificativa: "Faixa de destaque e tags visuais demonstram sensibilidade estética logo na primeira impressão — relevante em áreas onde o portfólio visual pesa tanto quanto o texto.",
+    paletas: [
+      { nome: "Roxo", accentColor: "#7C3AED" },
+      { nome: "Verde-esmeralda", accentColor: "#059669" },
+      { nome: "Petróleo e coral", accentColor: "#0F766E" },
+    ],
+    estiloTitulo: "linha",
   },
 ];
 
 interface Formacao {
   instituicao: string; curso: string; grau: string;
   anoInicio: string; anoFim: string; descricao: string;
-  classificacao?: string; // Europass only
 }
 interface Experiencia {
   empresa: string; cargo: string; local: string;
@@ -140,8 +307,6 @@ interface Experiencia {
 }
 interface Lingua {
   lingua: string; nivel: string;
-  // Europass CEFR
-  compreensao?: string; expressaoOral?: string; escrita?: string;
 }
 interface Referencia {
   nome: string; cargo: string; empresa: string; telefone: string; email: string;
@@ -169,12 +334,6 @@ interface CvData {
   referencias: Referencia[];
   cartaConducao: string;
   actividadesExtra: string;
-  // Europass extras
-  competenciasComunicacao: string;
-  competenciasOrganizacao: string;
-  competenciasProfissionais: string;
-  competenciasDigitais: string;
-  infoAdicional: string;
 }
 
 const emptyCv: CvData = {
@@ -195,25 +354,17 @@ const emptyCv: CvData = {
   referencias: [],
   cartaConducao: "",
   actividadesExtra: "",
-  competenciasComunicacao: "",
-  competenciasOrganizacao: "",
-  competenciasProfissionais: "",
-  competenciasDigitais: "",
-  infoAdicional: "",
 };
 
-const emptyFormacao: Formacao = { instituicao: "", curso: "", grau: "Licenciatura", anoInicio: "", anoFim: "", descricao: "", classificacao: "" };
+const emptyFormacao: Formacao = { instituicao: "", curso: "", grau: "Licenciatura", anoInicio: "", anoFim: "", descricao: "" };
 const emptyExperiencia: Experiencia = { empresa: "", cargo: "", local: "", dataInicio: "", dataFim: "", actualmente: false, descricao: "" };
 const emptyLinguaNacional: Lingua = { lingua: "", nivel: "Intermédio" };
-const emptyLinguaEuropeu: Lingua = { lingua: "", nivel: "", compreensao: "B1", expressaoOral: "B1", escrita: "B1" };
 const emptyReferencia: Referencia = { nome: "", cargo: "", empresa: "", telefone: "", email: "" };
 
 const graus = ["Ensino Secundário", "Técnico Médio", "Técnico Superior", "Licenciatura", "Mestrado", "Doutoramento", "Pós-Graduação", "Outro"];
 const niveisNacional = ["Básico", "Intermédio", "Avançado", "Fluente"];
-const niveisCEFR = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 const stepsNacional = ["Dados Pessoais", "Formação", "Experiência", "Competências", "Info Adicional", "Pré-visualização"];
-const stepsEuropeu = ["Dados Pessoais", "Formação", "Experiência", "Competências", "Info Adicional", "Pré-visualização"];
 
 /* ─── Tip Component ─── */
 function Tip({ text }: { text: string }) {
@@ -242,19 +393,83 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ThemedSectionTitle({ children, accent, font }: { children: React.ReactNode; accent: string; font: string }) {
+function ThemedSectionTitle({ children, accent, font, size = "11pt", estilo = "linha", numero }: {
+  children: React.ReactNode; accent: string; font: string; size?: string; estilo?: EstiloTitulo; numero?: number;
+}) {
+  const base: React.CSSProperties = {
+    fontFamily: font,
+    fontSize: size,
+    fontWeight: 700,
+    color: "#0D0D0D",
+    marginTop: 0,
+    overflowWrap: "break-word",
+  };
+
+  if (estilo === "caixa") {
+    return (
+      <h2 style={{
+        ...base,
+        display: "inline-block",
+        color: "#fff",
+        background: accent,
+        textTransform: "uppercase",
+        letterSpacing: "1.5px",
+        padding: "1.5mm 4mm",
+        borderRadius: "1.5mm",
+        marginBottom: "4mm",
+      }}>{children}</h2>
+    );
+  }
+  if (estilo === "numerado") {
+    return (
+      <h2 style={{ ...base, display: "flex", alignItems: "baseline", gap: "3mm", marginBottom: "3.5mm" }}>
+        <span style={{ color: accent, fontWeight: 700, fontSize: "1.15em" }}>{String(numero ?? 1).padStart(2, "0")}</span>
+        <span style={{ textTransform: "uppercase", letterSpacing: "1.5px" }}>{children}</span>
+      </h2>
+    );
+  }
+  if (estilo === "centrado") {
+    return (
+      <h2 style={{
+        ...base,
+        textAlign: "center",
+        textTransform: "uppercase",
+        letterSpacing: "3.5px",
+        fontWeight: 600,
+        borderTop: `0.5pt solid ${accent}`,
+        borderBottom: `0.5pt solid ${accent}`,
+        padding: "1.5mm 0",
+        marginBottom: "4mm",
+      }}>{children}</h2>
+    );
+  }
+  if (estilo === "simples") {
+    return (
+      <h2 style={{ ...base, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "2.5mm" }}>{children}</h2>
+    );
+  }
+  if (estilo === "linha-fina") {
+    return (
+      <h2 style={{
+        ...base,
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: "3px",
+        borderBottom: "0.25pt solid #ccc",
+        paddingBottom: "2mm",
+        marginBottom: "4.5mm",
+      }}>{children}</h2>
+    );
+  }
+  // "linha" — estilo por omissão
   return (
     <h2 style={{
-      fontFamily: font,
-      fontSize: "11pt",
-      fontWeight: 700,
+      ...base,
       textTransform: "uppercase",
       letterSpacing: "2.5px",
-      color: "#0D0D0D",
       borderBottom: `0.5pt solid ${accent}`,
       paddingBottom: "1.5mm",
       marginBottom: "3.5mm",
-      marginTop: 0,
     }}>{children}</h2>
   );
 }
@@ -269,6 +484,27 @@ function Card({ children, title, icon: Icon }: { children: React.ReactNode; titl
         <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>{title}</h2>
       </div>
       {children}
+    </div>
+  );
+}
+
+function Ferramenta({ children, title, desc, icon: Icon, open, onToggle }: {
+  children: React.ReactNode; title: string; desc: string; icon: React.ElementType;
+  open: boolean; onToggle: () => void;
+}) {
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden print:hidden">
+      <button onClick={onToggle} className="w-full flex items-center gap-3 p-4 text-left">
+        <div className="w-9 h-9 rounded-xl bg-[#D20001]/10 flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-[#D20001]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-bold text-[#2A0001]">{title}</h3>
+          <p className="text-[11px] text-gray-400 truncate">{desc}</p>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-gray-300 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
     </div>
   );
 }
@@ -345,6 +581,10 @@ function AiTextarea({ value, onChange, contexto, placeholder, rows = 3 }: {
 export default function CurriculumPage() {
   const [cvType, setCvType] = useState<CvType>(null);
   const [cvModelo, setCvModelo] = useState<CvModelo>("classico");
+  const [paletaIndex, setPaletaIndex] = useState<number | null>(null);
+  const [modeloEscolhidoManualmente, setModeloEscolhidoManualmente] = useState(false);
+  const [sugestaoIgnorada, setSugestaoIgnorada] = useState(false);
+  const [infoModeloAberto, setInfoModeloAberto] = useState<CvModelo | null>(null);
   const [step, setStep] = useState(0);
   const [data, setData] = useState<CvData>({ ...emptyCv });
   const [removingBg, setRemovingBg] = useState(false);
@@ -354,8 +594,11 @@ export default function CurriculumPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const scrollPosRef = useRef(0);
+  const compraGateRef = useRef<HTMLDivElement>(null);
   const criarCvEnt = useEntitlement("criar-cv-ia");
   const [compraPendenteCv, setCompraPendenteCv] = useState(false);
+  const [ferramentaAberta, setFerramentaAberta] = useState<string | null>(null);
+  const toggleFerramenta = (id: string) => setFerramentaAberta(prev => prev === id ? null : id);
 
   // Preserve scroll position on re-renders
   useLayoutEffect(() => {
@@ -369,7 +612,16 @@ export default function CurriculumPage() {
     return () => cancelAnimationFrame(timer);
   }, [data, step]);
 
-  const steps = cvType === "nacional" ? stepsNacional : stepsEuropeu;
+  // O botão de descarregar pode estar longe do bloco de compra (que fica perto
+  // do selector de modelo) — sem isto, clicar em "Descarregar" lá em baixo não
+  // dá reacção visível nenhuma, porque o bloco aparece fora do ecrã lá em cima.
+  useEffect(() => {
+    if (compraPendenteCv) {
+      compraGateRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [compraPendenteCv]);
+
+  const steps = stepsNacional;
   const totalSteps = steps.length;
 
   /* helpers */
@@ -454,8 +706,7 @@ export default function CurriculumPage() {
     if (!criarCvEnt.unlocked) { setCompraPendenteCv(true); return; }
     setGerandoDocx(true);
     try {
-      const modelo = MODELOS.find(m => m.id === cvModelo) ?? MODELOS[0];
-      const accentHex = modelo.accentColor.replace("#", "");
+      const accentHex = coresActuais.accentColor.replace("#", "");
       const blob = await gerarCvDocx(data, accentHex);
       const nomeFicheiro = `CV_${(data.nome || "curriculo").replace(/\s+/g, "_")}.docx`;
       downloadBlob(blob, nomeFicheiro);
@@ -509,29 +760,28 @@ export default function CurriculumPage() {
             Um CV melhor dá mais chances de aceitação
           </h1>
           <p className="text-gray-500 mb-3 max-w-xl mx-auto">
-            É por isso que a MUIANGA existe: aqui não encontras só vagas, crias, melhoras e adaptas o teu CV para te destacares na candidatura. Experimenta grátis; só pagas <span className="font-semibold text-[#2A0001]">200 MT</span> quando quiseres descarregar o resultado.
+            É por isso que a MUIANGA existe: aqui não encontras só vagas, crias, melhoras e adaptas o teu CV para te destacares na candidatura. Experimenta grátis; por <span className="font-semibold text-[#2A0001]">59 MT</span> desbloqueias o download e todas as ferramentas de IA por 8 horas.
           </p>
           <p className="text-gray-300 text-xs mb-8 max-w-xl mx-auto">
             Motor: MUIANGA IA, sistema dedicado a carreiras, desenvolvido por Fredson Muianga.
           </p>
           <p className="text-gray-400 text-sm mb-8 max-w-xl mx-auto">
-            Escolhe o formato que melhor se adapta ao teu objectivo. Preenche os dados em minutos e sai com um CV pronto a enviar.
+            Preenche os dados em minutos e sai com um CV pronto a enviar, no formato que os recrutadores em Moçambique esperam ver.
           </p>
 
           <div className="max-w-md mx-auto mb-10">
             <ImportarCv onImported={handleImported} />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Nacional */}
+          <div className="max-w-md mx-auto">
             <button
               onClick={() => setCvType("nacional")}
-              className="group bg-white rounded-2xl border border-gray-100 p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#D20001]/30"
+              className="group w-full bg-white rounded-2xl border border-gray-100 p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#D20001]/30"
             >
               <div className="w-14 h-14 rounded-2xl bg-[#D20001]/10 flex items-center justify-center mb-4 group-hover:bg-[#D20001]/20 transition-colors">
                 <Flag className="w-7 h-7 text-[#D20001]" />
               </div>
-              <h3 className="text-xl font-bold mb-2" style={{ fontFamily: "var(--font-display)" }}>Nacional (Moçambique)</h3>
+              <h3 className="text-xl font-bold mb-2" style={{ fontFamily: "var(--font-display)" }}>Criar o meu CV</h3>
               <p className="text-sm text-gray-500 mb-4">
                 Formato que os recrutadores em Moçambique esperam ver, ideal para candidaturas em empresas nacionais, ONGs e instituições públicas.
               </p>
@@ -540,25 +790,6 @@ export default function CurriculumPage() {
                 <span className="badge bg-emerald-50 text-emerald-700">Referências</span>
                 <span className="badge bg-emerald-50 text-emerald-700">BI/DIRE</span>
                 <span className="badge bg-emerald-50 text-emerald-700">Estado Civil</span>
-              </div>
-            </button>
-
-            {/* Europeu */}
-            <button
-              onClick={() => setCvType("europeu")}
-              className="group bg-white rounded-2xl border border-gray-100 p-8 text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#D20001]/30"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-[#D20001]/10 flex items-center justify-center mb-4 group-hover:bg-[#D20001]/20 transition-colors">
-                <Globe2 className="w-7 h-7 text-[#D20001]" />
-              </div>
-              <h3 className="text-xl font-bold mb-2" style={{ fontFamily: "var(--font-display)" }}>Europeu (Europass)</h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Formato Europass, reconhecido em toda a União Europeia, aumenta as tuas hipóteses ao candidatares-te para trabalhar ou estudar na Europa.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="badge bg-amber-50 text-amber-700">Europass</span>
-                <span className="badge bg-amber-50 text-amber-700">QECR Línguas</span>
-                <span className="badge bg-amber-50 text-amber-700">Competências UE</span>
               </div>
             </button>
           </div>
@@ -743,12 +974,6 @@ export default function CurriculumPage() {
               <label className="label-xs mb-1">Website / Portfolio</label>
               <input className="input-field" value={data.website} onChange={e => set("website", e.target.value)} placeholder="joaosilva.com" />
             </div>
-            {cvType === "europeu" && (
-              <div className="sm:col-span-2">
-                <label className="label-xs mb-1">GitHub</label>
-                <input className="input-field" value={data.github} onChange={e => set("github", e.target.value)} placeholder="github.com/joaosilva" />
-              </div>
-            )}
           </div>
         </div>
 
@@ -794,25 +1019,21 @@ export default function CurriculumPage() {
                 <option>Masculino</option><option>Feminino</option><option>Outro</option>
               </select>
             </div>
-            {cvType === "nacional" && (
-              <>
-                <div>
-                  <label className="label-xs mb-1">Estado civil</label>
-                  <select className="input-field" value={data.estadoCivil} onChange={e => set("estadoCivil", e.target.value)}>
-                    <option value="">Seleccionar</option>
-                    <option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União de facto</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="label-xs mb-1">N.º BI / DIRE</label>
-                  <input className="input-field" value={data.biDire} onChange={e => set("biDire", e.target.value)} placeholder="Ex: 1234567890A" />
-                </div>
-                <div>
-                  <label className="label-xs mb-1">NUIT</label>
-                  <input className="input-field" value={data.nuit} onChange={e => set("nuit", e.target.value)} placeholder="Ex: 123456789" />
-                </div>
-              </>
-            )}
+            <div>
+              <label className="label-xs mb-1">Estado civil</label>
+              <select className="input-field" value={data.estadoCivil} onChange={e => set("estadoCivil", e.target.value)}>
+                <option value="">Seleccionar</option>
+                <option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União de facto</option>
+              </select>
+            </div>
+            <div>
+              <label className="label-xs mb-1">N.º BI / DIRE</label>
+              <input className="input-field" value={data.biDire} onChange={e => set("biDire", e.target.value)} placeholder="Ex: 1234567890A" />
+            </div>
+            <div>
+              <label className="label-xs mb-1">NUIT</label>
+              <input className="input-field" value={data.nuit} onChange={e => set("nuit", e.target.value)} placeholder="Ex: 123456789" />
+            </div>
           </div>
         </div>
 
@@ -830,9 +1051,6 @@ export default function CurriculumPage() {
   /* ─── STEP 1: FORMACAO ─── */
   const stepFormacao = (
     <Card title="Formação Académica" icon={GraduationCap}>
-      {cvType === "europeu" && (
-        <Tip text="O CV Europeu segue o formato Europass, reconhecido em toda a União Europeia. Inclui a classificação obtida em cada formação." />
-      )}
       {data.formacao.length === 0 && (
         <p className="text-sm text-gray-400 mb-4">Nenhuma formação adicionada. Clica em &quot;Adicionar&quot; para começar.</p>
       )}
@@ -864,12 +1082,6 @@ export default function CurriculumPage() {
               <label className="label-xs mb-1">Ano fim</label>
               <input className="input-field" value={f.anoFim} onChange={e => updateFormacao(i, "anoFim", e.target.value)} placeholder="2022" />
             </div>
-            {cvType === "europeu" && (
-              <div className="sm:col-span-2">
-                <label className="label-xs mb-1">Classificação obtida</label>
-                <input className="input-field" value={f.classificacao || ""} onChange={e => updateFormacao(i, "classificacao", e.target.value)} placeholder="Ex: 16 valores / Distinção" />
-              </div>
-            )}
             <div className="sm:col-span-2">
               <label className="label-xs mb-1">Descrição</label>
               <AiTextarea value={f.descricao} onChange={v => updateFormacao(i, "descricao", v)} contexto="Descrição da formação académica no CV" placeholder="Principais disciplinas, trabalhos de destaque..." rows={2} />
@@ -990,10 +1202,6 @@ export default function CurriculumPage() {
           <input className="input-field" value={data.linguaMaterna} onChange={e => set("linguaMaterna", e.target.value)} placeholder="Português" />
         </div>
 
-        {cvType === "europeu" && (
-          <Tip text="Os níveis de línguas seguem o Quadro Europeu Comum de Referência (QECR): A1-A2 (Básico), B1-B2 (Independente), C1-C2 (Proficiente)" />
-        )}
-
         {data.linguas.map((l, i) => (
           <div key={i} className="border border-gray-100 rounded-xl p-3 mb-3 mt-3 relative">
             <button onClick={() => set("linguas", data.linguas.filter((_, idx) => idx !== i))} className="absolute top-2 right-2 text-red-400 hover:text-red-600">
@@ -1004,64 +1212,19 @@ export default function CurriculumPage() {
                 <label className="label-xs mb-1">Língua</label>
                 <input className="input-field" value={l.lingua} onChange={e => updateLingua(i, "lingua", e.target.value)} placeholder="Ex: Inglês" />
               </div>
-              {cvType === "nacional" ? (
-                <div>
-                  <label className="label-xs mb-1">Nível</label>
-                  <select className="input-field" value={l.nivel} onChange={e => updateLingua(i, "nivel", e.target.value)}>
-                    {niveisNacional.map(n => <option key={n}>{n}</option>)}
-                  </select>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <label className="label-xs mb-1">Compreensão</label>
-                    <select className="input-field" value={l.compreensao || "B1"} onChange={e => updateLingua(i, "compreensao", e.target.value)}>
-                      {niveisCEFR.map(n => <option key={n}>{n}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label-xs mb-1">Expressão oral</label>
-                    <select className="input-field" value={l.expressaoOral || "B1"} onChange={e => updateLingua(i, "expressaoOral", e.target.value)}>
-                      {niveisCEFR.map(n => <option key={n}>{n}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label-xs mb-1">Escrita</label>
-                    <select className="input-field" value={l.escrita || "B1"} onChange={e => updateLingua(i, "escrita", e.target.value)}>
-                      {niveisCEFR.map(n => <option key={n}>{n}</option>)}
-                    </select>
-                  </div>
-                </>
-              )}
+              <div>
+                <label className="label-xs mb-1">Nível</label>
+                <select className="input-field" value={l.nivel} onChange={e => updateLingua(i, "nivel", e.target.value)}>
+                  {niveisNacional.map(n => <option key={n}>{n}</option>)}
+                </select>
+              </div>
             </div>
           </div>
         ))}
-        <button onClick={() => set("linguas", [...data.linguas, cvType === "nacional" ? { ...emptyLinguaNacional } : { ...emptyLinguaEuropeu }])} className="btn-ghost text-xs mt-1">
+        <button onClick={() => set("linguas", [...data.linguas, { ...emptyLinguaNacional }])} className="btn-ghost text-xs mt-1">
           <Plus className="w-4 h-4" /> Adicionar língua
         </button>
       </div>
-
-      {/* Europass extra skills */}
-      {cvType === "europeu" && (
-        <div className="space-y-4">
-          <div>
-            <label className="label-xs mb-1">Competências de comunicação</label>
-            <AiTextarea value={data.competenciasComunicacao} onChange={v => set("competenciasComunicacao", v)} contexto="Competências de comunicação para CV Europass" placeholder="Ex: Boa capacidade de comunicação adquirida através de..." rows={2} />
-          </div>
-          <div>
-            <label className="label-xs mb-1">Competências organizacionais</label>
-            <AiTextarea value={data.competenciasOrganizacao} onChange={v => set("competenciasOrganizacao", v)} contexto="Competências de organização e liderança para CV Europass" placeholder="Ex: Experiência em liderança de equipas..." rows={2} />
-          </div>
-          <div>
-            <label className="label-xs mb-1">Competências profissionais</label>
-            <AiTextarea value={data.competenciasProfissionais} onChange={v => set("competenciasProfissionais", v)} contexto="Competências profissionais relacionadas com o cargo" placeholder="Competências específicas da tua área..." rows={2} />
-          </div>
-          <div>
-            <label className="label-xs mb-1">Competência digital</label>
-            <AiTextarea value={data.competenciasDigitais} onChange={v => set("competenciasDigitais", v)} contexto="Competências digitais/informáticas para CV Europass" placeholder="Ex: Utilizador avançado de Microsoft Office, Adobe Creative Suite..." rows={2} />
-          </div>
-        </div>
-      )}
     </Card>
   );
 
@@ -1074,65 +1237,62 @@ export default function CurriculumPage() {
           <input className="input-field" value={data.cartaConducao} onChange={e => set("cartaConducao", e.target.value)} placeholder="Ex: Categoria B" />
         </div>
 
-        {cvType === "nacional" ? (
-          <>
-            <div>
-              <label className="label-xs mb-1">Actividades extracurriculares</label>
-              <textarea className="input-field min-h-[60px]" value={data.actividadesExtra} onChange={e => set("actividadesExtra", e.target.value)} placeholder="Voluntariado, desporto, associações..." />
-            </div>
-            {/* Referencias */}
-            <div>
-              <label className="label-xs mb-2">Referências</label>
-              <Tip text="Inclui pelo menos 2 referências. Pede autorização antes de incluir alguém." />
-              {data.referencias.map((r, i) => (
-                <div key={i} className="border border-gray-100 rounded-xl p-4 mb-3 mt-3 relative">
-                  <button onClick={() => set("referencias", data.referencias.filter((_, idx) => idx !== i))} className="absolute top-2 right-2 text-red-400 hover:text-red-600">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="label-xs mb-1">Nome</label>
-                      <input className="input-field" value={r.nome} onChange={e => updateReferencia(i, "nome", e.target.value)} placeholder="Nome completo" />
-                    </div>
-                    <div>
-                      <label className="label-xs mb-1">Cargo</label>
-                      <input className="input-field" value={r.cargo} onChange={e => updateReferencia(i, "cargo", e.target.value)} placeholder="Director de RH" />
-                    </div>
-                    <div>
-                      <label className="label-xs mb-1">Empresa</label>
-                      <input className="input-field" value={r.empresa} onChange={e => updateReferencia(i, "empresa", e.target.value)} placeholder="Empresa" />
-                    </div>
-                    <div>
-                      <label className="label-xs mb-1">Telefone</label>
-                      <input className="input-field" value={r.telefone} onChange={e => updateReferencia(i, "telefone", e.target.value)} placeholder="+258 84 000 0000" />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="label-xs mb-1">Email</label>
-                      <input className="input-field" value={r.email} onChange={e => updateReferencia(i, "email", e.target.value)} placeholder="email@empresa.com" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <button onClick={() => set("referencias", [...data.referencias, { ...emptyReferencia }])} className="btn-ghost text-xs mt-1">
-                <Plus className="w-4 h-4" /> Adicionar referência
+        <div>
+          <label className="label-xs mb-1">Actividades extracurriculares</label>
+          <textarea className="input-field min-h-[60px]" value={data.actividadesExtra} onChange={e => set("actividadesExtra", e.target.value)} placeholder="Voluntariado, desporto, associações..." />
+        </div>
+        {/* Referencias */}
+        <div>
+          <label className="label-xs mb-2">Referências</label>
+          <Tip text="Inclui pelo menos 2 referências. Pede autorização antes de incluir alguém." />
+          {data.referencias.map((r, i) => (
+            <div key={i} className="border border-gray-100 rounded-xl p-4 mb-3 mt-3 relative">
+              <button onClick={() => set("referencias", data.referencias.filter((_, idx) => idx !== i))} className="absolute top-2 right-2 text-red-400 hover:text-red-600">
+                <Trash2 className="w-4 h-4" />
               </button>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="label-xs mb-1">Nome</label>
+                  <input className="input-field" value={r.nome} onChange={e => updateReferencia(i, "nome", e.target.value)} placeholder="Nome completo" />
+                </div>
+                <div>
+                  <label className="label-xs mb-1">Cargo</label>
+                  <input className="input-field" value={r.cargo} onChange={e => updateReferencia(i, "cargo", e.target.value)} placeholder="Director de RH" />
+                </div>
+                <div>
+                  <label className="label-xs mb-1">Empresa</label>
+                  <input className="input-field" value={r.empresa} onChange={e => updateReferencia(i, "empresa", e.target.value)} placeholder="Empresa" />
+                </div>
+                <div>
+                  <label className="label-xs mb-1">Telefone</label>
+                  <input className="input-field" value={r.telefone} onChange={e => updateReferencia(i, "telefone", e.target.value)} placeholder="+258 84 000 0000" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label-xs mb-1">Email</label>
+                  <input className="input-field" value={r.email} onChange={e => updateReferencia(i, "email", e.target.value)} placeholder="email@empresa.com" />
+                </div>
+              </div>
             </div>
-          </>
-        ) : (
-          <div>
-            <label className="label-xs mb-1">Informação adicional (publicações, projectos, etc.)</label>
-            <textarea className="input-field min-h-[100px]" value={data.infoAdicional} onChange={e => set("infoAdicional", e.target.value)} placeholder="Publicações, projectos, prémios, conferências..." />
-          </div>
-        )}
+          ))}
+          <button onClick={() => set("referencias", [...data.referencias, { ...emptyReferencia }])} className="btn-ghost text-xs mt-1">
+            <Plus className="w-4 h-4" /> Adicionar referência
+          </button>
+        </div>
       </div>
     </Card>
   );
 
   /* ─── STEP 5: PREVIEW ─── */
   const PreviewNacional = () => {
-    const accent = modeloActual.accentColor;
+    const accent = coresActuais.accentColor;
     const fontFam = modeloActual.fontFamily;
     const isMinimal = cvModelo === "minimalista";
+    const dens = DENSIDADE_ESCALA[modeloActual.densidade];
+    const nomeFontSize = data.nome.length > 28 ? "19pt" : "26pt";
+    const estilo = modeloActual.estiloTitulo;
+    const centrado = modeloActual.headerAlign === "centrado";
+    let numeroSeccao = 0;
+    const proximoNumero = () => ++numeroSeccao;
     const localizacao = [data.cidade, data.provincia].filter(Boolean).join(", ");
     const dadosPessoais = [
       data.dataNascimento && `Nasc. ${data.dataNascimento}`,
@@ -1151,30 +1311,172 @@ export default function CurriculumPage() {
       </span>
     );
 
+    const colunaLateral = !!modeloActual.colunaLateral;
+
+    const secPerfil = data.objectivo && (
+      <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
+        <ThemedSectionTitle accent={accent} font={fontFam} size={dens.tituloSize} estilo={estilo} numero={proximoNumero()}>Perfil Profissional</ThemedSectionTitle>
+        <p style={{ textAlign: "justify", margin: 0, color: "#333", fontStyle: isMinimal ? "normal" : "italic" }}>{data.objectivo}</p>
+      </section>
+    );
+
+    const secExperiencia = data.experiencia.length > 0 && (
+      <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
+        <ThemedSectionTitle accent={accent} font={fontFam} size={dens.tituloSize} estilo={estilo} numero={proximoNumero()}>Experiência Profissional</ThemedSectionTitle>
+        {data.experiencia.map((e, i) => (
+          <div key={i} className="cv-entry" style={{ marginBottom: "5mm", display: "flex", gap: "6mm" }}>
+            <div style={{ width: "28mm", flexShrink: 0, fontSize: "9pt", color: accent, fontWeight: 700, paddingTop: "1pt", letterSpacing: "0.3px" }}>
+              {e.dataInicio}{e.actualmente ? " - Presente" : e.dataFim ? ` - ${e.dataFim}` : ""}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: "11pt", color: "#0D0D0D", overflowWrap: "break-word" }}>{e.cargo}</div>
+              <div style={{ fontSize: "10pt", color: "#555", fontStyle: "italic", marginBottom: "1mm", overflowWrap: "break-word" }}>
+                {e.empresa}{e.local ? `, ${e.local}` : ""}
+              </div>
+              {e.descricao && (
+                <div style={{ margin: 0, color: "#333" }}>
+                  {e.descricao.split("\n").filter(l => l.trim()).map((l, j) => {
+                    const clean = l.replace(/^[-•·*]\s*/, "").trim();
+                    return <div key={j} style={{ display: "flex", gap: "2mm", marginTop: "0.8mm" }}><span>•</span><span>{clean}</span></div>;
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </section>
+    );
+
+    const secFormacao = data.formacao.length > 0 && (
+      <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
+        <ThemedSectionTitle accent={accent} font={fontFam} size={dens.tituloSize} estilo={estilo} numero={proximoNumero()}>Formação Académica</ThemedSectionTitle>
+        {data.formacao.map((f, i) => (
+          <div key={i} className="cv-entry" style={{ marginBottom: "4mm", display: "flex", gap: "6mm" }}>
+            <div style={{ width: "28mm", flexShrink: 0, fontSize: "9pt", color: accent, fontWeight: 700, paddingTop: "1pt", letterSpacing: "0.3px" }}>
+              {f.anoInicio}{f.anoFim ? ` - ${f.anoFim}` : ""}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: "11pt", color: "#0D0D0D", overflowWrap: "break-word" }}>
+                {f.curso}{f.grau ? ` (${f.grau})` : ""}
+              </div>
+              <div style={{ fontSize: "10pt", color: "#555", fontStyle: "italic", overflowWrap: "break-word" }}>{f.instituicao}</div>
+              {f.descricao && <p style={{ margin: "1mm 0 0", color: "#333" }}>{f.descricao}</p>}
+            </div>
+          </div>
+        ))}
+      </section>
+    );
+
+    const secCompetencias = (data.competenciasTecnicas.length > 0 || data.competenciasInformaticas.length > 0) && (
+      <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
+        <ThemedSectionTitle accent={accent} font={fontFam} size={dens.tituloSize} estilo={estilo} numero={proximoNumero()}>Competências</ThemedSectionTitle>
+        {data.competenciasTecnicas.length > 0 && (
+          <div style={{ marginBottom: "2mm", display: colunaLateral ? "block" : "flex", gap: "6mm" }}>
+            <div style={{ width: colunaLateral ? "auto" : "28mm", flexShrink: 0, fontWeight: 600, color: "#555" }}>Técnicas</div>
+            <div style={{ flex: 1, color: "#333" }}>{data.competenciasTecnicas.join(" · ")}</div>
+          </div>
+        )}
+        {data.competenciasInformaticas.length > 0 && (
+          <div style={{ marginBottom: "2mm", display: colunaLateral ? "block" : "flex", gap: "6mm" }}>
+            <div style={{ width: colunaLateral ? "auto" : "28mm", flexShrink: 0, fontWeight: 600, color: "#555" }}>Informáticas</div>
+            <div style={{ flex: 1, color: "#333" }}>{data.competenciasInformaticas.join(" · ")}</div>
+          </div>
+        )}
+      </section>
+    );
+
+    const secLinguas = (data.linguaMaterna || data.linguas.length > 0) && (
+      <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
+        <ThemedSectionTitle accent={accent} font={fontFam} size={dens.tituloSize} estilo={estilo} numero={proximoNumero()}>Línguas</ThemedSectionTitle>
+        {data.linguaMaterna && (
+          <div style={{ marginBottom: "1.5mm", display: colunaLateral ? "block" : "flex", gap: "6mm" }}>
+            <div style={{ width: colunaLateral ? "auto" : "28mm", flexShrink: 0, fontWeight: 600, color: "#0D0D0D" }}>{data.linguaMaterna}</div>
+            <div style={{ flex: 1, color: "#555", fontStyle: "italic" }}>Língua materna</div>
+          </div>
+        )}
+        {data.linguas.map((l, i) => (
+          <div key={i} style={{ marginBottom: "1.5mm", display: colunaLateral ? "block" : "flex", gap: "6mm" }}>
+            <div style={{ width: colunaLateral ? "auto" : "28mm", flexShrink: 0, fontWeight: 600, color: "#0D0D0D" }}>{l.lingua}</div>
+            <div style={{ flex: 1, color: "#555" }}>{l.nivel}</div>
+          </div>
+        ))}
+      </section>
+    );
+
+    const secDadosPessoais = dadosPessoais.length > 0 && (
+      <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
+        <ThemedSectionTitle accent={accent} font={fontFam} size={dens.tituloSize} estilo={estilo} numero={proximoNumero()}>Dados Pessoais</ThemedSectionTitle>
+        <p style={{ margin: 0, color: "#333", whiteSpace: colunaLateral ? "pre-line" : "normal" }}>{dadosPessoais.join(colunaLateral ? "\n" : "  ·  ")}</p>
+      </section>
+    );
+
+    const secActividades = data.actividadesExtra && (
+      <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
+        <ThemedSectionTitle accent={accent} font={fontFam} size={dens.tituloSize} estilo={estilo} numero={proximoNumero()}>Actividades Extra-curriculares</ThemedSectionTitle>
+        <p style={{ margin: 0, color: "#333" }}>{data.actividadesExtra}</p>
+      </section>
+    );
+
+    const secReferencias = data.referencias.length > 0 && (
+      <section className="cv-section">
+        <ThemedSectionTitle accent={accent} font={fontFam} size={dens.tituloSize} estilo={estilo} numero={proximoNumero()}>Referências</ThemedSectionTitle>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5mm 8mm" }}>
+          {data.referencias.map((r, i) => (
+            <div key={i}>
+              <div style={{ fontWeight: 700, color: "#0D0D0D" }}>{r.nome}</div>
+              {r.cargo && <div style={{ fontSize: "9.5pt", color: "#555", fontStyle: "italic" }}>{r.cargo}{r.empresa ? `, ${r.empresa}` : ""}</div>}
+              {r.telefone && <div style={{ fontSize: "9.5pt", color: "#444" }}>Tel.: {r.telefone}</div>}
+              {r.email && <div style={{ fontSize: "9.5pt", color: "#444" }}>{r.email}</div>}
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+
     return (
-      <div className="cv-preview bg-white mx-auto shadow-lg border border-gray-200 print:shadow-none print:border-0"
+      <div className={`cv-preview bg-white mx-auto shadow-lg border border-gray-200 print:shadow-none print:border-0 ${criarCvEnt.unlocked ? "desbloqueado" : ""}`}
         style={{
+          position: "relative",
           fontFamily: fontFam,
-          fontSize: "10.5pt",
-          lineHeight: "1.5",
+          fontSize: dens.fontBase,
+          lineHeight: dens.lineHeight,
           color: "#1a1a1a",
           width: "210mm",
           minHeight: "297mm",
           padding: "18mm 20mm",
         }}>
+        {!criarCvEnt.unlocked && <MarcaDagua />}
 
         {/* ─── Cabeçalho ─── */}
-        <header className="cv-section" style={{ marginBottom: "7mm" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "8mm" }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
+        <header className="cv-section" style={{ marginBottom: dens.secMargin }}>
+          <div style={{
+            display: "flex",
+            alignItems: centrado ? "center" : "flex-start",
+            flexDirection: centrado ? "column" : "row",
+            gap: "8mm",
+          }}>
+            {centrado && data.foto && (
+              <div style={{
+                width: "30mm",
+                height: "30mm",
+                borderRadius: "50%",
+                overflow: "hidden",
+                border: `1.5pt solid ${accent}`,
+              }}>
+                <img src={data.foto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            )}
+            <div style={{ flex: centrado ? undefined : 1, minWidth: 0, textAlign: centrado ? "center" : "left" }}>
               <h1 style={{
                 fontFamily: fontFam,
-                fontSize: "26pt",
+                fontSize: nomeFontSize,
                 fontWeight: 700,
-                letterSpacing: "-0.5px",
+                letterSpacing: centrado ? "1.5px" : "-0.5px",
                 lineHeight: 1.05,
                 margin: 0,
                 color: modeloActual.textColor,
+                overflowWrap: "break-word",
+                textTransform: centrado ? "uppercase" : "none",
               }}>
                 {data.nome || "Nome Completo"}
               </h1>
@@ -1186,6 +1488,7 @@ export default function CurriculumPage() {
                   letterSpacing: "0.8px",
                   margin: "2mm 0 0",
                   textTransform: "uppercase",
+                  overflowWrap: "break-word",
                 }}>
                   {data.titulo || data.experiencia[0]?.cargo}
                 </p>
@@ -1198,6 +1501,7 @@ export default function CurriculumPage() {
                 marginTop: "4mm",
                 display: "flex",
                 flexWrap: "wrap",
+                justifyContent: centrado ? "center" : "flex-start",
                 gap: "2mm 5mm",
                 lineHeight: 1.4,
               }}>
@@ -1215,6 +1519,7 @@ export default function CurriculumPage() {
                   marginTop: "2mm",
                   display: "flex",
                   flexWrap: "wrap",
+                  justifyContent: centrado ? "center" : "flex-start",
                   gap: "2mm 5mm",
                   lineHeight: 1.4,
                 }}>
@@ -1224,7 +1529,7 @@ export default function CurriculumPage() {
                 </div>
               )}
             </div>
-            {data.foto && (
+            {!centrado && data.foto && (
               <div style={{
                 width: "32mm",
                 height: "40mm",
@@ -1240,149 +1545,56 @@ export default function CurriculumPage() {
           <div style={{
             marginTop: "5mm",
             height: isMinimal ? "0.5pt" : "2pt",
-            background: isMinimal
+            width: centrado ? "40mm" : "auto",
+            marginLeft: centrado ? "auto" : 0,
+            marginRight: centrado ? "auto" : 0,
+            background: centrado
+              ? accent
+              : isMinimal
               ? "#0D0D0D"
               : `linear-gradient(to right, ${accent} 0%, ${accent} 40mm, #e5e5e5 40mm, #e5e5e5 100%)`,
           }} />
         </header>
 
-        {/* ─── Perfil / Objectivo ─── */}
-        {data.objectivo && (
-          <section className="cv-section" style={{ marginBottom: "7mm" }}>
-            <ThemedSectionTitle accent={accent} font={fontFam}>Perfil Profissional</ThemedSectionTitle>
-            <p style={{ textAlign: "justify", margin: 0, color: "#333", fontStyle: isMinimal ? "normal" : "italic" }}>{data.objectivo}</p>
-          </section>
-        )}
-
-        {/* ─── Experiência ─── */}
-        {data.experiencia.length > 0 && (
-          <section className="cv-section" style={{ marginBottom: "7mm" }}>
-            <ThemedSectionTitle accent={accent} font={fontFam}>Experiência Profissional</ThemedSectionTitle>
-            {data.experiencia.map((e, i) => (
-              <div key={i} className="cv-entry" style={{ marginBottom: "5mm", display: "flex", gap: "6mm" }}>
-                <div style={{ width: "28mm", flexShrink: 0, fontSize: "9pt", color: accent, fontWeight: 700, paddingTop: "1pt", letterSpacing: "0.3px" }}>
-                  {e.dataInicio}{e.actualmente ? " - Presente" : e.dataFim ? ` - ${e.dataFim}` : ""}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: "11pt", color: "#0D0D0D" }}>{e.cargo}</div>
-                  <div style={{ fontSize: "10pt", color: "#555", fontStyle: "italic", marginBottom: "1mm" }}>
-                    {e.empresa}{e.local ? `, ${e.local}` : ""}
-                  </div>
-                  {e.descricao && (
-                    <div style={{ margin: 0, color: "#333" }}>
-                      {e.descricao.split("\n").filter(l => l.trim()).map((l, j) => {
-                        const clean = l.replace(/^[-•·*]\s*/, "").trim();
-                        return <div key={j} style={{ display: "flex", gap: "2mm", marginTop: "0.8mm" }}><span>•</span><span>{clean}</span></div>;
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* ─── Formação ─── */}
-        {data.formacao.length > 0 && (
-          <section className="cv-section" style={{ marginBottom: "7mm" }}>
-            <ThemedSectionTitle accent={accent} font={fontFam}>Formação Académica</ThemedSectionTitle>
-            {data.formacao.map((f, i) => (
-              <div key={i} className="cv-entry" style={{ marginBottom: "4mm", display: "flex", gap: "6mm" }}>
-                <div style={{ width: "28mm", flexShrink: 0, fontSize: "9pt", color: accent, fontWeight: 700, paddingTop: "1pt", letterSpacing: "0.3px" }}>
-                  {f.anoInicio}{f.anoFim ? ` - ${f.anoFim}` : ""}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: "11pt", color: "#0D0D0D" }}>
-                    {f.curso}{f.grau ? ` (${f.grau})` : ""}
-                  </div>
-                  <div style={{ fontSize: "10pt", color: "#555", fontStyle: "italic" }}>{f.instituicao}</div>
-                  {f.descricao && <p style={{ margin: "1mm 0 0", color: "#333" }}>{f.descricao}</p>}
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* ─── Competências ─── */}
-        {(data.competenciasTecnicas.length > 0 || data.competenciasInformaticas.length > 0) && (
-          <section className="cv-section" style={{ marginBottom: "7mm" }}>
-            <ThemedSectionTitle accent={accent} font={fontFam}>Competências</ThemedSectionTitle>
-            {data.competenciasTecnicas.length > 0 && (
-              <div style={{ marginBottom: "2mm", display: "flex", gap: "6mm" }}>
-                <div style={{ width: "28mm", flexShrink: 0, fontWeight: 600, color: "#555" }}>Técnicas</div>
-                <div style={{ flex: 1, color: "#333" }}>{data.competenciasTecnicas.join(" · ")}</div>
-              </div>
-            )}
-            {data.competenciasInformaticas.length > 0 && (
-              <div style={{ marginBottom: "2mm", display: "flex", gap: "6mm" }}>
-                <div style={{ width: "28mm", flexShrink: 0, fontWeight: 600, color: "#555" }}>Informáticas</div>
-                <div style={{ flex: 1, color: "#333" }}>{data.competenciasInformaticas.join(" · ")}</div>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* ─── Línguas ─── */}
-        {(data.linguaMaterna || data.linguas.length > 0) && (
-          <section className="cv-section" style={{ marginBottom: "7mm" }}>
-            <ThemedSectionTitle accent={accent} font={fontFam}>Línguas</ThemedSectionTitle>
-            {data.linguaMaterna && (
-              <div style={{ marginBottom: "1.5mm", display: "flex", gap: "6mm" }}>
-                <div style={{ width: "28mm", flexShrink: 0, fontWeight: 600, color: "#0D0D0D" }}>{data.linguaMaterna}</div>
-                <div style={{ flex: 1, color: "#555", fontStyle: "italic" }}>Língua materna</div>
-              </div>
-            )}
-            {data.linguas.map((l, i) => (
-              <div key={i} style={{ marginBottom: "1.5mm", display: "flex", gap: "6mm" }}>
-                <div style={{ width: "28mm", flexShrink: 0, fontWeight: 600, color: "#0D0D0D" }}>{l.lingua}</div>
-                <div style={{ flex: 1, color: "#555" }}>{l.nivel}</div>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* ─── Dados Pessoais ─── */}
-        {dadosPessoais.length > 0 && (
-          <section className="cv-section" style={{ marginBottom: "7mm" }}>
-            <ThemedSectionTitle accent={accent} font={fontFam}>Dados Pessoais</ThemedSectionTitle>
-            <p style={{ margin: 0, color: "#333" }}>{dadosPessoais.join("  ·  ")}</p>
-          </section>
-        )}
-
-        {/* ─── Actividades Extra ─── */}
-        {data.actividadesExtra && (
-          <section className="cv-section" style={{ marginBottom: "7mm" }}>
-            <ThemedSectionTitle accent={accent} font={fontFam}>Actividades Extra-curriculares</ThemedSectionTitle>
-            <p style={{ margin: 0, color: "#333" }}>{data.actividadesExtra}</p>
-          </section>
-        )}
-
-        {/* ─── Referências ─── */}
-        {data.referencias.length > 0 && (
-          <section className="cv-section">
-            <ThemedSectionTitle accent={accent} font={fontFam}>Referências</ThemedSectionTitle>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5mm 8mm" }}>
-              {data.referencias.map((r, i) => (
-                <div key={i}>
-                  <div style={{ fontWeight: 700, color: "#0D0D0D" }}>{r.nome}</div>
-                  {r.cargo && <div style={{ fontSize: "9.5pt", color: "#555", fontStyle: "italic" }}>{r.cargo}{r.empresa ? `, ${r.empresa}` : ""}</div>}
-                  {r.telefone && <div style={{ fontSize: "9.5pt", color: "#444" }}>Tel.: {r.telefone}</div>}
-                  {r.email && <div style={{ fontSize: "9.5pt", color: "#444" }}>{r.email}</div>}
-                </div>
-              ))}
+        {colunaLateral ? (
+          <div style={{ display: "flex", gap: "10mm" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {secPerfil}
+              {secExperiencia}
+              {secFormacao}
             </div>
-          </section>
+            <div style={{ width: "52mm", flexShrink: 0, borderLeft: `0.5pt solid ${accent}55`, paddingLeft: "6mm" }}>
+              {secCompetencias}
+              {secLinguas}
+              {secDadosPessoais}
+              {secActividades}
+            </div>
+          </div>
+        ) : (
+          <>
+            {secPerfil}
+            {secExperiencia}
+            {secFormacao}
+            {secCompetencias}
+            {secLinguas}
+            {secDadosPessoais}
+            {secActividades}
+          </>
         )}
+        {secReferencias}
       </div>
     );
   };
 
-  const PreviewEuropeu = () => {
-    const accent = modeloActual.accentColor;
+  const PreviewSidebar = () => {
+    const accent = coresActuais.accentColor;
     const fontFam = modeloActual.fontFamily;
-    const sidebarBg = modeloActual.sidebarBg ?? "#0D0D0D";
-    const sidebarColor = modeloActual.sidebarColor ?? "#fff";
-    const hasSidebar = modeloActual.layout === "sidebar";
+    const sidebarBg = coresActuais.sidebarBg ?? "#0D0D0D";
+    const sidebarColor = coresActuais.sidebarColor ?? "#fff";
+    const dens = DENSIDADE_ESCALA[modeloActual.densidade];
+    const nomeFontSize = data.nome.length > 28 ? "17pt" : "22pt";
+    const sidebarDireita = modeloActual.sidebarPos === "direita";
+    const tituloCaixa = modeloActual.estiloTitulo === "caixa";
     const localizacao = [data.cidade, data.provincia].filter(Boolean).join(", ");
 
     const SideTitle = ({ children }: { children: React.ReactNode }) => (
@@ -1395,12 +1607,28 @@ export default function CurriculumPage() {
         margin: "0 0 2mm",
         paddingBottom: "1mm",
         borderBottom: `0.5pt solid ${accent}55`,
+        overflowWrap: "break-word",
       }}>{children}</h3>
     );
-    const MainTitle = ({ children }: { children: React.ReactNode }) => (
+    const MainTitle = ({ children }: { children: React.ReactNode }) => tituloCaixa ? (
       <h2 style={{
         fontFamily: fontFam,
-        fontSize: "11pt",
+        fontSize: dens.tituloSize,
+        fontWeight: 700,
+        color: "#fff",
+        background: accent,
+        textTransform: "uppercase",
+        letterSpacing: "1.5px",
+        display: "inline-block",
+        padding: "1.5mm 4mm",
+        borderRadius: "1.5mm",
+        margin: "0 0 4mm",
+        overflowWrap: "break-word",
+      }}>{children}</h2>
+    ) : (
+      <h2 style={{
+        fontFamily: fontFam,
+        fontSize: dens.tituloSize,
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "2px",
@@ -1408,20 +1636,23 @@ export default function CurriculumPage() {
         margin: "0 0 3mm",
         paddingBottom: "1.5mm",
         borderBottom: `0.5pt solid ${accent}`,
+        overflowWrap: "break-word",
       }}>{children}</h2>
     );
 
     return (
-      <div className="cv-preview bg-white mx-auto shadow-lg border border-gray-200 print:shadow-none print:border-0"
+      <div className={`cv-preview bg-white mx-auto shadow-lg border border-gray-200 print:shadow-none print:border-0 ${criarCvEnt.unlocked ? "desbloqueado" : ""}`}
         style={{
+          position: "relative",
           fontFamily: fontFam,
-          fontSize: "10pt",
-          lineHeight: "1.45",
+          fontSize: dens.fontBase,
+          lineHeight: dens.lineHeight,
           color: "#1a1a1a",
           width: "210mm",
           minHeight: "297mm",
         }}>
-        <div style={{ display: "flex", minHeight: "297mm" }}>
+        {!criarCvEnt.unlocked && <MarcaDagua />}
+        <div style={{ display: "flex", flexDirection: sidebarDireita ? "row-reverse" : "row", minHeight: "297mm" }}>
           {/* ─── Sidebar ─── */}
           <aside style={{
             width: "68mm",
@@ -1504,12 +1735,8 @@ export default function CurriculumPage() {
                   )}
                   {data.linguas.map((l, i) => (
                     <div key={i} style={{ marginBottom: "2.5mm" }}>
-                      <div style={{ fontWeight: 600, marginBottom: "1mm" }}>{l.lingua}</div>
-                      <div style={{ fontSize: "7.5pt", color: "#999", lineHeight: 1.5 }}>
-                        <div>Compreensão: <span style={{ color: accent }}>{l.compreensao}</span></div>
-                        <div>Expressão oral: <span style={{ color: accent }}>{l.expressaoOral}</span></div>
-                        <div>Escrita: <span style={{ color: accent }}>{l.escrita}</span></div>
-                      </div>
+                      <div style={{ fontWeight: 600, marginBottom: "0.5mm" }}>{l.lingua}</div>
+                      <div style={{ fontSize: "8pt", color: accent, fontStyle: "italic" }}>{l.nivel}</div>
                     </div>
                   ))}
                 </div>
@@ -1534,14 +1761,15 @@ export default function CurriculumPage() {
           {/* ─── Conteúdo principal ─── */}
           <main style={{ flex: 1, padding: "15mm 13mm" }}>
             {/* Nome */}
-            <header style={{ marginBottom: "6mm", paddingBottom: "4mm", borderBottom: "0.5pt solid #ddd" }}>
+            <header style={{ marginBottom: dens.secMargin, paddingBottom: "4mm", borderBottom: "0.5pt solid #ddd" }}>
               <h1 style={{
-                fontSize: "22pt",
+                fontSize: nomeFontSize,
                 fontWeight: 300,
                 letterSpacing: "-0.5px",
                 lineHeight: 1.1,
                 margin: 0,
                 color: "#0D0D0D",
+                overflowWrap: "break-word",
               }}>{data.nome || "Nome Completo"}</h1>
               {(data.titulo || data.experiencia[0]?.cargo) && (
                 <p style={{
@@ -1551,13 +1779,14 @@ export default function CurriculumPage() {
                   letterSpacing: "1px",
                   margin: "2mm 0 0",
                   textTransform: "uppercase",
+                  overflowWrap: "break-word",
                 }}>{data.titulo || data.experiencia[0]?.cargo}</p>
               )}
             </header>
 
             {/* Perfil */}
             {data.objectivo && (
-              <section className="cv-section" style={{ marginBottom: "6mm" }}>
+              <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
                 <MainTitle>Perfil Profissional</MainTitle>
                 <p style={{ textAlign: "justify", margin: 0, color: "#333" }}>{data.objectivo}</p>
               </section>
@@ -1565,17 +1794,17 @@ export default function CurriculumPage() {
 
             {/* Experiência */}
             {data.experiencia.length > 0 && (
-              <section className="cv-section" style={{ marginBottom: "6mm" }}>
+              <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
                 <MainTitle>Experiência Profissional</MainTitle>
                 {data.experiencia.map((e, i) => (
                   <div key={i} className="cv-entry" style={{ marginBottom: "4mm" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.5mm" }}>
-                      <strong style={{ fontSize: "10.5pt", color: "#0D0D0D" }}>{e.cargo}</strong>
-                      <span style={{ fontSize: "9pt", color: accent, fontWeight: 700, whiteSpace: "nowrap", marginLeft: "4mm" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.5mm", flexWrap: "wrap", gap: "1mm 3mm" }}>
+                      <strong style={{ fontSize: "10.5pt", color: "#0D0D0D", overflowWrap: "break-word" }}>{e.cargo}</strong>
+                      <span style={{ fontSize: "9pt", color: accent, fontWeight: 700, whiteSpace: "nowrap" }}>
                         {e.dataInicio}{e.actualmente ? " - Presente" : e.dataFim ? ` - ${e.dataFim}` : ""}
                       </span>
                     </div>
-                    <div style={{ fontSize: "9.5pt", color: "#555", fontStyle: "italic", marginBottom: "1mm" }}>
+                    <div style={{ fontSize: "9.5pt", color: "#555", fontStyle: "italic", marginBottom: "1mm", overflowWrap: "break-word" }}>
                       {e.empresa}{e.local ? `, ${e.local}` : ""}
                     </div>
                     {e.descricao && (
@@ -1593,18 +1822,17 @@ export default function CurriculumPage() {
 
             {/* Formação */}
             {data.formacao.length > 0 && (
-              <section className="cv-section" style={{ marginBottom: "6mm" }}>
+              <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
                 <MainTitle>Formação Académica</MainTitle>
                 {data.formacao.map((f, i) => (
                   <div key={i} className="cv-entry" style={{ marginBottom: "3.5mm" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.5mm" }}>
-                      <strong style={{ fontSize: "10.5pt", color: "#0D0D0D" }}>{f.curso}{f.grau ? ` (${f.grau})` : ""}</strong>
-                      <span style={{ fontSize: "9pt", color: accent, fontWeight: 700, whiteSpace: "nowrap", marginLeft: "4mm" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.5mm", flexWrap: "wrap", gap: "1mm 3mm" }}>
+                      <strong style={{ fontSize: "10.5pt", color: "#0D0D0D", overflowWrap: "break-word" }}>{f.curso}{f.grau ? ` (${f.grau})` : ""}</strong>
+                      <span style={{ fontSize: "9pt", color: accent, fontWeight: 700, whiteSpace: "nowrap" }}>
                         {f.anoInicio}{f.anoFim ? ` - ${f.anoFim}` : ""}
                       </span>
                     </div>
-                    <div style={{ fontSize: "9.5pt", color: "#555", fontStyle: "italic" }}>{f.instituicao}</div>
-                    {f.classificacao && <div style={{ fontSize: "9pt", color: "#666", marginTop: "0.5mm" }}>Classificação: {f.classificacao}</div>}
+                    <div style={{ fontSize: "9.5pt", color: "#555", fontStyle: "italic", overflowWrap: "break-word" }}>{f.instituicao}</div>
                     {f.descricao && <p style={{ margin: "1mm 0 0", color: "#444" }}>{f.descricao}</p>}
                   </div>
                 ))}
@@ -1613,57 +1841,211 @@ export default function CurriculumPage() {
 
             {/* Competências chave (técnicas) */}
             {data.competenciasTecnicas.length > 0 && (
-              <section className="cv-section" style={{ marginBottom: "6mm" }}>
+              <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
                 <MainTitle>Competências Chave</MainTitle>
                 <p style={{ margin: 0, color: "#333" }}>{data.competenciasTecnicas.join(" · ")}</p>
               </section>
             )}
 
-            {/* Competências Europass */}
-            {(data.competenciasComunicacao || data.competenciasOrganizacao || data.competenciasProfissionais || data.competenciasDigitais) && (
-              <section className="cv-section" style={{ marginBottom: "6mm" }}>
-                <MainTitle>Competências Pessoais</MainTitle>
-                {data.competenciasComunicacao && (
-                  <div style={{ marginBottom: "2.5mm" }}>
-                    <div style={{ fontSize: "9pt", fontWeight: 700, color: accent, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "0.5mm" }}>Comunicação</div>
-                    <p style={{ margin: 0, color: "#333" }}>{data.competenciasComunicacao}</p>
-                  </div>
-                )}
-                {data.competenciasOrganizacao && (
-                  <div style={{ marginBottom: "2.5mm" }}>
-                    <div style={{ fontSize: "9pt", fontWeight: 700, color: accent, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "0.5mm" }}>Organização e Liderança</div>
-                    <p style={{ margin: 0, color: "#333" }}>{data.competenciasOrganizacao}</p>
-                  </div>
-                )}
-                {data.competenciasProfissionais && (
-                  <div style={{ marginBottom: "2.5mm" }}>
-                    <div style={{ fontSize: "9pt", fontWeight: 700, color: accent, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "0.5mm" }}>Profissionais</div>
-                    <p style={{ margin: 0, color: "#333" }}>{data.competenciasProfissionais}</p>
-                  </div>
-                )}
-                {data.competenciasDigitais && (
-                  <div style={{ marginBottom: "2.5mm" }}>
-                    <div style={{ fontSize: "9pt", fontWeight: 700, color: accent, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "0.5mm" }}>Digital</div>
-                    <p style={{ margin: 0, color: "#333" }}>{data.competenciasDigitais}</p>
-                  </div>
-                )}
-              </section>
-            )}
-
-            {/* Informação adicional */}
-            {data.infoAdicional && (
-              <section className="cv-section">
-                <MainTitle>Informação Adicional</MainTitle>
-                <p style={{ margin: 0, color: "#333", whiteSpace: "pre-line" }}>{data.infoAdicional}</p>
-              </section>
-            )}
           </main>
         </div>
       </div>
     );
   };
 
+  /* Layout "banner" (modelo Criativo) — faixa colorida a toda a largura no
+     topo em vez de sidebar ou cabeçalho neutro: silhueta deliberadamente
+     diferente das outras duas famílias de layout. */
+  const PreviewBanner = () => {
+    const accent = coresActuais.accentColor;
+    const fontFam = modeloActual.fontFamily;
+    const dens = DENSIDADE_ESCALA[modeloActual.densidade];
+    const nomeFontSize = data.nome.length > 28 ? "18pt" : "24pt";
+    const localizacao = [data.cidade, data.provincia].filter(Boolean).join(", ");
+    const tags = [...data.competenciasTecnicas, ...data.competenciasInformaticas];
+
+    const BannerTitle = ({ children }: { children: React.ReactNode }) => (
+      <h2 style={{
+        fontFamily: fontFam,
+        fontSize: dens.tituloSize,
+        fontWeight: 700,
+        color: accent,
+        margin: "0 0 3mm",
+        overflowWrap: "break-word",
+      }}>{children}</h2>
+    );
+
+    return (
+      <div className={`cv-preview bg-white mx-auto shadow-lg border border-gray-200 print:shadow-none print:border-0 ${criarCvEnt.unlocked ? "desbloqueado" : ""}`}
+        style={{
+          position: "relative",
+          fontFamily: fontFam,
+          fontSize: dens.fontBase,
+          lineHeight: dens.lineHeight,
+          color: "#1a1a1a",
+          width: "210mm",
+          minHeight: "297mm",
+        }}>
+        {!criarCvEnt.unlocked && <MarcaDagua />}
+        {/* ─── Faixa colorida ─── */}
+        <header style={{
+          background: accent,
+          color: "#fff",
+          padding: "14mm 18mm",
+          display: "flex",
+          alignItems: "center",
+          gap: "8mm",
+          WebkitPrintColorAdjust: "exact",
+          printColorAdjust: "exact",
+        }}>
+          {data.foto && (
+            <div style={{
+              width: "30mm",
+              height: "30mm",
+              borderRadius: "50%",
+              overflow: "hidden",
+              flexShrink: 0,
+              border: "2pt solid rgba(255,255,255,0.6)",
+            }}>
+              <img src={data.foto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 style={{ fontSize: nomeFontSize, fontWeight: 700, margin: 0, lineHeight: 1.1, overflowWrap: "break-word" }}>
+              {data.nome || "Nome Completo"}
+            </h1>
+            {(data.titulo || data.experiencia[0]?.cargo) && (
+              <p style={{ fontSize: "12pt", fontWeight: 500, margin: "2mm 0 0", opacity: 0.92, overflowWrap: "break-word" }}>
+                {data.titulo || data.experiencia[0]?.cargo}
+              </p>
+            )}
+            <div style={{ fontSize: "9pt", marginTop: "3mm", display: "flex", flexWrap: "wrap", gap: "1.5mm 5mm", opacity: 0.9 }}>
+              {data.telefone && <span>{data.telefone}</span>}
+              {data.email && <span style={{ wordBreak: "break-all" }}>{data.email}</span>}
+              {localizacao && <span>{localizacao}</span>}
+            </div>
+          </div>
+        </header>
+
+        {/* ─── Tags de competências ─── */}
+        {tags.length > 0 && (
+          <div style={{ padding: "5mm 18mm 0", display: "flex", flexWrap: "wrap", gap: "2mm" }}>
+            {tags.map((t, i) => (
+              <span key={i} style={{
+                fontSize: "8.5pt",
+                fontWeight: 600,
+                color: accent,
+                background: `${accent}18`,
+                borderRadius: "999px",
+                padding: "1.5mm 3.5mm",
+              }}>{t}</span>
+            ))}
+          </div>
+        )}
+
+        {/* ─── Corpo ─── */}
+        <div style={{ padding: "6mm 18mm 15mm" }}>
+          {data.objectivo && (
+            <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
+              <BannerTitle>Perfil</BannerTitle>
+              <p style={{ textAlign: "justify", margin: 0, color: "#333" }}>{data.objectivo}</p>
+            </section>
+          )}
+
+          {data.experiencia.length > 0 && (
+            <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
+              <BannerTitle>Experiência</BannerTitle>
+              {data.experiencia.map((e, i) => (
+                <div key={i} className="cv-entry" style={{ marginBottom: "4mm" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "1mm 3mm" }}>
+                    <strong style={{ fontSize: "11pt", color: "#0D0D0D", overflowWrap: "break-word" }}>{e.cargo}</strong>
+                    <span style={{ fontSize: "9pt", color: accent, fontWeight: 700, whiteSpace: "nowrap" }}>
+                      {e.dataInicio}{e.actualmente ? " - Presente" : e.dataFim ? ` - ${e.dataFim}` : ""}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "10pt", color: "#555", fontStyle: "italic", marginBottom: "1mm", overflowWrap: "break-word" }}>
+                    {e.empresa}{e.local ? `, ${e.local}` : ""}
+                  </div>
+                  {e.descricao && (
+                    <div style={{ color: "#333" }}>
+                      {e.descricao.split("\n").filter(l => l.trim()).map((l, j) => {
+                        const clean = l.replace(/^[-•·*]\s*/, "").trim();
+                        return <div key={j} style={{ display: "flex", gap: "2mm", marginTop: "0.8mm" }}><span style={{ color: accent }}>•</span><span>{clean}</span></div>;
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </section>
+          )}
+
+          {data.formacao.length > 0 && (
+            <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
+              <BannerTitle>Formação</BannerTitle>
+              {data.formacao.map((f, i) => (
+                <div key={i} className="cv-entry" style={{ marginBottom: "3.5mm" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "1mm 3mm" }}>
+                    <strong style={{ fontSize: "11pt", color: "#0D0D0D", overflowWrap: "break-word" }}>{f.curso}{f.grau ? ` (${f.grau})` : ""}</strong>
+                    <span style={{ fontSize: "9pt", color: accent, fontWeight: 700, whiteSpace: "nowrap" }}>
+                      {f.anoInicio}{f.anoFim ? ` - ${f.anoFim}` : ""}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "10pt", color: "#555", fontStyle: "italic", overflowWrap: "break-word" }}>{f.instituicao}</div>
+                  {f.descricao && <p style={{ margin: "1mm 0 0", color: "#333" }}>{f.descricao}</p>}
+                </div>
+              ))}
+            </section>
+          )}
+
+          {(data.linguaMaterna || data.linguas.length > 0) && (
+            <section className="cv-section" style={{ marginBottom: dens.secMargin }}>
+              <BannerTitle>Línguas</BannerTitle>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "2mm 6mm" }}>
+                {data.linguaMaterna && (
+                  <span><strong style={{ color: "#0D0D0D" }}>{data.linguaMaterna}</strong> <span style={{ color: "#777", fontStyle: "italic" }}>— Língua materna</span></span>
+                )}
+                {data.linguas.map((l, i) => (
+                  <span key={i}><strong style={{ color: "#0D0D0D" }}>{l.lingua}</strong> <span style={{ color: "#777" }}>— {l.nivel}</span></span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {data.referencias.length > 0 && (
+            <section className="cv-section">
+              <BannerTitle>Referências</BannerTitle>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5mm 8mm" }}>
+                {data.referencias.map((r, i) => (
+                  <div key={i}>
+                    <div style={{ fontWeight: 700, color: "#0D0D0D" }}>{r.nome}</div>
+                    {r.cargo && <div style={{ fontSize: "9.5pt", color: "#555", fontStyle: "italic" }}>{r.cargo}{r.empresa ? `, ${r.empresa}` : ""}</div>}
+                    {r.telefone && <div style={{ fontSize: "9.5pt", color: "#444" }}>Tel.: {r.telefone}</div>}
+                    {r.email && <div style={{ fontSize: "9.5pt", color: "#444" }}>{r.email}</div>}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const modeloActual = MODELOS.find(m => m.id === cvModelo) ?? MODELOS[0];
+  const paletaActual = modeloActual.paletas[paletaIndex ?? 0] ?? modeloActual.paletas[0];
+  const coresActuais = {
+    accentColor: paletaActual?.accentColor ?? modeloActual.accentColor,
+    sidebarBg: paletaActual?.sidebarBg ?? modeloActual.sidebarBg,
+    sidebarColor: paletaActual?.sidebarColor ?? modeloActual.sidebarColor,
+  };
+  const sugestaoModelo = !modeloEscolhidoManualmente && !sugestaoIgnorada ? recomendarModelo(data.titulo) : null;
+  const modeloSugerido = sugestaoModelo ? MODELOS.find(m => m.id === sugestaoModelo.modeloId) : null;
+
+  const escolherModelo = (id: CvModelo) => {
+    setCvModelo(id);
+    setPaletaIndex(null);
+    setModeloEscolhidoManualmente(true);
+  };
 
   const stepPreview = (
     <div>
@@ -1698,72 +2080,88 @@ export default function CurriculumPage() {
             <p className="text-[11px] text-gray-400">{MODELOS.length} designs profissionais para diferentes contextos</p>
           </div>
         </div>
+
+        {modeloSugerido && modeloSugerido.id !== cvModelo && (
+          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-3 mb-3">
+            <Sparkles size={15} className="text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-amber-800">
+                <span className="font-bold">Sugerimos: {modeloSugerido.nome}</span> — {sugestaoModelo?.motivo}
+              </p>
+              <div className="flex gap-3 mt-1.5">
+                <button onClick={() => escolherModelo(modeloSugerido.id)} className="text-xs font-bold text-amber-700 hover:underline">Usar</button>
+                <button onClick={() => setSugestaoIgnorada(true)} className="text-xs text-amber-500 hover:underline">Ignorar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
           {MODELOS.map(m => (
-            <button
+            <div
               key={m.id}
-              onClick={() => setCvModelo(m.id)}
-              className={`text-left p-3 rounded-xl border-2 transition-all ${cvModelo === m.id ? "border-[#D20001] bg-[#D20001]/5" : "border-gray-100 hover:border-gray-300"}`}
+              className={`text-left rounded-xl border-2 transition-all overflow-hidden ${cvModelo === m.id ? "border-[#D20001] bg-[#D20001]/5" : "border-gray-100 hover:border-gray-300"}`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: m.accentColor }} />
-                <span className="text-sm font-bold text-[#2A0001]">{m.nome}</span>
-              </div>
-              <p className="text-[10px] text-gray-500 leading-tight">{m.descricao}</p>
-            </button>
+              <button onClick={() => escolherModelo(m.id)} className="w-full text-left p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: m.accentColor }} />
+                  <span className="text-sm font-bold text-[#2A0001]">{m.nome}</span>
+                </div>
+                <p className="text-[10px] text-gray-500 leading-tight">{m.descricao}</p>
+              </button>
+              <button
+                onClick={() => setInfoModeloAberto(infoModeloAberto === m.id ? null : m.id)}
+                className="w-full flex items-center justify-center gap-1 text-[10px] text-gray-400 hover:text-[#D20001] border-t border-gray-50 py-1"
+              >
+                <Info className="w-3 h-3" /> {infoModeloAberto === m.id ? "Ocultar" : "Detalhes"}
+              </button>
+              {infoModeloAberto === m.id && (
+                <div className="px-3 pb-3 pt-1 text-[10px] text-gray-500 space-y-1 border-t border-gray-50">
+                  <p><span className="font-bold text-gray-600">Área recomendada:</span> {m.areaRecomendada.join(", ")}</p>
+                  <p><span className="font-bold text-gray-600">Experiência:</span> {m.nivelExperiencia}</p>
+                  <p><span className="font-bold text-gray-600">Compatibilidade ATS:</span> {m.ats}</p>
+                  <p className="italic leading-relaxed">{m.justificativa}</p>
+                </div>
+              )}
+            </div>
           ))}
         </div>
-      </div>
 
-      {/* Análise Inteligente do CV — consultor virtual */}
-      <div className="mb-5 print:hidden">
-        <CvAnaliseIA cvData={data as unknown as Record<string, unknown>} />
+        {modeloActual.paletas.length > 1 && (
+          <div className="mt-4 pt-4 border-t border-gray-50">
+            <p className="text-[11px] font-bold text-gray-500 mb-2">Cor do modelo</p>
+            <div className="flex flex-wrap gap-2">
+              {modeloActual.paletas.map((p, i) => (
+                <button
+                  key={p.nome}
+                  onClick={() => setPaletaIndex(i)}
+                  title={p.nome}
+                  className={`flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-full border-2 transition-all ${(paletaIndex ?? 0) === i ? "border-[#D20001]" : "border-gray-100 hover:border-gray-300"}`}
+                >
+                  <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: p.accentColor }} />
+                  <span className="text-[10px] font-semibold text-gray-600">{p.nome}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {compraPendenteCv && (
-        <div className="mb-5 print:hidden">
+        <div ref={compraGateRef} className="mb-5 print:hidden">
           <CompraGate servicoSlug="criar-cv-ia" servicoNome="Criar CV" onUnlock={() => setCompraPendenteCv(false)}>
             {null}
           </CompraGate>
         </div>
       )}
 
-      {/* Compatibilidade com uma vaga específica */}
-      <div className="mb-5 print:hidden">
-        <CvMatchingVaga cvData={data as unknown as Record<string, unknown>} />
-      </div>
-
-      {/* Carta de Apresentação + Carta de Motivação + Requerimento */}
-      <div className="mb-5 print:hidden">
-        <DocumentosGerados cvData={data as unknown as Record<string, unknown>} />
-      </div>
-
-      {/* Conversão para ATS */}
-      <div className="mb-5 print:hidden">
-        <ConversaoATS cvData={data as unknown as Record<string, unknown>} />
-      </div>
-
-      {/* Tradução de CV */}
-      <div className="mb-5 print:hidden">
-        <TraducaoCv cvData={data as unknown as Record<string, unknown>} />
-      </div>
-
-      {/* Simulação de Entrevista */}
-      <div className="mb-5 print:hidden">
-        <SimulacaoEntrevista cvData={data as unknown as Record<string, unknown>} />
-      </div>
-
-      {/* Os teus documentos já pagos/gerados */}
-      <div className="mb-5 print:hidden">
-        <MeusDocumentos />
-      </div>
-
-      {/* Sidebar layout só se modelo "moderno"; outros modelos usam layout single mesmo para Europeu */}
+      {/* Cada família de layout (single/sidebar/banner) tem a sua própria função de
+          preview; a densidade do modelo controla espaçamento/tamanho de fonte dentro dela. */}
       {/* O documento tem largura real de A4 (210mm) — em ecrãs estreitos isso
           teria de "sair" da página; contém-se o overflow aqui, num scroll
           horizontal só desta caixa, para a página nunca ganhar scroll lateral. */}
       <div className="overflow-x-auto max-w-full print:overflow-visible">
-        {modeloActual.layout === "sidebar" ? <PreviewEuropeu /> : <PreviewNacional />}
+        {modeloActual.layout === "sidebar" ? <PreviewSidebar /> : modeloActual.layout === "banner" ? <PreviewBanner /> : <PreviewNacional />}
       </div>
       <div className="text-center mt-6 print:hidden flex flex-wrap justify-center gap-3">
         <button onClick={handlePrint} className="btn-green">
@@ -1772,6 +2170,34 @@ export default function CurriculumPage() {
         <button onClick={handleDownloadWord} disabled={gerandoDocx} className="btn-vivid-outline disabled:opacity-60">
           {gerandoDocx ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Word (.docx)
         </button>
+      </div>
+
+      {/* Ferramentas extra — em acordeão, para não competir por espaço com o modelo e a pré-visualização */}
+      <div className="mt-10 print:hidden">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 px-1">Mais ferramentas</h3>
+        <div className="space-y-2">
+          <Ferramenta title="Análise Inteligente do CV" desc="Auditoria completa: ATS, ortografia, layout" icon={Sparkles} open={ferramentaAberta === "analise"} onToggle={() => toggleFerramenta("analise")}>
+            <CvAnaliseIA cvData={data as unknown as Record<string, unknown>} />
+          </Ferramenta>
+          <Ferramenta title="CV Match com MUIANGA IA" desc="Compara o teu CV com uma vaga específica" icon={Award} open={ferramentaAberta === "match"} onToggle={() => toggleFerramenta("match")}>
+            <CvMatchingVaga cvData={data as unknown as Record<string, unknown>} />
+          </Ferramenta>
+          <Ferramenta title="Cartas & Requerimento" desc="Gerados automaticamente a partir do teu CV" icon={Mail} open={ferramentaAberta === "cartas"} onToggle={() => toggleFerramenta("cartas")}>
+            <DocumentosGerados cvData={data as unknown as Record<string, unknown>} />
+          </Ferramenta>
+          <Ferramenta title="Conversão para ATS" desc="Reescreve o CV para sistemas automáticos de triagem" icon={CheckCircle2} open={ferramentaAberta === "ats"} onToggle={() => toggleFerramenta("ats")}>
+            <ConversaoATS cvData={data as unknown as Record<string, unknown>} />
+          </Ferramenta>
+          <Ferramenta title="Tradução de CV" desc="Para candidaturas internacionais" icon={Languages} open={ferramentaAberta === "traducao"} onToggle={() => toggleFerramenta("traducao")}>
+            <TraducaoCv cvData={data as unknown as Record<string, unknown>} />
+          </Ferramenta>
+          <Ferramenta title="Simulação de Entrevista" desc="Perguntas prováveis e dicas de resposta" icon={Users} open={ferramentaAberta === "entrevista"} onToggle={() => toggleFerramenta("entrevista")}>
+            <SimulacaoEntrevista cvData={data as unknown as Record<string, unknown>} />
+          </Ferramenta>
+          <Ferramenta title="Os teus documentos" desc="Documentos já gerados, prontos a re-descarregar" icon={FileUser} open={ferramentaAberta === "meus"} onToggle={() => toggleFerramenta("meus")}>
+            <MeusDocumentos />
+          </Ferramenta>
+        </div>
       </div>
     </div>
   );
@@ -1782,7 +2208,16 @@ export default function CurriculumPage() {
   return (
     <>
       <style jsx global>{`
+        .cv-preview {
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-touch-callout: none;
+        }
         @media print {
+          .cv-preview.desbloqueado {
+            user-select: text;
+            -webkit-user-select: text;
+          }
           body * { visibility: hidden; }
           .cv-preview, .cv-preview * { visibility: visible !important; }
           .cv-preview {
@@ -1818,7 +2253,7 @@ export default function CurriculumPage() {
           <div className="text-center mb-8 print:hidden">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D20001]/10 text-[#D20001] text-xs font-semibold mb-4">
               <FileUser className="w-4 h-4" />
-              {cvType === "nacional" ? "CV NACIONAL" : "CV EUROPASS"}
+              CV NACIONAL
             </div>
             <h1 className="text-2xl font-bold text-[#2A0001]" style={{ fontFamily: "var(--font-display)" }}>
               Criador de Curriculum Vitae

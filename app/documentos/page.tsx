@@ -13,6 +13,7 @@ import { CATEGORIAS, TIPOS_DOCUMENTO, type CategoriaDocumento } from "@/lib/docu
 import AuthModal from "@/components/AuthModal";
 import CompraGate from "@/components/premium/CompraGate";
 import BlocoBloqueado from "@/components/premium/BlocoBloqueado";
+import MarcaDagua from "@/components/premium/MarcaDagua";
 
 const ICONE_CATEGORIA: Record<CategoriaDocumento, typeof Briefcase> = {
   emprego: Briefcase,
@@ -165,7 +166,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
             Documentos
           </span>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#2A0001] mb-1">Cartas, requerimentos e declarações</h1>
-          <p className="text-gray-400 text-sm max-w-xl">Escolhe o documento, preenche os detalhes e gera de graça. Só pagas 200 MT quando fores copiar, descarregar ou partilhar.</p>
+          <p className="text-gray-400 text-sm max-w-xl">Escolhe o documento, preenche os detalhes e gera de graça. Por 59 MT desbloqueias copiar, descarregar ou partilhar durante 8 horas.</p>
         </div>
 
         {/* Categorias */}
@@ -314,9 +315,10 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
                 </div>
 
                 <div
-                  className="bg-[#FFF8F8] border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-gray-700"
+                  className="relative overflow-hidden bg-[#FFF8F8] border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-gray-700"
                   style={{ fontFamily: "'Times New Roman', Times, serif" }}
                 >
+                  {!ent.unlocked && <MarcaDagua />}
                   {texto.slice(0, 140)}
                   {texto.length > 140 && "…"}
                   {texto.length > 140 && (

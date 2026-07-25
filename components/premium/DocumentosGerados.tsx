@@ -7,6 +7,7 @@ import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
 import CompraGate from "@/components/premium/CompraGate";
 import BlocoBloqueado from "@/components/premium/BlocoBloqueado";
+import MarcaDagua from "@/components/premium/MarcaDagua";
 
 type Doc = "carta" | "requerimento" | "motivacao";
 
@@ -246,9 +247,10 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
               />
             ) : (
               <div
-                className="bg-white border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-gray-700"
+                className="relative overflow-hidden bg-white border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-gray-700"
                 style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
+                {!(!!activeDoc && entitlementPorDoc[activeDoc].unlocked) && <MarcaDagua />}
                 {texto.slice(0, 140)}
                 {texto.length > 140 && "…"}
                 {texto.length > 140 && (

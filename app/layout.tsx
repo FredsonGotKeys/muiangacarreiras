@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/lib/auth-context";
+import { EntitlementProvider } from "@/lib/use-entitlement";
 import BottomNav from "@/components/premium/BottomNav";
 import InstallPrompt from "@/components/premium/InstallPrompt";
 
@@ -78,11 +79,13 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}
         />
         <AuthProvider>
-          <Navbar />
-          <main className="pb-24 lg:pb-0">{children}</main>
-          <Footer />
-          <BottomNav />
-          <InstallPrompt />
+          <EntitlementProvider>
+            <Navbar />
+            <main className="pb-24 lg:pb-0">{children}</main>
+            <Footer />
+            <BottomNav />
+            <InstallPrompt />
+          </EntitlementProvider>
         </AuthProvider>
       </body>
     </html>

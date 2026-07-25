@@ -1,21 +1,28 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
-import { X, CheckCircle2, Loader2, AlertCircle, ExternalLink, Smartphone } from "lucide-react";
+import { X, CheckCircle2, Loader2, AlertCircle, Smartphone } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { getCatalogoItem, type TipoCatalogo, type CatalogoItem } from "@/lib/catalogo-client";
 
 type Fase = "metodo" | "aguardando" | "sucesso";
-type Metodo = "mpesa" | "emola" | "card";
+type Metodo = "mpesa" | "emola";
 
 const METODOS: { id: Metodo; label: string; hint: string; logo: string }[] = [
   { id: "mpesa", label: "M-Pesa", hint: "Confirmação directa", logo: "/images/payment/mpesa.png" },
   { id: "emola", label: "e-Mola", hint: "Confirmação directa", logo: "/images/payment/emola.png" },
-  { id: "card",  label: "Cartão", hint: "Visa / Mastercard", logo: "/images/payment/visa-mastercard.png" },
 ];
 
+// Planos de numeração móvel de Moçambique — usado para avisar logo se o
+// número não pertence à rede do método escolhido (ex.: número Vodacom
+// escolhido com e-Mola nunca recebe o USSD, porque e-Mola é da Movitel).
+const PREFIXOS_REDE: Record<Metodo, string[]> = {
+  mpesa: ["84", "85"],
+  emola: ["86", "87"],
+};
+
 export default function ZumboPayModal({
-  initialFase = "metodo",
   onClose,
   onSuccess,
   tipo,
@@ -23,7 +30,6 @@ export default function ZumboPayModal({
   tituloSucesso,
   subtituloSucesso,
 }: {
-  initialFase?: Fase;
   onClose: () => void;
   onSuccess: () => void;
   tipo: TipoCatalogo;
@@ -31,7 +37,7 @@ export default function ZumboPayModal({
   tituloSucesso?: string;
   subtituloSucesso?: string;
 }) {
-  const [fase, setFase] = useState<Fase>(initialFase);
+  const [fase, setFase] = useState<Fase>("metodo");
   const [metodo, setMetodo] = useState<Metodo>("mpesa");
   const [telefone, setTelefone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,15 +68,6 @@ export default function ZumboPayModal({
   const pollRef = useRef<number | null>(null);
   useEffect(() => {
     return () => { if (pollRef.current) window.clearInterval(pollRef.current); };
-  }, []);
-
-  // Regresso do checkout de cartão — já abre em "aguardando" e inicia o polling
-  useEffect(() => {
-    if (initialFase === "aguardando") {
-      setAguardandoMsg("A confirmar o teu pagamento com cartão...");
-      startPolling();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function checkStatus(): Promise<"active" | "pending" | "blocked" | "error"> {
@@ -116,8 +113,14 @@ export default function ZumboPayModal({
       setError("Item indisponível de momento. Tenta novamente.");
       return;
     }
-    if ((metodo === "mpesa" || metodo === "emola") && !/^\d{9}$/.test(telefone.replace(/\D/g, ""))) {
+    const numero = telefone.replace(/\D/g, "");
+    if (!/^\d{9}$/.test(numero)) {
       setError("Indica um número de telefone válido (9 dígitos).");
+      return;
+    }
+    if (!PREFIXOS_REDE[metodo].includes(numero.slice(0, 2))) {
+      const rede = metodo === "mpesa" ? "Vodacom (M-Pesa), começa por 84 ou 85" : "Movitel (e-Mola), começa por 86 ou 87";
+      setError(`Este número não parece ser ${rede}. Confirma o número ou muda de método.`);
       return;
     }
     setLoading(true);
@@ -125,17 +128,12 @@ export default function ZumboPayModal({
       const res = await authFetch("/api/zumbopay/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipo, itemId: item.id, metodo, telefone: telefone.replace(/\D/g, "") }),
+        body: JSON.stringify({ tipo, itemId: item.id, metodo, telefone: numero }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Erro ao iniciar pagamento.");
         setLoading(false);
-        return;
-      }
-
-      if (data.mode === "redirect" && data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
         return;
       }
 
@@ -167,7 +165,7 @@ export default function ZumboPayModal({
     fase === "aguardando" ? "Não feches esta janela" :
     itemErro ? "Item indisponível" : `${precoLabel} · pagamento seguro`;
 
-  return (
+  return createPortal(
     <>
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60]"
         onClick={() => { if (fase !== "aguardando") onClose(); }} />
@@ -197,7 +195,7 @@ export default function ZumboPayModal({
             {/* FASE: escolher método */}
             {fase === "metodo" && (
               <div className="p-6 flex flex-col gap-5">
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {METODOS.map((m) => (
                     <button
                       key={m.id}
@@ -215,20 +213,18 @@ export default function ZumboPayModal({
                   ))}
                 </div>
 
-                {(metodo === "mpesa" || metodo === "emola") && (
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Número de telefone</label>
-                    <input
-                      type="tel"
-                      inputMode="numeric"
-                      maxLength={9}
-                      value={telefone}
-                      onChange={(e) => setTelefone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                      placeholder="84 123 4567"
-                      className="w-full border border-gray-200 rounded-xl text-sm px-4 py-3 focus:outline-none focus:border-[#D20001] focus:ring-2 focus:ring-[#D20001]/10 transition-all"
-                    />
-                  </div>
-                )}
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Número de telefone</label>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={9}
+                    value={telefone}
+                    onChange={(e) => setTelefone(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                    placeholder={metodo === "mpesa" ? "84 123 4567" : "86 123 4567"}
+                    className="w-full border border-gray-200 rounded-xl text-sm px-4 py-3 focus:outline-none focus:border-[#D20001] focus:ring-2 focus:ring-[#D20001]/10 transition-all"
+                  />
+                </div>
 
                 {error && (
                   <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-3">
@@ -246,8 +242,6 @@ export default function ZumboPayModal({
                     ? <><Loader2 size={16} className="animate-spin" /> A iniciar...</>
                     : !item
                     ? <><Loader2 size={16} className="animate-spin" /> A carregar...</>
-                    : metodo === "card"
-                    ? <><ExternalLink size={16} /> Continuar para pagamento</>
                     : <><Smartphone size={16} /> Pagar {precoLabel} com {metodo === "mpesa" ? "M-Pesa" : "e-Mola"}</>}
                 </button>
               </div>
@@ -292,6 +286,7 @@ export default function ZumboPayModal({
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

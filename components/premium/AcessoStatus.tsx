@@ -15,6 +15,8 @@ function formatRestante(expiraEm: string): string {
   return `${h}h${String(m).padStart(2, "0")}`;
 }
 
+const AVISO_EXPIRACAO_MS = 10 * 60000;
+
 /**
  * Indicador global do passe de Acesso Total: mostra a contagem decrescente
  * quando activo, ou um botão para o comprar quando não está. Visível em
@@ -36,13 +38,16 @@ export default function AcessoStatus() {
   if (!user || checking) return null;
 
   if (unlocked && expiraEm) {
+    const expirandoEm = new Date(expiraEm).getTime() - Date.now() < AVISO_EXPIRACAO_MS;
     return (
       <span
-        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
-        style={{ background: "rgba(210,0,1,0.10)", color: "#D20001" }}
-        title="O teu acesso total ainda está activo"
+        className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${expirandoEm ? "animate-pulse" : ""}`}
+        style={expirandoEm
+          ? { background: "rgba(217,119,6,0.12)", color: "#B45309" }
+          : { background: "rgba(210,0,1,0.10)", color: "#D20001" }}
+        title={expirandoEm ? "O teu acesso total está prestes a expirar" : "O teu acesso total ainda está activo"}
       >
-        <Zap className="w-3 h-3" /> Acesso activo · {formatRestante(expiraEm)}
+        <Zap className="w-3 h-3" /> {expirandoEm ? "Expira em breve" : "Acesso activo"} · {formatRestante(expiraEm)}
       </span>
     );
   }

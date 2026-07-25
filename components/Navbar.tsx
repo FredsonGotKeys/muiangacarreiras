@@ -164,6 +164,9 @@ export default function Navbar() {
                       <UserCircle2 size={18} className="text-[#D20001]" />
                       <span className="text-sm font-semibold text-[#2A0001] truncate">{nomeUser}</span>
                     </Link>
+                    <div className="flex justify-center px-1">
+                      <AcessoStatus />
+                    </div>
                     <button onClick={() => { signOut(); setOpen(false); }}
                       className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
                     >

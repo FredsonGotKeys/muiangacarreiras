@@ -12,13 +12,24 @@ const sb = createClient(
  * `servicoSlug` é ignorado; mantido só por compatibilidade de assinatura.
  */
 export async function hasEntitlement(userId: string, _servicoSlug?: string): Promise<boolean> {
+  const row = await entitlementRow(userId);
+  return !!row;
+}
+
+/**
+ * Igual a `hasEntitlement`, mas devolve também `expira_em` — para UI que
+ * precisa de mostrar a contagem decrescente sem confiar no relógio do
+ * browser (usado por app/api/entitlement/status/route.ts).
+ */
+export async function entitlementRow(userId: string): Promise<{ expira_em: string } | null> {
   const { data } = await sb
     .from("compras")
-    .select("id")
+    .select("expira_em")
     .eq("user_id", userId)
     .eq("status", "concluida")
     .gt("expira_em", new Date().toISOString())
+    .order("expira_em", { ascending: false })
     .limit(1)
     .maybeSingle();
-  return !!data;
+  return data as { expira_em: string } | null;
 }
