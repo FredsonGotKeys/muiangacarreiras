@@ -585,7 +585,7 @@ function AiTextarea({ value, onChange, contexto, placeholder, rows = 3 }: {
 export default function CurriculumPage() {
   const [cvType, setCvType] = useState<CvType>(null);
   const [cvModelo, setCvModelo] = useState<CvModelo>("classico");
-  const [paletaIndex, setPaletaIndex] = useState<number | null>(null);
+  const [corCustom, setCorCustom] = useState<string | null>(null);
   const [modeloEscolhidoManualmente, setModeloEscolhidoManualmente] = useState(false);
   const [sugestaoIgnorada, setSugestaoIgnorada] = useState(false);
   const [infoModeloAberto, setInfoModeloAberto] = useState<CvModelo | null>(null);
@@ -2037,18 +2037,18 @@ export default function CurriculumPage() {
   };
 
   const modeloActual = MODELOS.find(m => m.id === cvModelo) ?? MODELOS[0];
-  const paletaActual = modeloActual.paletas[paletaIndex ?? 0] ?? modeloActual.paletas[0];
+  const paletaBase = modeloActual.paletas[0];
   const coresActuais = {
-    accentColor: paletaActual?.accentColor ?? modeloActual.accentColor,
-    sidebarBg: paletaActual?.sidebarBg ?? modeloActual.sidebarBg,
-    sidebarColor: paletaActual?.sidebarColor ?? modeloActual.sidebarColor,
+    accentColor: corCustom ?? paletaBase?.accentColor ?? modeloActual.accentColor,
+    sidebarBg: paletaBase?.sidebarBg ?? modeloActual.sidebarBg,
+    sidebarColor: paletaBase?.sidebarColor ?? modeloActual.sidebarColor,
   };
   const sugestaoModelo = !modeloEscolhidoManualmente && !sugestaoIgnorada ? recomendarModelo(data.titulo) : null;
   const modeloSugerido = sugestaoModelo ? MODELOS.find(m => m.id === sugestaoModelo.modeloId) : null;
 
   const escolherModelo = (id: CvModelo) => {
     setCvModelo(id);
-    setPaletaIndex(null);
+    setCorCustom(null);
     setModeloEscolhidoManualmente(true);
   };
 
@@ -2132,24 +2132,29 @@ export default function CurriculumPage() {
           ))}
         </div>
 
-        {modeloActual.paletas.length > 1 && (
-          <div className="mt-4 pt-4 border-t border-gray-50">
-            <p className="text-[11px] font-bold text-gray-500 mb-2">Cor do modelo</p>
-            <div className="flex flex-wrap gap-2">
-              {modeloActual.paletas.map((p, i) => (
-                <button
-                  key={p.nome}
-                  onClick={() => setPaletaIndex(i)}
-                  title={p.nome}
-                  className={`flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-full border-2 transition-all ${(paletaIndex ?? 0) === i ? "border-[#D20001]" : "border-gray-100 hover:border-gray-300"}`}
-                >
-                  <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: p.accentColor }} />
-                  <span className="text-[10px] font-semibold text-gray-600">{p.nome}</span>
-                </button>
-              ))}
+        <div className="mt-4 pt-4 border-t border-gray-50">
+          <p className="text-[11px] font-bold text-gray-500 mb-2">Cor do modelo</p>
+          <div className="flex items-center gap-3">
+            <div className="relative w-12 h-12 rounded-2xl border-2 border-gray-100 overflow-hidden shrink-0" style={{ backgroundColor: coresActuais.accentColor }}>
+              <input
+                type="color"
+                value={coresActuais.accentColor}
+                onChange={(e) => setCorCustom(e.target.value)}
+                title="Arrasta ou toca para escolher a cor"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-gray-600">Toca no quadrado para abrir a paleta</p>
+              <p className="text-[10px] text-gray-400">Arrasta o dedo ou o cursor para escolher qualquer cor</p>
+            </div>
+            {corCustom && (
+              <button onClick={() => setCorCustom(null)} className="text-[10px] font-semibold text-gray-400 hover:text-[#D20001] underline underline-offset-2 shrink-0">
+                Repor cor padrão
+              </button>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {compraPendenteCv && (
