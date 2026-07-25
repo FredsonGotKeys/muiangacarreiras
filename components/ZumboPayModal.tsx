@@ -9,9 +9,17 @@ import { getCatalogoItem, type TipoCatalogo, type CatalogoItem } from "@/lib/cat
 type Fase = "metodo" | "aguardando" | "sucesso";
 type Metodo = "mpesa" | "emola";
 
-const METODOS: { id: Metodo; label: string; hint: string; logo: string }[] = [
-  { id: "mpesa", label: "M-Pesa", hint: "Confirmação directa", logo: "/images/payment/mpesa.png" },
-  { id: "emola", label: "e-Mola", hint: "Confirmação directa", logo: "/images/payment/emola.png" },
+/**
+ * e-Mola temporariamente desligado — instabilidade confirmada do lado da
+ * ZumboPay (erros internos de base de dados deles, não algo que se
+ * resolva por aqui). Para voltar a activar assim que a ZumboPay
+ * confirmar que está resolvido, é só mudar isto para `true`.
+ */
+const EMOLA_DISPONIVEL = false;
+
+const METODOS: { id: Metodo; label: string; hint: string; logo: string; disponivel: boolean }[] = [
+  { id: "mpesa", label: "M-Pesa", hint: "Confirmação directa", logo: "/images/payment/mpesa.png", disponivel: true },
+  { id: "emola", label: "e-Mola", hint: "Indisponível de momento", logo: "/images/payment/emola.png", disponivel: EMOLA_DISPONIVEL },
 ];
 
 // Planos de numeração móvel de Moçambique — usado para avisar logo se o
@@ -199,19 +207,31 @@ export default function ZumboPayModal({
                   {METODOS.map((m) => (
                     <button
                       key={m.id}
-                      onClick={() => setMetodo(m.id)}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all min-h-[92px] ${
-                        metodo === m.id ? "border-[#D20001] bg-[#D20001]/5" : "border-gray-100 hover:border-gray-300"
+                      onClick={() => { if (m.disponivel) setMetodo(m.id); }}
+                      disabled={!m.disponivel}
+                      title={m.disponivel ? undefined : "e-Mola temporariamente indisponível — a ZumboPay está a resolver uma instabilidade do lado deles."}
+                      className={`relative flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all min-h-[92px] ${
+                        !m.disponivel
+                          ? "border-gray-100 opacity-50 cursor-not-allowed grayscale"
+                          : metodo === m.id ? "border-[#D20001] bg-[#D20001]/5" : "border-gray-100 hover:border-gray-300"
                       }`}
                     >
                       <div className="h-7 flex items-center justify-center">
                         <Image src={m.logo} alt={m.label} width={64} height={28} className="h-7 w-auto object-contain" />
                       </div>
                       <span className="text-xs font-bold text-[#2A0001]">{m.label}</span>
-                      <span className="text-[10px] text-gray-400 text-center leading-tight">{m.hint}</span>
+                      <span className={`text-[10px] text-center leading-tight ${m.disponivel ? "text-gray-400" : "text-amber-600 font-semibold"}`}>{m.hint}</span>
                     </button>
                   ))}
                 </div>
+                {!EMOLA_DISPONIVEL && (
+                  <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 -mt-2">
+                    <AlertCircle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-amber-700">
+                      O pagamento por e-Mola está temporariamente indisponível devido a uma instabilidade da própria ZumboPay. Usa M-Pesa entretanto — voltamos a activar assim que estiver resolvido.
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Número de telefone</label>

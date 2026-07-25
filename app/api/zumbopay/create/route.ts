@@ -29,6 +29,14 @@ const ZUMBOPAY_API_URL = "https://zumbopay.com/api/public/v1";
 const METODOS = new Set(["mpesa", "emola"]);
 const TIPOS = new Set<TipoCompra>(["servico", "pacote"]);
 
+/**
+ * e-Mola temporariamente desligado — instabilidade confirmada do lado da
+ * ZumboPay (erros internos de base de dados deles). Mantido em sincronia
+ * com EMOLA_DISPONIVEL em components/ZumboPayModal.tsx; muda os dois
+ * juntos quando a ZumboPay confirmar que está resolvido.
+ */
+const METODOS_DESACTIVADOS = new Set(["emola"]);
+
 // Planos de numeração móvel de Moçambique — o STK/USSD só chega se o
 // número pertencer mesmo à rede do método escolhido (e-Mola é Movitel,
 // M-Pesa é Vodacom); validar isto no servidor também, não só no cliente.
@@ -76,6 +84,9 @@ export async function POST(req: NextRequest) {
   const metodo = typeof body?.metodo === "string" ? body.metodo : "";
   if (!METODOS.has(metodo)) {
     return NextResponse.json({ error: "Método de pagamento inválido." }, { status: 400 });
+  }
+  if (METODOS_DESACTIVADOS.has(metodo)) {
+    return NextResponse.json({ error: "e-Mola está temporariamente indisponível (instabilidade do lado da ZumboPay). Usa M-Pesa entretanto." }, { status: 503 });
   }
   const tipo = typeof body?.tipo === "string" ? (body.tipo as TipoCompra) : undefined;
   const itemId = str(body?.itemId, 100);
