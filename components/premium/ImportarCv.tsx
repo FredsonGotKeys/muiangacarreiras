@@ -1,11 +1,10 @@
 "use client";
 import { useRef, useState } from "react";
-import { UploadCloud, Loader2, AlertTriangle, CheckCircle2, FileText, Sparkles } from "lucide-react";
+import { UploadCloud, Loader2, AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { useAuth } from "@/lib/auth-context";
 import AuthModal from "@/components/AuthModal";
 
-const IMAGE_EXT = [".jpg", ".jpeg", ".png", ".webp"];
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 
 export default function ImportarCv({
@@ -16,16 +15,11 @@ export default function ImportarCv({
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
-  const [isImageFlow, setIsImageFlow] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-
-  function isImage(name: string) {
-    return IMAGE_EXT.some((ext) => name.toLowerCase().endsWith(ext));
-  }
 
   function onFileSelected(file: File) {
     if (!user) { setPendingFile(file); setShowAuth(true); return; }
@@ -42,11 +36,8 @@ export default function ImportarCv({
       return;
     }
 
-    const imagem = isImage(file.name);
-    setIsImageFlow(imagem);
-
     const formData = new FormData();
-    formData.append(imagem ? "image" : "file", file);
+    formData.append("file", file);
 
     setLoading(true);
     try {
@@ -76,16 +67,16 @@ export default function ImportarCv({
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.docx,.jpg,.jpeg,.png,.webp"
+        accept=".pdf,.docx"
         className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) onFileSelected(f); if (inputRef.current) inputRef.current.value = ""; }}
       />
 
       {loading ? (
           <div key="loading" className="flex flex-col items-center gap-2 py-3">
-            {isImageFlow ? <Sparkles className="w-7 h-7 animate-pulse" style={{ color: "#FE0000" }} /> : <Loader2 className="w-7 h-7 animate-spin" style={{ color: "#FE0000" }} />}
+            <Loader2 className="w-7 h-7 animate-spin" style={{ color: "#FE0000" }} />
             <p className="text-xs text-gray-500">
-              {isImageFlow ? "A ler a foto do teu CV..." : <>A estruturar dados de <span className="font-semibold">{fileName}</span>...</>}
+              A estruturar dados de <span className="font-semibold">{fileName}</span>...
             </p>
           </div>
         ) : success ? (
@@ -109,7 +100,7 @@ export default function ImportarCv({
             </div>
             <p className="text-sm font-semibold text-[#2A0001]">Já tens um CV? Importa e continua a partir dele</p>
             <p className="text-[11px] text-gray-400 flex items-center gap-1">
-              <FileText className="w-3 h-3" /> PDF, DOCX ou foto (JPG/PNG): lemos e estruturamos tudo automaticamente
+              <FileText className="w-3 h-3" /> PDF ou DOCX: lemos e estruturamos tudo automaticamente
             </p>
           </button>
         )}

@@ -12,14 +12,11 @@ const securityHeaders = [
 const nextConfig = {
   // Esconde o indicador de dev do Next.js (o badge "N / Issues" no canto)
   devIndicators: false,
-  // pdf-parse (pdfjs-dist) usa um worker interno com caminhos/requires que o
-  // bundler do Next parte — sem isto, falha em produção com "DOMMatrix is
-  // not defined" mesmo em PDFs válidos. mammoth tem o mesmo tipo de
-  // problema de empacotamento (falha silenciosa a ler .docx). @napi-rs/canvas
-  // é o binário nativo que o pdfjs-dist detecta sozinho para obter
-  // DOMMatrix/Path2D/ImageData em Node.js — sem ele, PDFs com fontes Type3
-  // (comuns em PDFs gerados por Canva/Word) rebentavam mesmo só a extrair texto.
-  serverExternalPackages: ["pdf-parse", "mammoth", "@napi-rs/canvas"],
+  // mammoth tem lógica interna (caminhos/requires) que o bundler do Next
+  // parte se tentar embutir no bundle da rota — falha silenciosa a ler
+  // .docx sem isto. (PDF passou a usar "unpdf", já feito para correr em
+  // serverless sem precisar desta excepção.)
+  serverExternalPackages: ["mammoth"],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
