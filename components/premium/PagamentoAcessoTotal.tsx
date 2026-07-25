@@ -56,7 +56,7 @@ export default function PagamentoAcessoTotal({
     return () => { if (pollRef.current) window.clearInterval(pollRef.current); };
   }, []);
 
-  async function checkStatus(): Promise<"active" | "pending" | "blocked" | "error"> {
+  async function checkStatus(): Promise<"active" | "pending" | "cancelled" | "blocked" | "error"> {
     try {
       const res = await authFetch("/api/zumbopay/confirmar", {
         method: "POST",
@@ -66,7 +66,9 @@ export default function PagamentoAcessoTotal({
       if (res.status === 403) return "blocked";
       if (!res.ok) return "error";
       const d = await res.json();
-      return d.status === "active" ? "active" : "pending";
+      if (d.status === "active") return "active";
+      if (d.status === "cancelled") return "cancelled";
+      return "pending";
     } catch {
       return "error";
     }
@@ -74,23 +76,30 @@ export default function PagamentoAcessoTotal({
 
   function startPolling() {
     let attempts = 0;
+    // Intervalo curto (2s) para reagir depressa assim que o webhook
+    // confirmar ou cancelar — a maioria dos STK push do M-Pesa resolve-se
+    // em poucos segundos quando a pessoa confirma ou cancela no telemóvel.
     pollRef.current = window.setInterval(async () => {
       attempts++;
       const s = await checkStatus();
       if (s === "active") {
         if (pollRef.current) window.clearInterval(pollRef.current);
         setFase("sucesso");
+      } else if (s === "cancelled") {
+        if (pollRef.current) window.clearInterval(pollRef.current);
+        setError("Pagamento cancelado ou recusado. Podes tentar novamente.");
+        setFase("metodo");
       } else if (s === "blocked") {
         if (pollRef.current) window.clearInterval(pollRef.current);
         setError("Conta bloqueada. Contacta o suporte.");
         setFase("metodo");
-      } else if (attempts >= 24) {
-        // 24 x 5s = 2 min
+      } else if (attempts >= 45) {
+        // 45 x 2s = 90s — janela normal de expiração de um STK push
         if (pollRef.current) window.clearInterval(pollRef.current);
         setError("Ainda não recebemos confirmação. Se já confirmaste no telemóvel, aguarda mais um pouco — não precisas de pagar de novo.");
         setFase("metodo");
       }
-    }, 5000);
+    }, 2000);
   }
 
   async function iniciarPagamento() {
