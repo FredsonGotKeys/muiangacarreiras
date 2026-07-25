@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { rateLimit, getIp, rateLimitedResponse } from "@/lib/api-utils";
 import { logError } from "@/lib/logger";
 import { chatCompletion } from "@/lib/llm";
+import { DOMMatrix, Path2D, ImageData } from "@napi-rs/canvas";
 
 /**
  * Importa um CV existente (PDF, DOCX ou foto) e estrutura os campos via IA,
@@ -14,6 +15,23 @@ import { chatCompletion } from "@/lib/llm";
  * JSON estruturado numa única chamada — mais preciso que OCR + correcção.
  */
 export const runtime = "nodejs";
+
+// pdfjs-dist (usado pelo pdf-parse) precisa destes globais do browser para
+// processar PDFs com fontes Type3/vectoriais (comuns em PDFs gerados por
+// Canva, Word, etc.) mesmo só para extrair texto — sem isto, rebenta com
+// "DOMMatrix is not defined" em produção. O pdfjs tenta detectar isto
+// sozinho via require("@napi-rs/canvas"), mas isso é invisível ao
+// rastreio de ficheiros do Vercel; importar aqui explicitamente garante
+// que o pacote vai incluído no deploy.
+if (typeof globalThis.DOMMatrix === "undefined") {
+  (globalThis as unknown as { DOMMatrix: unknown }).DOMMatrix = DOMMatrix;
+}
+if (typeof globalThis.Path2D === "undefined") {
+  (globalThis as unknown as { Path2D: unknown }).Path2D = Path2D;
+}
+if (typeof globalThis.ImageData === "undefined") {
+  (globalThis as unknown as { ImageData: unknown }).ImageData = ImageData;
+}
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 const ALLOWED_DOC_EXT = [".pdf", ".docx"];

@@ -11,6 +11,7 @@
     "download-image": "node scripts/download-founder-image.mjs"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^1.0.2",
     "@supabase/supabase-js": "^2.108.1",
     "clsx": "^2.1.1",
     "docx": "^9.7.1",
