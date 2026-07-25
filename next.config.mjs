@@ -12,6 +12,11 @@ const securityHeaders = [
 const nextConfig = {
   // Esconde o indicador de dev do Next.js (o badge "N / Issues" no canto)
   devIndicators: false,
+  // pdf-parse (pdfjs-dist) usa um worker interno com caminhos/requires que o
+  // bundler do Next parte — sem isto, falha em produção com "DOMMatrix is
+  // not defined" mesmo em PDFs válidos. mammoth tem o mesmo tipo de
+  // problema de empacotamento (falha silenciosa a ler .docx).
+  serverExternalPackages: ["pdf-parse", "mammoth"],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
