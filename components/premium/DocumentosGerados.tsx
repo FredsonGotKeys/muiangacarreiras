@@ -251,7 +251,7 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
               />
             ) : (
               <div
-                className="relative overflow-hidden bg-white border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-gray-700"
+                className="relative overflow-hidden bg-white border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-justify text-gray-700"
                 style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
                 {!(!!activeDoc && entitlementPorDoc[activeDoc].unlocked) && <MarcaDagua />}
@@ -265,7 +265,7 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
                       precoMt={activeDoc ? entitlementPorDoc[activeDoc].servico?.preco_mt : undefined}
                       minHeight={120}
                     >
-                      <div className="whitespace-pre-wrap">{texto.slice(140)}</div>
+                      <div className="whitespace-pre-wrap text-justify">{texto.slice(140)}</div>
                     </BlocoBloqueado>
                   </div>
                 )}

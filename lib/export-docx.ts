@@ -90,7 +90,10 @@ export async function gerarTextoDocx(titulo: string, texto: string): Promise<Blo
           alignment: AlignmentType.CENTER,
           spacing: { after: 240 },
         }),
-        ...texto.split("\n").map(line => new Paragraph({ children: [new TextRun({ text: line, font: FONTE, size: TAMANHO })] })),
+        ...texto.split("\n").map(line => new Paragraph({
+          children: [new TextRun({ text: line, font: FONTE, size: TAMANHO })],
+          alignment: AlignmentType.JUSTIFIED,
+        })),
       ],
     }],
     styles: { default: { document: { run: { font: FONTE, size: TAMANHO } } } },

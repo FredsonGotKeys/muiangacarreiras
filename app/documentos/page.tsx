@@ -315,7 +315,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
                 </div>
 
                 <div
-                  className="relative overflow-hidden bg-[#FFF8F8] border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-gray-700"
+                  className="relative overflow-hidden bg-[#FFF8F8] border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-justify text-gray-700"
                   style={{ fontFamily: "'Times New Roman', Times, serif" }}
                 >
                   {!ent.unlocked && <MarcaDagua />}
@@ -329,7 +329,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
                         precoMt={ent.servico?.preco_mt}
                         minHeight={120}
                       >
-                        <div className="whitespace-pre-wrap">{texto.slice(140)}</div>
+                        <div className="whitespace-pre-wrap text-justify">{texto.slice(140)}</div>
                       </BlocoBloqueado>
                     </div>
                   )}

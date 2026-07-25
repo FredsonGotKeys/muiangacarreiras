@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
 
   const cv = body.cvData as Record<string, unknown>;
   const nome = str(cv.nome, 120) ?? "";
+  const dataNascimento = str(cv.dataNascimento, 30) ?? "";
   const biDire = str(cv.biDire, 60) ?? "";
   const nacionalidade = str(cv.nacionalidade, 60) ?? "Moçambicana";
   const endereco = str(cv.endereco, 200) ?? "";
@@ -46,6 +47,8 @@ export async function POST(req: NextRequest) {
   }
 
   const hoje = formatDate(new Date());
+  const nascimentoValido = dataNascimento && !isNaN(new Date(dataNascimento).getTime());
+  const nascimentoFormatado = nascimentoValido ? formatDate(new Date(dataNascimento)) : "";
 
   const requerimento = `Exmo(a). Senhor(a)
 Director(a) de Recursos Humanos
@@ -53,7 +56,7 @@ ${empresa}
 
 Assunto: Requerimento de Emprego — Candidatura ao cargo de ${cargo}
 
-Eu, ${nome}${biDire ? `, portador(a) do Bilhete de Identidade/DIRE n.º ${biDire}` : ""}, de nacionalidade ${nacionalidade}${endereco ? `, residente em ${endereco}, ${cidade}` : `, residente em ${cidade}`}, venho por este meio requerer a Vossa Excelência que se digne considerar a minha candidatura ao cargo de ${cargo} nessa instituição.
+Eu, ${nome}${nascimentoValido ? `, nascido(a) aos ${nascimentoFormatado}` : ""}${biDire ? `, portador(a) do Bilhete de Identidade/DIRE n.º ${biDire}` : ""}, de nacionalidade ${nacionalidade}${endereco ? `, residente em ${endereco}, ${cidade}` : `, residente em ${cidade}`}, venho por este meio requerer a Vossa Excelência que se digne considerar a minha candidatura ao cargo de ${cargo} nessa instituição.
 
 Anexo à presente o meu Curriculum Vitae detalhado, bem como a Carta de Apresentação, para vossa apreciação.
 
