@@ -35,8 +35,8 @@ const sections = [
     body: "Implementamos medidas técnicas e organizacionais para proteger os teus dados contra acesso não autorizado, incluindo autenticação segura, comunicações cifradas (HTTPS) e controlo de acesso baseado em funções (RLS).",
   },
   {
-    title: "8. Cookies",
-    body: "Utilizamos apenas cookies de sessão essenciais para manter o teu estado de autenticação. Não utilizamos cookies de rastreamento ou publicidade de terceiros.",
+    title: "8. Cookies e publicidade",
+    body: "Utilizamos cookies de sessão essenciais para manter o teu estado de autenticação. Este site também utiliza o Google AdSense para apresentar publicidade, que recorre a cookies (incluindo o cookie DoubleClick) para exibir anúncios com base nas tuas visitas a este e a outros sites. Podes gerir ou desactivar a personalização de anúncios em adssettings.google.com, e consultar como a Google usa dados de sites parceiros em www.google.com/policies/privacy/partners/.",
   },
   {
     title: "9. Alterações a esta política",
