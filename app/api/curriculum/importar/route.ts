@@ -86,7 +86,9 @@ ${REGRAS}`;
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await rateLimit(getIp(req), 4))) return rateLimitedResponse();
+  // 10/min (não 4) — importar por vezes precisa de 2-3 tentativas seguidas
+  // (ficheiro errado, timeout), e o limite antigo penalizava isso sem motivo.
+  if (!(await rateLimit(getIp(req), 10))) return rateLimitedResponse();
 
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
   if (!token) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
