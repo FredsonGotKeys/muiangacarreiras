@@ -70,11 +70,28 @@ function VagaDrawer({ slug, onClose, nomeUser }: { slug: string; onClose: () => 
   const [loading, setLoading] = useState(true);
   const [candidateName, setCandidateName] = useState(nomeUser);
   const [nameSubmitted, setNameSubmitted] = useState(false);
+  const [embedAberto, setEmbedAberto] = useState(false);
+  const [embedCarregado, setEmbedCarregado] = useState(false);
+  const [embedBloqueado, setEmbedBloqueado] = useState(false);
 
   useEffect(() => {
     setLoading(true);
+    setEmbedAberto(false);
+    setEmbedCarregado(false);
+    setEmbedBloqueado(false);
     fetch(`/api/vagas/${slug}`).then(r => r.json()).then(setDetail).finally(() => setLoading(false));
   }, [slug]);
+
+  // Muitos sites de candidaturas bloqueiam ser mostrados dentro de outro
+  // site (X-Frame-Options/CSP) — não há forma fiável de detectar isso via
+  // JavaScript porque o browser nunca deixa ler o conteúdo de um iframe
+  // de outra origem. Na prática: se o "load" não disparar depressa,
+  // assume-se bloqueado e cai-se para o link externo.
+  useEffect(() => {
+    if (!embedAberto || embedCarregado) return;
+    const t = setTimeout(() => setEmbedBloqueado(true), 4000);
+    return () => clearTimeout(t);
+  }, [embedAberto, embedCarregado]);
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -227,12 +244,56 @@ ${nomeStr}`
 
                 {!d.appEmail && d.appUrl && (
                   <div className="space-y-3">
-                    <p className="text-sm text-gray-500 leading-relaxed">Esta vaga tem formulário próprio. Clica para te candidatares directamente no site da empresa.</p>
-                    <a href={d.appUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full bg-[#D20001] hover:bg-[#B40001] text-white font-bold text-sm py-4 rounded-xl transition-all active:scale-[0.98]">
-                      <ExternalLink size={16} /> Candidatar-se agora
-                    </a>
-                    <p className="text-xs text-center text-gray-400">Abre o site original da empresa</p>
+                    <p className="text-sm text-gray-500 leading-relaxed">Esta vaga tem formulário próprio, da empresa.</p>
+
+                    {!embedAberto && (
+                      <>
+                        <button
+                          onClick={() => setEmbedAberto(true)}
+                          className="flex items-center justify-center gap-2 w-full bg-[#D20001] hover:bg-[#B40001] text-white font-bold text-sm py-4 rounded-xl transition-all active:scale-[0.98]"
+                        >
+                          <Briefcase size={16} /> Preencher formulário aqui
+                        </button>
+                        <a href={d.appUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 w-full bg-[#D20001]/10 hover:bg-[#D20001]/20 text-[#D20001] font-bold text-sm py-3.5 rounded-xl transition-all">
+                          <ExternalLink size={15} /> Ou abrir no site da empresa
+                        </a>
+                      </>
+                    )}
+
+                    {embedAberto && !embedBloqueado && (
+                      <div className="space-y-2">
+                        <div className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50" style={{ height: "65vh" }}>
+                          {!embedCarregado && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <RefreshCw size={20} className="text-gray-300 animate-spin" />
+                            </div>
+                          )}
+                          <iframe
+                            src={d.appUrl}
+                            title={`Formulário de candidatura — ${d.empresa}`}
+                            className="w-full h-full"
+                            onLoad={() => setEmbedCarregado(true)}
+                          />
+                        </div>
+                        <a href={d.appUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors">
+                          <ExternalLink size={12} /> Não está a carregar bem? Abre em nova aba
+                        </a>
+                      </div>
+                    )}
+
+                    {embedAberto && embedBloqueado && (
+                      <div className="space-y-3">
+                        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                          <p className="text-xs text-amber-700">Esta empresa não permite mostrar o formulário dela dentro de outros sites (é uma proteção de segurança do lado deles). Abre directamente no site da empresa.</p>
+                        </div>
+                        <a href={d.appUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 w-full bg-[#D20001] hover:bg-[#B40001] text-white font-bold text-sm py-4 rounded-xl transition-all active:scale-[0.98]">
+                          <ExternalLink size={16} /> Candidatar-se agora
+                        </a>
+                      </div>
+                    )}
                   </div>
                 )}
 
