@@ -15,6 +15,8 @@ import CvMatchingVaga from "@/components/premium/CvMatchingVaga";
 import FotoVersoes from "@/components/premium/FotoVersoes";
 import CompraGate from "@/components/premium/CompraGate";
 import { useEntitlement } from "@/lib/use-entitlement";
+import { useAuthGate } from "@/lib/use-auth-gate";
+import AuthModal from "@/components/AuthModal";
 import { guardarDocumento } from "@/lib/documentos-client";
 import MeusDocumentos from "@/components/premium/MeusDocumentos";
 import MarcaDagua from "@/components/premium/MarcaDagua";
@@ -514,6 +516,7 @@ function AiTextarea({ value, onChange, contexto, placeholder, rows = 3 }: {
 }) {
   const [loading, setLoading] = useState(false);
   const [original, setOriginal] = useState<string | null>(null);
+  const { withAuth, showAuth, onAuthSuccess, onAuthClose } = useAuthGate();
 
   // Melhorar com IA é livre e imediato — a cobrança acontece no download do
   // CV final (que já inclui o texto melhorado), não em cada acção intermédia.
@@ -547,7 +550,7 @@ function AiTextarea({ value, onChange, contexto, placeholder, rows = 3 }: {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={melhorar}
+          onClick={() => withAuth(melhorar)}
           disabled={loading || !value.trim()}
           className="flex items-center gap-1.5 text-xs font-bold disabled:opacity-40 px-4 py-2 rounded-xl transition-all active:scale-95"
           style={{
@@ -573,6 +576,7 @@ function AiTextarea({ value, onChange, contexto, placeholder, rows = 3 }: {
           </button>
         )}
       </div>
+      {showAuth && <AuthModal onClose={onAuthClose} onSuccess={onAuthSuccess} />}
     </div>
   );
 }
@@ -596,6 +600,7 @@ export default function CurriculumPage() {
   const scrollPosRef = useRef(0);
   const compraGateRef = useRef<HTMLDivElement>(null);
   const criarCvEnt = useEntitlement("criar-cv-ia");
+  const { withAuth: withAuthCv, showAuth: showAuthCv, onAuthSuccess: onAuthSuccessCv, onAuthClose: onAuthCloseCv } = useAuthGate();
   const [compraPendenteCv, setCompraPendenteCv] = useState(false);
   const [ferramentaAberta, setFerramentaAberta] = useState<string | null>(null);
   const toggleFerramenta = (id: string) => setFerramentaAberta(prev => prev === id ? null : id);
@@ -871,7 +876,7 @@ export default function CurriculumPage() {
               </button>
             </div>
             {data.fotoOriginal && (
-              <button onClick={removeBg} disabled={removingBg} className="btn-primary text-xs py-2 px-4 disabled:opacity-50">
+              <button onClick={() => withAuthCv(removeBg)} disabled={removingBg} className="btn-primary text-xs py-2 px-4 disabled:opacity-50">
                 {removingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wrench className="w-3.5 h-3.5" />}
                 {removingBg ? "A processar..." : "Remover fundo"}
               </button>
@@ -2265,6 +2270,7 @@ export default function CurriculumPage() {
           <NavButtons />
         </div>
       </main>
+      {showAuthCv && <AuthModal onClose={onAuthCloseCv} onSuccess={onAuthSuccessCv} />}
     </>
   );
 }

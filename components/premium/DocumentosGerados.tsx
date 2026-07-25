@@ -5,9 +5,11 @@ import { authFetch } from "@/lib/auth-fetch";
 import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
 import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
+import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
 import BlocoBloqueado from "@/components/premium/BlocoBloqueado";
 import MarcaDagua from "@/components/premium/MarcaDagua";
+import AuthModal from "@/components/AuthModal";
 
 type Doc = "carta" | "requerimento" | "motivacao";
 
@@ -33,6 +35,7 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
   const [editing, setEditing] = useState(false);
   const [compraPendente, setCompraPendente] = useState<Doc | null>(null);
 
+  const { withAuth, showAuth, onAuthSuccess, onAuthClose } = useAuthGate();
   const cartaEnt = useEntitlement(SLUG_POR_DOC.carta);
   const requerimentoEnt = useEntitlement(SLUG_POR_DOC.requerimento);
   const motivacaoEnt = useEntitlement(SLUG_POR_DOC.motivacao);
@@ -158,19 +161,20 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
       </div>
 
       <div className="flex flex-wrap gap-2 mb-5">
-        <button onClick={() => gerar("carta")} disabled={loading !== null} className="btn-vivid text-xs px-4 py-2.5 disabled:opacity-60">
+        <button onClick={() => withAuth(() => gerar("carta"))} disabled={loading !== null} className="btn-vivid text-xs px-4 py-2.5 disabled:opacity-60">
           {loading === "carta" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
           {texto && activeDoc === "carta" ? "Regenerar Carta" : "Gerar Carta de Apresentação"}
         </button>
-        <button onClick={() => gerar("requerimento")} disabled={loading !== null} className="btn-vivid-outline text-xs px-4 py-2.5 disabled:opacity-60">
+        <button onClick={() => withAuth(() => gerar("requerimento"))} disabled={loading !== null} className="btn-vivid-outline text-xs px-4 py-2.5 disabled:opacity-60">
           {loading === "requerimento" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSignature className="w-3.5 h-3.5" />}
           {texto && activeDoc === "requerimento" ? "Regenerar Requerimento" : "Gerar Requerimento"}
         </button>
-        <button onClick={() => gerar("motivacao")} disabled={loading !== null} className="btn-vivid-outline text-xs px-4 py-2.5 disabled:opacity-60">
+        <button onClick={() => withAuth(() => gerar("motivacao"))} disabled={loading !== null} className="btn-vivid-outline text-xs px-4 py-2.5 disabled:opacity-60">
           {loading === "motivacao" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Heart className="w-3.5 h-3.5" />}
           {texto && activeDoc === "motivacao" ? "Regenerar Carta de Motivação" : "Gerar Carta de Motivação"}
         </button>
       </div>
+      {showAuth && <AuthModal onClose={onAuthClose} onSuccess={onAuthSuccess} />}
 
       {compraPendente && (
         <div className="mb-5">

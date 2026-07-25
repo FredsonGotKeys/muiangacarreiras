@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { downloadBlob } from "@/lib/export-docx";
+import { useAuthGate } from "@/lib/use-auth-gate";
+import AuthModal from "@/components/AuthModal";
 import {
   NIVEIS, SECOES, defaultSecoesForNivel,
   type NivelAcademico, type SecaoId,
@@ -55,6 +57,7 @@ export default function AcademicoPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [docBlob, setDocBlob] = useState<Blob | null>(null);
   const logoRef = useRef<HTMLInputElement>(null);
+  const { withAuth, showAuth, onAuthSuccess, onAuthClose } = useAuthGate();
 
   const set = <K extends keyof FormState>(key: K, val: FormState[K]) => setForm(f => ({ ...f, [key]: val }));
 
@@ -312,9 +315,10 @@ export default function AcademicoPage() {
                     <p className="text-xs text-red-600">{erro}</p>
                   </div>
                 )}
-                <button onClick={gerarDocumento} className="btn-primary px-8 py-3.5 rounded-2xl text-sm">
+                <button onClick={() => withAuth(gerarDocumento)} className="btn-primary px-8 py-3.5 rounded-2xl text-sm">
                   <Sparkles className="w-4 h-4" /> Gerar Documento Word
                 </button>
+                {showAuth && <AuthModal onClose={onAuthClose} onSuccess={onAuthSuccess} />}
               </>
             )}
           </div>

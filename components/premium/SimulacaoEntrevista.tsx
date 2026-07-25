@@ -5,13 +5,16 @@ import { authFetch } from "@/lib/auth-fetch";
 import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
 import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
+import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
 import BlocoBloqueado from "@/components/premium/BlocoBloqueado";
+import AuthModal from "@/components/AuthModal";
 
 interface Pergunta { pergunta: string; dica: string; }
 
 export default function SimulacaoEntrevista({ cvData }: { cvData: Record<string, unknown> }) {
   const ent = useEntitlement("simulacao-entrevista");
+  const { withAuth, showAuth, onAuthSuccess, onAuthClose } = useAuthGate();
   const [vagaTexto, setVagaTexto] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,10 +80,11 @@ export default function SimulacaoEntrevista({ cvData }: { cvData: Record<string,
       />
 
       {!loading && (
-        <button onClick={gerar} className="btn-vivid text-xs px-4 py-2.5 mb-4">
+        <button onClick={() => withAuth(gerar)} className="btn-vivid text-xs px-4 py-2.5 mb-4">
           <MessageCircleQuestion className="w-3.5 h-3.5" /> Gerar guião de entrevista
         </button>
       )}
+      {showAuth && <AuthModal onClose={onAuthClose} onSuccess={onAuthSuccess} />}
 
       {compraPendente && (
         <div className="mb-4">

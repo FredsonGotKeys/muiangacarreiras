@@ -5,8 +5,10 @@ import { authFetch } from "@/lib/auth-fetch";
 import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
 import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
+import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
 import BlocoBloqueado from "@/components/premium/BlocoBloqueado";
+import AuthModal from "@/components/AuthModal";
 
 interface MatchResult {
   compatibilidade: number;
@@ -23,6 +25,7 @@ function matchColor(v: number) {
 
 export default function CvMatchingVaga({ cvData }: { cvData: Record<string, unknown> }) {
   const ent = useEntitlement("cv-matching-vaga");
+  const { withAuth, showAuth, onAuthSuccess, onAuthClose } = useAuthGate();
   const [vagaTexto, setVagaTexto] = useState("");
   const [result, setResult] = useState<MatchResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -105,10 +108,11 @@ export default function CvMatchingVaga({ cvData }: { cvData: Record<string, unkn
         className="input-vivid mb-3 resize-none"
       />
 
-      <button onClick={comparar} disabled={loading} className="btn-vivid text-xs px-4 py-2.5 disabled:opacity-60">
+      <button onClick={() => withAuth(comparar)} disabled={loading} className="btn-vivid text-xs px-4 py-2.5 disabled:opacity-60">
         {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Target className="w-3.5 h-3.5" />}
         {result ? "Comparar novamente" : "Calcular Compatibilidade"}
       </button>
+      {showAuth && <AuthModal onClose={onAuthClose} onSuccess={onAuthSuccess} />}
 
       {error && (
         <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-3 mt-4">

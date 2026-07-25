@@ -5,8 +5,10 @@ import { authFetch } from "@/lib/auth-fetch";
 import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
 import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
+import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
 import BlocoBloqueado from "@/components/premium/BlocoBloqueado";
+import AuthModal from "@/components/AuthModal";
 
 interface Categoria { nome: string; pontuacao: number; comentario: string; }
 interface AnaliseResult {
@@ -69,6 +71,7 @@ function CategoryBar({ cat, delay }: { cat: Categoria; delay: number }) {
 
 export default function CvAnaliseIA({ cvData }: { cvData: Record<string, unknown> }) {
   const ent = useEntitlement("analise-cv");
+  const { withAuth, showAuth, onAuthSuccess, onAuthClose } = useAuthGate();
   const [result, setResult] = useState<AnaliseResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -150,13 +153,14 @@ export default function CvAnaliseIA({ cvData }: { cvData: Record<string, unknown
 
         {!loading && (
           <button
-            onClick={analisar}
+            onClick={() => withAuth(analisar)}
             className="btn-vivid text-xs px-4 py-2.5"
           >
             {result ? <RefreshCw className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
             {result ? "Reanalisar" : "Analisar CV"}
           </button>
         )}
+        {showAuth && <AuthModal onClose={onAuthClose} onSuccess={onAuthSuccess} />}
       </div>
 
       {loading && (

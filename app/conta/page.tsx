@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import {
   UserCircle2, Save, Loader2, CheckCircle2, Clock, XCircle, ShieldAlert,
   Package, CreditCard, LogIn,
@@ -55,7 +56,14 @@ export default function ContaPage() {
 
 function ContaConteudo() {
   const { user, signOut } = useAuth();
-  const nomeUser: string = (user?.user_metadata?.nome as string | undefined) || user?.email?.split("@")[0] || "";
+  const nomeUser: string =
+    (user?.user_metadata?.nome as string | undefined) ||
+    (user?.user_metadata?.full_name as string | undefined) ||
+    (user?.user_metadata?.name as string | undefined) ||
+    user?.email?.split("@")[0] || "";
+  const avatarUrl: string | undefined =
+    (user?.user_metadata?.avatar_url as string | undefined) ||
+    (user?.user_metadata?.picture as string | undefined);
 
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -116,8 +124,12 @@ function ContaConteudo() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#D20001]/10 rounded-2xl flex items-center justify-center">
-              <UserCircle2 size={24} className="text-[#D20001]" />
+            <div className="w-12 h-12 bg-[#D20001]/10 rounded-2xl flex items-center justify-center overflow-hidden">
+              {avatarUrl ? (
+                <Image src={avatarUrl} alt={nomeUser} width={48} height={48} className="w-full h-full object-cover" />
+              ) : (
+                <UserCircle2 size={24} className="text-[#D20001]" />
+              )}
             </div>
             <div>
               <h1 className="text-xl font-bold text-[#2A0001]">{nomeUser || "A tua conta"}</h1>

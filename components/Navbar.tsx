@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronRight, LogOut, UserCircle2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -21,7 +22,14 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const { user, signOut } = useAuth();
   const isHome = pathname === "/";
-  const nomeUser: string = (user?.user_metadata?.nome as string | undefined) || user?.email?.split("@")[0] || "";
+  const nomeUser: string =
+    (user?.user_metadata?.nome as string | undefined) ||
+    (user?.user_metadata?.full_name as string | undefined) ||
+    (user?.user_metadata?.name as string | undefined) ||
+    user?.email?.split("@")[0] || "";
+  const avatarUrl: string | undefined =
+    (user?.user_metadata?.avatar_url as string | undefined) ||
+    (user?.user_metadata?.picture as string | undefined);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 60);
@@ -99,7 +107,11 @@ export default function Navbar() {
           {user ? (
             <div className="hidden sm:flex items-center gap-2">
               <Link href="/conta" className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 rounded-xl px-3 py-2 transition-colors">
-                <UserCircle2 size={16} className="text-[#D20001]" />
+                {avatarUrl ? (
+                  <Image src={avatarUrl} alt={nomeUser} width={20} height={20} className="rounded-full object-cover shrink-0" />
+                ) : (
+                  <UserCircle2 size={16} className="text-[#D20001]" />
+                )}
                 <span className="text-sm font-semibold text-[#2A0001] max-w-[120px] truncate">{nomeUser}</span>
               </Link>
               <button onClick={signOut} title="Sair"
@@ -161,7 +173,11 @@ export default function Navbar() {
                 {user ? (
                   <>
                     <Link href="/conta" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-3 bg-[#D20001]/10 rounded-2xl">
-                      <UserCircle2 size={18} className="text-[#D20001]" />
+                      {avatarUrl ? (
+                        <Image src={avatarUrl} alt={nomeUser} width={22} height={22} className="rounded-full object-cover shrink-0" />
+                      ) : (
+                        <UserCircle2 size={18} className="text-[#D20001]" />
+                      )}
                       <span className="text-sm font-semibold text-[#2A0001] truncate">{nomeUser}</span>
                     </Link>
                     <div className="flex justify-center px-1">

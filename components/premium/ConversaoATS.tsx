@@ -5,7 +5,9 @@ import { authFetch } from "@/lib/auth-fetch";
 import { gerarCvDocx, downloadBlob } from "@/lib/export-docx";
 import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
+import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
+import AuthModal from "@/components/AuthModal";
 
 interface CvDataLike {
   nome: string; titulo: string; telefone: string; email: string; endereco: string; cidade: string;
@@ -18,6 +20,7 @@ interface CvDataLike {
 
 export default function ConversaoATS({ cvData }: { cvData: Record<string, unknown> }) {
   const ent = useEntitlement("conversao-ats");
+  const { withAuth, showAuth, onAuthSuccess, onAuthClose } = useAuthGate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pronto, setPronto] = useState(false);
@@ -83,11 +86,12 @@ export default function ConversaoATS({ cvData }: { cvData: Record<string, unknow
           </div>
         </div>
         {!loading && !pronto && (
-          <button onClick={otimizar} className="btn-vivid text-xs px-4 py-2.5">
+          <button onClick={() => withAuth(otimizar)} className="btn-vivid text-xs px-4 py-2.5">
             <FileCheck2 className="w-3.5 h-3.5" /> Optimizar para ATS
           </button>
         )}
       </div>
+      {showAuth && <AuthModal onClose={onAuthClose} onSuccess={onAuthSuccess} />}
 
       {compraPendente && (
         <div className="mb-4">

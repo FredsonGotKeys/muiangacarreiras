@@ -3,6 +3,8 @@ import { useState } from "react";
 import { FileCheck2, ListChecks, LayoutTemplate, Loader2, Download, Copy, Check, AlertTriangle } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { downloadBlob } from "@/lib/export-docx";
+import { useAuthGate } from "@/lib/use-auth-gate";
+import AuthModal from "@/components/AuthModal";
 
 type Tool = "revisao" | "normalizar" | "formatar";
 
@@ -49,6 +51,7 @@ function RevisaoTool() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const { withAuth, showAuth, onAuthSuccess, onAuthClose } = useAuthGate();
 
   async function rever() {
     setLoading(true); setError(null); setResultado(null);
@@ -65,9 +68,10 @@ function RevisaoTool() {
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 space-y-4">
       <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={10} placeholder="Cola aqui o texto a rever..." className="input-field resize-none" />
-      <button onClick={rever} disabled={loading || !texto.trim()} className="btn-primary text-sm disabled:opacity-60">
+      <button onClick={() => withAuth(rever)} disabled={loading || !texto.trim()} className="btn-primary text-sm disabled:opacity-60">
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCheck2 className="w-4 h-4" />} Rever texto
       </button>
+      {showAuth && <AuthModal onClose={onAuthClose} onSuccess={onAuthSuccess} />}
       {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl p-3 text-xs text-red-600"><AlertTriangle className="w-4 h-4" />{error}</div>}
       {resultado && (
         <div className="space-y-3 pt-2 border-t border-gray-100">
@@ -98,6 +102,7 @@ function NormalizarTool() {
   const [resultado, setResultado] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { withAuth, showAuth, onAuthSuccess, onAuthClose } = useAuthGate();
 
   async function normalizar() {
     setLoading(true); setError(null); setResultado(null);
@@ -119,9 +124,10 @@ function NormalizarTool() {
         ))}
       </div>
       <textarea value={referencias} onChange={e => setReferencias(e.target.value)} rows={8} placeholder="Cola aqui as tuas referências, uma por linha..." className="input-field resize-none" />
-      <button onClick={normalizar} disabled={loading || !referencias.trim()} className="btn-primary text-sm disabled:opacity-60">
+      <button onClick={() => withAuth(normalizar)} disabled={loading || !referencias.trim()} className="btn-primary text-sm disabled:opacity-60">
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListChecks className="w-4 h-4" />} Normalizar para {norma}
       </button>
+      {showAuth && <AuthModal onClose={onAuthClose} onSuccess={onAuthSuccess} />}
       {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl p-3 text-xs text-red-600"><AlertTriangle className="w-4 h-4" />{error}</div>}
       {resultado && (
         <div className="bg-gray-50 rounded-xl p-4 space-y-2">
@@ -138,6 +144,7 @@ function FormatarTool() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pronto, setPronto] = useState(false);
+  const { withAuth, showAuth, onAuthSuccess, onAuthClose } = useAuthGate();
 
   async function formatar() {
     setLoading(true); setError(null); setPronto(false);
@@ -157,9 +164,10 @@ function FormatarTool() {
       <input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Título do trabalho" className="input-field" />
       <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={12} placeholder={"Cola aqui o teu texto.\nUsa \"# \" no início da linha para criar um título de secção (ex: # Introdução)."} className="input-field resize-none font-mono text-xs" />
       <p className="text-[11px] text-gray-400">Dica: linhas começadas com <code className="bg-gray-100 px-1 rounded">#</code> viram títulos e aparecem no índice automático.</p>
-      <button onClick={formatar} disabled={loading || !texto.trim()} className="btn-primary text-sm disabled:opacity-60">
+      <button onClick={() => withAuth(formatar)} disabled={loading || !texto.trim()} className="btn-primary text-sm disabled:opacity-60">
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Gerar .docx formatado
       </button>
+      {showAuth && <AuthModal onClose={onAuthClose} onSuccess={onAuthSuccess} />}
       {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl p-3 text-xs text-red-600"><AlertTriangle className="w-4 h-4" />{error}</div>}
       {pronto && <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs text-emerald-700"><Check className="w-4 h-4" />Documento descarregado!</div>}
     </div>

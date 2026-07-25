@@ -5,7 +5,9 @@ import { authFetch } from "@/lib/auth-fetch";
 import { gerarCvDocx, downloadBlob } from "@/lib/export-docx";
 import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
+import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
+import AuthModal from "@/components/AuthModal";
 
 interface CvDataLike {
   nome: string; titulo: string; telefone: string; email: string; endereco: string; cidade: string; objectivo: string;
@@ -19,6 +21,7 @@ const IDIOMAS = [{ id: "en", label: "Inglês" }, { id: "fr", label: "Francês" }
 
 export default function TraducaoCv({ cvData }: { cvData: Record<string, unknown> }) {
   const ent = useEntitlement("traducao-cv");
+  const { withAuth, showAuth, onAuthSuccess, onAuthClose } = useAuthGate();
   const [idioma, setIdioma] = useState<"en" | "fr">("en");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,11 +95,12 @@ export default function TraducaoCv({ cvData }: { cvData: Record<string, unknown>
           </button>
         ))}
         {!loading && (
-          <button onClick={traduzir} className="btn-vivid text-xs px-4 py-2.5 ml-auto">
+          <button onClick={() => withAuth(traduzir)} className="btn-vivid text-xs px-4 py-2.5 ml-auto">
             <Languages className="w-3.5 h-3.5" /> Traduzir
           </button>
         )}
       </div>
+      {showAuth && <AuthModal onClose={onAuthClose} onSuccess={onAuthSuccess} />}
 
       {compraPendente && (
         <div className="mb-4">
