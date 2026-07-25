@@ -32,7 +32,7 @@ export default function AuthModal({ onClose, onSuccess }: { onClose: () => void;
     const sb = getSupabaseBrowser();
     const { error: err } = await sb.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/emprego` },
+      options: { redirectTo: window.location.href },
     });
     if (err) {
       setError("Erro ao iniciar sessão com Google. Tenta novamente.");

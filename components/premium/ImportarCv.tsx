@@ -2,6 +2,8 @@
 import { useRef, useState } from "react";
 import { UploadCloud, Loader2, AlertTriangle, CheckCircle2, FileText, Sparkles } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
+import { useAuth } from "@/lib/auth-context";
+import AuthModal from "@/components/AuthModal";
 
 const IMAGE_EXT = [".jpg", ".jpeg", ".png", ".webp"];
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
@@ -11,15 +13,23 @@ export default function ImportarCv({
 }: {
   onImported: (extraido: Record<string, unknown>) => void;
 }) {
+  const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [isImageFlow, setIsImageFlow] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   function isImage(name: string) {
     return IMAGE_EXT.some((ext) => name.toLowerCase().endsWith(ext));
+  }
+
+  function onFileSelected(file: File) {
+    if (!user) { setPendingFile(file); setShowAuth(true); return; }
+    handleFile(file);
   }
 
   async function handleFile(file: File) {
@@ -68,7 +78,7 @@ export default function ImportarCv({
         type="file"
         accept=".pdf,.docx,.jpg,.jpeg,.png,.webp"
         className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); if (inputRef.current) inputRef.current.value = ""; }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFileSelected(f); if (inputRef.current) inputRef.current.value = ""; }}
       />
 
       {loading ? (
@@ -109,6 +119,16 @@ export default function ImportarCv({
           <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
           <p className="text-[11px] text-red-600">{error}</p>
         </div>
+      )}
+
+      {showAuth && (
+        <AuthModal
+          onClose={() => { setShowAuth(false); setPendingFile(null); }}
+          onSuccess={() => {
+            setShowAuth(false);
+            if (pendingFile) { handleFile(pendingFile); setPendingFile(null); }
+          }}
+        />
       )}
     </div>
   );
