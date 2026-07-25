@@ -31,14 +31,23 @@ export async function POST(req: NextRequest) {
 
     const nome = str(body?.nome, 200) ?? "";
     const bi = str(body?.bi, 50) ?? "";
+    const biEmitidoEm = str(body?.biEmitidoEm, 100) ?? "";
+    const biDataEmissao = str(body?.biDataEmissao, 30) ?? "";
     const dataNascimento = str(body?.dataNascimento, 30) ?? "";
     const naturalidade = str(body?.naturalidade, 100) ?? "";
+    const nacionalidade = str(body?.nacionalidade, 60) ?? "";
     const estadoCivil = str(body?.estadoCivil, 50) ?? "";
+    const profissao = str(body?.profissao, 100) ?? "";
+    const nuit = str(body?.nuit, 30) ?? "";
+    const filiacaoPai = str(body?.filiacaoPai, 200) ?? "";
+    const filiacaoMae = str(body?.filiacaoMae, 200) ?? "";
     const morada = str(body?.morada, 300) ?? "";
     const contacto = str(body?.contacto, 200) ?? "";
     const entidade = str(body?.entidade, 200) ?? "";
     const segundaPessoaNome = str(body?.segundaPessoaNome, 200) ?? "";
     const segundaPessoaBi = str(body?.segundaPessoaBi, 50) ?? "";
+    const segundaPessoaNacionalidade = str(body?.segundaPessoaNacionalidade, 60) ?? "";
+    const segundaPessoaProfissao = str(body?.segundaPessoaProfissao, 100) ?? "";
     const detalhes = str(body?.detalhes, 3000) ?? "";
 
     if (!nome) return NextResponse.json({ error: "Indica o teu nome completo." }, { status: 400 });
@@ -53,9 +62,14 @@ export async function POST(req: NextRequest) {
     const dadosRequerente = [
       `Nome completo: ${nome}`,
       bi && `Bilhete de Identidade nº: ${bi}`,
+      (biEmitidoEm || biDataEmissao) && `BI emitido em: ${[biEmitidoEm, biDataEmissao].filter(Boolean).join(", aos ")}`,
       dataNascimento && `Data de nascimento: ${dataNascimento}`,
       naturalidade && `Naturalidade: ${naturalidade}`,
+      nacionalidade && `Nacionalidade: ${nacionalidade}`,
       estadoCivil && `Estado civil: ${estadoCivil}`,
+      profissao && `Profissão: ${profissao}`,
+      (filiacaoPai || filiacaoMae) && `Filiação: filho(a) de ${[filiacaoPai, filiacaoMae].filter(Boolean).join(" e de ")}`,
+      nuit && `NUIT: ${nuit}`,
       morada && `Residência/Morada: ${morada}`,
       contacto && `Contacto: ${contacto}`,
     ].filter(Boolean).join("\n");
@@ -64,6 +78,8 @@ export async function POST(req: NextRequest) {
       tipo.precisaEntidade && entidade && `${tipo.labelEntidade ?? "Entidade"}: ${entidade}`,
       tipo.precisaSegundaPessoa && segundaPessoaNome && `Nome da segunda pessoa: ${segundaPessoaNome}`,
       tipo.precisaSegundaPessoa && segundaPessoaBi && `BI da segunda pessoa: ${segundaPessoaBi}`,
+      tipo.precisaSegundaPessoa && segundaPessoaNacionalidade && `Nacionalidade da segunda pessoa: ${segundaPessoaNacionalidade}`,
+      tipo.precisaSegundaPessoa && segundaPessoaProfissao && `Profissão da segunda pessoa: ${segundaPessoaProfissao}`,
     ].filter(Boolean).join("\n");
 
     const systemPrompt = `És um assistente moçambicano especializado em redigir documentos formais (cartas, requerimentos e declarações), cumprindo rigorosamente as regras de elaboração usadas em Moçambique — não é apenas prosa formal genérica, é a estrutura exacta que estas peças exigem.
@@ -76,7 +92,7 @@ ${tipo.estrutura}
 
 REGRAS ABSOLUTAS:
 - Usa APENAS a informação fornecida pelo utilizador (dados pessoais, entidade, detalhes). Nunca inventes factos, datas, entidades, números de BI ou moradas que não estejam indicados.
-- Integra os dados pessoais fornecidos (nome, BI, data de nascimento, naturalidade, estado civil, morada) no parágrafo de identificação do requerente/declarante, exactamente como as regras de estrutura acima descrevem — não os omitas nem os relegues para o fim.
+- Integra TODOS os dados pessoais fornecidos (nome, BI e respectiva data/local de emissão quando indicados, data de nascimento, naturalidade, nacionalidade, estado civil, profissão, filiação, NUIT quando relevante para o tipo de documento, morada) no parágrafo de identificação do requerente/declarante, exactamente como as regras de estrutura acima descrevem — não os omitas nem os relegues para o fim. Usa apenas os campos que tiverem sido fornecidos; não incluas um campo que não veio preenchido.
 - Se faltar alguma informação necessária para completar o documento correctamente, deixa um marcador claro entre parênteses rectos, ex.: [Data de emissão do BI], em vez de inventar.
 - Tom formal, claro e directo — português de Moçambique/Portugal (nunca brasileiro).
 - Devolve APENAS o texto do documento, sem explicações, sem markdown, sem títulos extra.`;
