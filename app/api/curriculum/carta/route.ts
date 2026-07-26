@@ -11,6 +11,7 @@ import { chatCompletion } from "@/lib/llm";
 function buildCandidatoSummary(data: Record<string, unknown>): string {
   const lines: string[] = [];
   lines.push(`Nome: ${data.nome || "(não preenchido)"}`);
+  lines.push(`Sexo/Género: ${data.genero || "(não indicado)"}`);
   lines.push(`Data de nascimento: ${data.dataNascimento || "(não preenchida)"}`);
   lines.push(`BI/DIRE: ${data.biDire || "(não preenchido)"}`);
   lines.push(`Nacionalidade: ${data.nacionalidade || "Moçambicana"}`);
@@ -79,14 +80,16 @@ export async function POST(req: NextRequest) {
 
 REGRAS ABSOLUTAS:
 - Usa APENAS a informação fornecida sobre o candidato. Nunca inventes experiência, formação ou competências.
-- Tom profissional, formal mas natural — adequado ao mercado de trabalho moçambicano.
+- Tom profissional, formal, elegante e natural — adequado ao mercado de trabalho moçambicano. Escreve como um consultor de carreira experiente, não como um assistente de IA a ser simpático.
 - Estrutura obrigatória, exactamente por esta ordem:
-  1. Cabeçalho: "Exmo(a). Senhor(a)" seguido de "Director(a) de Recursos Humanos" e o nome da empresa (ou "___________________________" se não for fornecida), cada um numa linha.
+  1. Cabeçalho: "Exmo(a). Senhor(a)" seguido de "Director(a) de Recursos Humanos" e o nome da empresa (ou "___________________________" se não for fornecida), cada um numa linha. (Aqui "(a)" é aceitável — é o destinatário, cujo género é desconhecido.)
   2. Uma linha em branco, depois "Assunto: Candidatura ao cargo de [cargo]" (ou "Assunto: Candidatura Espontânea" se o cargo não for especificado).
-  3. Uma linha em branco, depois o parágrafo de abertura DEVE começar literalmente por "Eu, [Nome completo]" seguido, quando os dados existirem, de ", nascido(a) aos [data de nascimento]", ", portador(a) do Bilhete de Identidade/DIRE n.º [BI/DIRE]", ", de nacionalidade [nacionalidade]" e ", residente em [endereço/cidade]" — omite qualquer destes segmentos cujo dado não tenha sido fornecido, sem inventar nem usar reticências. A frase termina por manifestar o interesse na vaga/empresa.
+  3. Uma linha em branco, depois o parágrafo de abertura DEVE começar literalmente por "Eu, [Nome completo]" seguido, quando os dados existirem, de ", [nascido/nascida] aos [data de nascimento]", ", [portador/portadora] do Bilhete de Identidade/DIRE n.º [BI/DIRE]", ", de nacionalidade [nacionalidade]" e ", residente em [endereço/cidade]" — escrito como texto corrido e natural (nunca uma lista mecânica de campos), omitindo qualquer segmento cujo dado não tenha sido fornecido, sem inventar nem usar reticências. A frase termina por manifestar o interesse na vaga/empresa.
   4. Parágrafo central: experiência e valor que traz.
   5. Parágrafo de fecho: disponibilidade, forma de contacto (telefone/email se fornecidos), agradecimento.
   6. Despedida formal (ex: "Com os melhores cumprimentos,") seguida do nome completo do candidato.
+- CONCORDÂNCIA DE GÉNERO: usa o campo "Sexo/Género" do candidato para escolher a forma certa das palavras que o descrevem (nascido/nascida, portador/portadora, "o candidato"/"a candidata") — nunca escrevas a forma dupla com barra "(a)" para descrever o PRÓPRIO candidato. Se o género não tiver sido indicado, usa a forma masculina por defeito, nunca a forma com barra.
+- Nunca uses fórmulas traduzidas do inglês ou efusivas que soam a IA (ex.: "Espero que esta mensagem o encontre bem", "É com enorme satisfação/imenso prazer que..."). Fórmulas formais moçambicanas (ex.: "Venho por este meio...", "Tenho a honra de...") são as correctas.
 - Português de Moçambique/Portugal (não brasileiro).
 - Máximo 380 palavras.
 - Devolve APENAS o texto da carta, sem explicações, sem markdown, sem títulos adicionais.`;

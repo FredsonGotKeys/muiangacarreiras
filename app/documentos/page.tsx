@@ -52,6 +52,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
   const [categoria, setCategoria] = useState<CategoriaDocumento>("emprego");
   const [tipoSlug, setTipoSlug] = useState<string | null>(null);
   const [nome, setNome] = useState(nomeUser);
+  const [sexo, setSexo] = useState<"" | "M" | "F">("");
   const [bi, setBi] = useState("");
   const [biEmitidoEm, setBiEmitidoEm] = useState("");
   const [biDataEmissao, setBiDataEmissao] = useState("");
@@ -70,6 +71,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
   const [segundaPessoaBi, setSegundaPessoaBi] = useState("");
   const [segundaPessoaNacionalidade, setSegundaPessoaNacionalidade] = useState("");
   const [segundaPessoaProfissao, setSegundaPessoaProfissao] = useState("");
+  const [segundaPessoaSexo, setSegundaPessoaSexo] = useState<"" | "M" | "F">("");
   const [detalhes, setDetalhes] = useState("");
   const [texto, setTexto] = useState("");
   const [loading, setLoading] = useState(false);
@@ -100,9 +102,9 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tipo: tipo.slug, nome, bi, biEmitidoEm, biDataEmissao, dataNascimento, naturalidade, nacionalidade,
+          tipo: tipo.slug, nome, sexo, bi, biEmitidoEm, biDataEmissao, dataNascimento, naturalidade, nacionalidade,
           estadoCivil, profissao, nuit, filiacaoPai, filiacaoMae, morada, contacto,
-          entidade, segundaPessoaNome, segundaPessoaBi, segundaPessoaNacionalidade, segundaPessoaProfissao, detalhes,
+          entidade, segundaPessoaNome, segundaPessoaBi, segundaPessoaNacionalidade, segundaPessoaProfissao, segundaPessoaSexo, detalhes,
         }),
       });
       const data = await res.json();
@@ -230,6 +232,11 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Os teus dados (como no Bilhete de Identidade)</p>
             <div className="grid sm:grid-cols-2 gap-3 mb-3">
               <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome completo" className="input-vivid sm:col-span-2" />
+              <select value={sexo} onChange={(e) => setSexo(e.target.value as "" | "M" | "F")} className="input-vivid">
+                <option value="">Sexo (para a concordância do texto)</option>
+                <option value="M">Masculino</option>
+                <option value="F">Feminino</option>
+              </select>
               <input value={bi} onChange={(e) => setBi(e.target.value)} placeholder="Nº do Bilhete de Identidade" className="input-vivid" />
               <input value={biEmitidoEm} onChange={(e) => setBiEmitidoEm(e.target.value)} placeholder="BI emitido em (local, opcional)" className="input-vivid" />
               <input value={biDataEmissao} onChange={(e) => setBiDataEmissao(e.target.value)} placeholder="Data de emissão do BI (opcional)" className="input-vivid" />
@@ -265,6 +272,11 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
                     <>
                       <input value={segundaPessoaNome} onChange={(e) => setSegundaPessoaNome(e.target.value)} placeholder="Nome completo da segunda pessoa" className="input-vivid sm:col-span-2" />
                       <input value={segundaPessoaBi} onChange={(e) => setSegundaPessoaBi(e.target.value)} placeholder="Nº do BI da segunda pessoa" className="input-vivid" />
+                      <select value={segundaPessoaSexo} onChange={(e) => setSegundaPessoaSexo(e.target.value as "" | "M" | "F")} className="input-vivid">
+                        <option value="">Sexo da segunda pessoa</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Feminino</option>
+                      </select>
                       <input value={segundaPessoaNacionalidade} onChange={(e) => setSegundaPessoaNacionalidade(e.target.value)} placeholder="Nacionalidade da segunda pessoa (opcional)" className="input-vivid" />
                       <input value={segundaPessoaProfissao} onChange={(e) => setSegundaPessoaProfissao(e.target.value)} placeholder="Profissão da segunda pessoa (opcional)" className="input-vivid sm:col-span-2" />
                     </>
