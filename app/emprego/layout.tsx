@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Vagas de Emprego",
@@ -6,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Vagas de Emprego | MUIANGA CARREIRAS",
     description: "Vagas de emprego em Moçambique actualizadas diariamente.",
-    url: "https://muiangaconsultores.co.mz/emprego",
+    url: `${SITE_URL}/emprego`,
   },
 };
 

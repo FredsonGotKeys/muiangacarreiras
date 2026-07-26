@@ -1,3 +1,5 @@
+import { SITE_DOMINIO } from "@/lib/site";
+
 export const metadata = {
   title: "Termos de Uso: MUIANGA CARREIRAS",
   description: "Termos e condições de utilização da plataforma MUIANGA CARREIRAS.",
@@ -35,7 +37,7 @@ export default function TermosPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
 
         <div className="bg-[#FFF8F8] border border-amber-100 rounded-2xl p-5 mb-10 text-sm text-gray-600 leading-relaxed">
-          Ao aceder e utilizar a plataforma <strong className="text-[#2A0001]">MUIANGA CARREIRAS</strong> (disponível em muiangaconsultores.co.mz), declara que leu, compreendeu e aceita os presentes Termos de Uso na íntegra. Caso não concorde com alguma das condições, deverá cessar imediatamente a utilização da plataforma.
+          Ao aceder e utilizar a plataforma <strong className="text-[#2A0001]">MUIANGA CARREIRAS</strong> (disponível em {SITE_DOMINIO}), declara que leu, compreendeu e aceita os presentes Termos de Uso na íntegra. Caso não concorde com alguma das condições, deverá cessar imediatamente a utilização da plataforma.
         </div>
 
         <Section title="1. Identificação da Empresa">

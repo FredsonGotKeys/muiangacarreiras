@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail, templates } from "@/lib/email";
+import { SITE_URL } from "@/lib/site";
 
 /**
  * Cron diário — compara vagas actuais com os alertas subscritos e envia
@@ -31,7 +32,9 @@ function isAuthorized(req: NextRequest): boolean {
 export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
+  // SITE_URL ignora valores de desenvolvimento (localhost) — os links nos
+  // emails enviados têm de apontar sempre para o site público.
+  const siteUrl = SITE_URL;
   const vagasRes = await fetch(`${siteUrl}/api/vagas`, { cache: "no-store" }).catch(() => null);
   if (!vagasRes?.ok) return NextResponse.json({ error: "Falha ao obter vagas." }, { status: 502 });
   const { vagas } = (await vagasRes.json()) as { vagas: VagaDetail[] };

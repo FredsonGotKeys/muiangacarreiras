@@ -7,33 +7,21 @@ const sb = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-const ZUMBOPAY_API_URL = "https://zumbopay.com/api/public/v1";
-
 /**
  * Consulta o estado de uma compra avulsa (serviço ou pacote) do
- * utilizador. NÃO activa nada — isso continua a ser responsabilidade
- * exclusiva do webhook ZumboPay (que verifica HMAC + faz o cross-check de
- * valor). Mas, para reagir depressa a um cancelamento — que o operador
- * às vezes não reporta via webhook, só fica visível ao consultar o
- * pagamento directamente — esta rota também pergunta à própria ZumboPay
- * pelo estado da referência em vez de esperar cegamente pelo webhook.
+ * utilizador. NÃO activa nada — isso é responsabilidade exclusiva do
+ * webhook ZumboPay (HMAC + frescura + idempotência + cross-check de
+ * valor). Esta rota é só leitura da tabela `compras`, e é o que o
+ * frontend faz polling enquanto espera a confirmação.
+ *
+ * Nota: houve aqui uma tentativa de consultar a ZumboPay directamente a
+ * cada sondagem, para apanhar cancelamentos mais depressa. Foi removida:
+ * `GET /payments/{ref}` só serve LINKS de pagamento (`ZP-LNK-...`) e
+ * devolve sempre 404 para uma cobrança STK (`ZUMBO...`), que é o único
+ * método aqui usado. Na prática era uma chamada de rede a cada 2s que
+ * nunca podia devolver nada — os cancelamentos chegam pelo webhook, que
+ * marca a compra como "expirada".
  */
-async function statusDirectoZumboPay(reference: string): Promise<string | null> {
-  const apiKey = process.env.ZUMBOPAY_API_KEY;
-  if (!apiKey) return null;
-  try {
-    const res = await fetch(`${ZUMBOPAY_API_URL}/payments/${encodeURIComponent(reference)}`, {
-      headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const body = await res.json().catch(() => ({}));
-    const auth = (body?.data ?? body?.payment) as Record<string, unknown> | undefined;
-    return auth ? String(auth.status ?? "").toLowerCase() : null;
-  } catch {
-    return null;
-  }
-}
 export async function POST(req: NextRequest) {
   if (!(await rateLimit(getIp(req), 30))) return rateLimitedResponse();
 
@@ -67,32 +55,20 @@ export async function POST(req: NextRequest) {
 
   const { data: compra } = await sb
     .from("compras")
-    .select("id, status, notas_admin, referencia, created_at")
+    .select("status, notas_admin")
     .eq("user_id", user.id)
     .eq("item_id", itemId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  const c = compra as { id: string; status: string; notas_admin: string | null; referencia: string | null; created_at: string } | null;
+  const c = compra as { status: string; notas_admin: string | null } | null;
   if (c?.status === "concluida") return NextResponse.json({ status: "active" });
 
-  // O webhook marca "expirada" assim que o operador (ZumboPay) confirma
+  // O webhook marca "expirada" assim que a ZumboPay confirma
   // failed/cancelled/expired — reportar isso já em vez de deixar o
-  // frontend continuar a fazer polling até ao limite de 2 minutos.
+  // frontend continuar a fazer polling até ao limite.
   if (c?.status === "expirada") return NextResponse.json({ status: "cancelled", detalhe: c.notas_admin ?? undefined });
-
-  // Fallback: se ainda "pendente" há mais de 5s, pergunta directamente à
-  // ZumboPay em vez de esperar só pelo webhook — nem todo cancelamento
-  // gera um evento de webhook, mas a consulta directa reflecte sempre o
-  // estado real do lado deles.
-  if (c?.status === "pendente" && c.referencia && Date.now() - new Date(c.created_at).getTime() > 5000) {
-    const authStatus = await statusDirectoZumboPay(c.referencia);
-    if (authStatus && ["failed", "cancelled", "expired"].includes(authStatus)) {
-      await sb.from("compras").update({ status: "expirada", notas_admin: `ZumboPay: ${authStatus} (consulta directa)` }).eq("id", c.id);
-      return NextResponse.json({ status: "cancelled" });
-    }
-  }
 
   return NextResponse.json({ status: "pending" });
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contacto",
@@ -6,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Contacto | MUIANGA CARREIRAS",
     description: "Fale connosco. Presentes em 6 países lusófonos.",
-    url: "https://muiangaconsultores.co.mz/contacto",
+    url: `${SITE_URL}/contacto`,
   },
 };
 

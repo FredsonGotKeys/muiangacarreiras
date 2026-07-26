@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "crypto";
 import { logError } from "@/lib/logger";
 import { sendEmail, templates } from "@/lib/email";
+import { verificarPagamento } from "@/lib/zumbopay-verificacao";
 
 /**
  * Webhook ZumboPay → activa subscrições e compras avulsas (serviço/pacote).
@@ -26,7 +27,6 @@ const sb = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-const ZUMBOPAY_API_URL = "https://zumbopay.com/api/public/v1";
 const MAX_SKEW_MS = 5 * 60 * 1000;
 
 function verifySignature(rawBody: string, timestamp: string, signature: string): boolean {
@@ -54,27 +54,49 @@ function emolaPinConfirmed(auth: Record<string, unknown>): boolean {
 type Subscricao = { id: string; user_id: string; status: string; valor_mt: number; metodo_pag: string };
 type Compra = { id: string; user_id: string; tipo: string; status: string; preco_mt: number; metodo_pag: string };
 
+/**
+ * Regista uma rejeição à entrada do webhook. Sem isto era impossível
+ * distinguir "a ZumboPay nunca chamou o webhook" de "chamou e foi
+ * recusada logo à porta" — os dois cenários eram silenciosos e
+ * indistinguíveis, o que tornava qualquer diagnóstico de pagamento um
+ * exercício de adivinhação.
+ */
+async function recusar(motivo: string, status: number, detalhe?: unknown) {
+  await logError({ route: "/api/zumbopay/webhook", message: `recusado: ${motivo}`, detail: detalhe, statusCode: status });
+  return NextResponse.json({ ok: false, error: motivo }, { status });
+}
+
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   const signature = req.headers.get("x-signature") ?? "";
   const timestamp = req.headers.get("x-timestamp") ?? "";
 
   if (!signature || !timestamp) {
-    return NextResponse.json({ ok: false, error: "missing_signature" }, { status: 401 });
+    return recusar("missing_signature", 401, {
+      temSignature: !!signature,
+      temTimestamp: !!timestamp,
+      cabecalhos: [...req.headers.keys()],
+    });
   }
   const tsNum = Number(timestamp);
   if (!tsNum || Math.abs(Date.now() - tsNum) > MAX_SKEW_MS) {
-    return NextResponse.json({ ok: false, error: "stale_timestamp" }, { status: 401 });
+    return recusar("stale_timestamp", 401, { timestamp, desvioMs: tsNum ? Date.now() - tsNum : null });
   }
   if (!verifySignature(rawBody, timestamp, signature)) {
-    return NextResponse.json({ ok: false, error: "invalid_signature" }, { status: 401 });
+    const secret = process.env.ZUMBOPAY_WEBHOOK_SECRET;
+    return recusar("invalid_signature", 401, {
+      // Nunca registar o segredo nem a assinatura recebida — só o que
+      // permite diagnosticar (segredo em falta vs. assinatura errada).
+      segredoConfigurado: !!secret && secret.length >= 16,
+      tamanhoAssinatura: signature.replace(/^sha256=/i, "").trim().length,
+    });
   }
 
   let payload: Record<string, unknown>;
   try {
     payload = JSON.parse(rawBody);
   } catch {
-    return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
+    return recusar("invalid_json", 400, rawBody.slice(0, 200));
   }
 
   const event = String(payload.event ?? payload.type ?? "").toLowerCase();
@@ -82,7 +104,7 @@ export async function POST(req: NextRequest) {
   const reference = String(data.reference ?? data.payment_reference ?? "");
   const eventId = String(payload.id ?? payload.event_id ?? `${event}:${reference}`);
 
-  if (!reference) return NextResponse.json({ ok: false, error: "missing_reference" }, { status: 400 });
+  if (!reference) return recusar("missing_reference", 400, payload);
 
   // Idempotência — evita reprocessar o mesmo evento
   const { data: already } = await sb
@@ -116,7 +138,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!sub && !compra) {
-    return NextResponse.json({ ok: false, error: "purchase_not_found" }, { status: 404 });
+    return recusar("purchase_not_found", 404, { reference, event });
   }
 
   const userId = sub ? sub.user_id : compra!.user_id;
@@ -129,30 +151,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, already_active: true });
   }
 
-  // Re-verificação server-to-server — nunca confiar cegamente no payload do webhook
   const apiKey = process.env.ZUMBOPAY_API_KEY;
   if (!apiKey) {
     console.error("ZUMBOPAY_API_KEY não configurada no webhook");
     return NextResponse.json({ ok: false, error: "server_misconfigured" }, { status: 500 });
   }
-  const verifyRes = await fetch(`${ZUMBOPAY_API_URL}/payments/${encodeURIComponent(reference)}`, {
-    headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
-  });
-  const verifyBody = await verifyRes.json().catch(() => ({}));
-  const auth = (verifyBody?.data ?? verifyBody?.payment) as Record<string, unknown> | undefined;
-  if (!auth) {
-    await logError({ route: "/api/zumbopay/webhook", message: "Re-verificação falhou", detail: verifyBody, statusCode: verifyRes.status });
+
+  const verificacao = await verificarPagamento(reference, apiKey, data);
+  if (!verificacao.ok) {
+    await logError({ route: "/api/zumbopay/webhook", message: "Re-verificação falhou", detail: verificacao.detalhe, statusCode: verificacao.status });
     return NextResponse.json({ ok: false, error: "verification_failed" }, { status: 502 });
   }
+  const auth = verificacao.dados;
+  // Fica registado nas notas para auditoria: "api" = confirmado por
+  // consulta independente à ZumboPay; "payload" = confirmado pelo evento
+  // assinado (cobrança STK, que não tem endpoint de consulta).
+  const fonte = verificacao.fonte === "api" ? "consulta directa" : "evento assinado";
 
   const authStatus = String(auth.status ?? "").toLowerCase();
   const channel = String(auth.channel ?? auth.method ?? metodoPag).toLowerCase();
 
   if (["failed", "cancelled", "expired"].includes(authStatus)) {
     if (sub) {
-      await sb.from("subscricoes").update({ status: "expirada", notas_admin: `ZumboPay: ${authStatus} (verificado)` }).eq("id", sub.id);
+      await sb.from("subscricoes").update({ status: "expirada", notas_admin: `ZumboPay: ${authStatus} (${fonte})` }).eq("id", sub.id);
     } else {
-      await sb.from("compras").update({ status: "expirada", notas_admin: `ZumboPay: ${authStatus} (verificado)` }).eq("id", compra!.id);
+      await sb.from("compras").update({ status: "expirada", notas_admin: `ZumboPay: ${authStatus} (${fonte})` }).eq("id", compra!.id);
     }
     await sb.from("zumbopay_processed_events").insert({ event_id: eventId }).select().maybeSingle();
     return NextResponse.json({ ok: true, status: authStatus });
@@ -181,7 +204,7 @@ export async function POST(req: NextRequest) {
       inicio: inicio.toISOString(),
       fim: fim.toISOString(),
       aprovado_em: inicio.toISOString(),
-      notas_admin: `ZumboPay: pago e verificado (ref ${reference}, canal ${channel}).`,
+      notas_admin: `ZumboPay: pago e verificado por ${fonte} (ref ${reference}, canal ${channel}).`,
     }).eq("id", sub.id);
   } else {
     // Modelo actual: um único produto vendável ("Acesso Total") — o
@@ -192,7 +215,7 @@ export async function POST(req: NextRequest) {
       status: "concluida",
       concluida_em: agora.toISOString(),
       expira_em: expiraEm.toISOString(),
-      notas_admin: `ZumboPay: pago e verificado (ref ${reference}, canal ${channel}).`,
+      notas_admin: `ZumboPay: pago e verificado por ${fonte} (ref ${reference}, canal ${channel}).`,
     }).eq("id", compra!.id);
   }
 

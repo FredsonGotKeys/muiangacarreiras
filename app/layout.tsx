@@ -7,8 +7,9 @@ import { AuthProvider } from "@/lib/auth-context";
 import { EntitlementProvider } from "@/lib/use-entitlement";
 import BottomNav from "@/components/premium/BottomNav";
 import InstallPrompt from "@/components/premium/InstallPrompt";
+import { SITE_URL } from "@/lib/site";
 
-const BASE = "https://muiangaconsultores.co.mz";
+const BASE = SITE_URL;
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE),
