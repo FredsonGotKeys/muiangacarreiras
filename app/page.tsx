@@ -3,7 +3,7 @@ import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Zap, Globe, Trophy, Star,
+  Zap, Globe, Trophy,
 } from "lucide-react";
 
 // Sistema de 2 tons — dourado (destaque) e grafite (neutro), alternados para
@@ -22,12 +22,6 @@ const whyUs = [
   { Icon: Zap,    bg: "from-[#FFF1F1] to-[#FFF1F1]", iconBg: GOLD_ICON,     iconColor: "text-[#FFFFFF]", border: "border-[#FE0000]/40", title: "Rápido & Acessível",  desc: "Vê as vagas, candidata-te em minutos. Cria o teu CV e paga só quando quiseres descarregar." },
   { Icon: Globe,  bg: "from-gray-50 to-gray-100",     iconBg: GRAPHITE_ICON, iconColor: "text-white",     border: "border-gray-200",    title: "Vagas Reais em Moçambique", desc: "Fontes actualizadas todos os dias, candidatura directa por email, sem intermediários." },
   { Icon: Trophy, bg: "from-[#FFF1F1] to-[#FFF1F1]", iconBg: GOLD_ICON,     iconColor: "text-[#FFFFFF]", border: "border-[#FE0000]/40", title: "Preço Único e Claro", desc: "109 MT dão acesso total a tudo por 8 horas. Sem mensalidade, sem surpresas." },
-];
-
-const testimonials = [
-  { text: "Criei o meu CV em minutos e já recebi resposta de duas empresas na mesma semana.", name: "Carlos M.", role: "Maputo" },
-  { text: "Gostei de poder experimentar antes de pagar. Só paguei quando decidi descarregar o CV.", name: "Anita F.", role: "Matola" },
-  { text: "As vagas são reais e a candidatura por email poupa-me imenso tempo.", name: "Pedro S.", role: "Beira" },
 ];
 
 // ── AnimatedCounter ──
@@ -273,35 +267,6 @@ export default function HomePage() {
             </div>
             <Link href="/emprego" className="shrink-0 btn-primary text-base px-8 py-4 rounded-2xl">Ver Vagas em aberto →</Link>
           </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ── */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <Section>
-            <div className="text-center mb-12">
-              <span className="badge bg-[#D20001]/10 text-[#D20001] mb-3 border border-[#D20001]/20">O que dizem os clientes</span>
-              <h2 className="text-3xl sm:text-4xl text-[#2A0001]">Resultados reais,<br /><span className="text-[#D20001]">clientes reais</span></h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {testimonials.map(({ text, name, role }) => (
-                <div key={name} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md hover:border-[#D20001]/20 transition-all">
-                  <div className="flex gap-0.5 mb-4">
-                    {[...Array(5)].map((_, i) => <Star key={i} size={14} className="text-[#D20001] fill-[#D20001]" />)}
-                  </div>
-                  <p className="text-gray-500 text-sm leading-relaxed mb-5">"{text}"</p>
-                  <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
-                    <div className="w-9 h-9 rounded-full bg-[#D20001]/15 flex items-center justify-center font-bold text-[#D20001] text-sm border border-[#D20001]/20">{name[0]}</div>
-                    <div>
-                      <p className="font-semibold text-sm text-[#2A0001]">{name}</p>
-                      <p className="text-xs text-gray-400">{role}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Section>
         </div>
       </section>
 
