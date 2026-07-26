@@ -16,7 +16,7 @@ interface CvDataLike {
 }
 
 export async function gerarCvDocx(data: CvDataLike, accentColorHex = "C9A84C"): Promise<Blob> {
-  const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import("docx");
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = await import("docx");
   const children: InstanceType<typeof Paragraph>[] = [];
 
   children.push(
@@ -36,7 +36,7 @@ export async function gerarCvDocx(data: CvDataLike, accentColorHex = "C9A84C"): 
 
   if (data.objectivo) {
     children.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: "PERFIL PROFISSIONAL", color: accentColorHex })] }));
-    children.push(new Paragraph({ children: [new TextRun(data.objectivo)], spacing: { after: 200 } }));
+    children.push(new Paragraph({ children: [new TextRun(data.objectivo)], alignment: AlignmentType.JUSTIFIED, spacing: { after: 200 } }));
   }
 
   if (data.experiencia?.length) {
@@ -45,7 +45,7 @@ export async function gerarCvDocx(data: CvDataLike, accentColorHex = "C9A84C"): 
       children.push(new Paragraph({ children: [new TextRun({ text: `${e.cargo} — ${e.empresa}`, bold: true })] }));
       const periodo = `${e.dataInicio} - ${e.actualmente ? "Actual" : e.dataFim}${e.local ? " · " + e.local : ""}`;
       children.push(new Paragraph({ children: [new TextRun({ text: periodo, italics: true, size: 20, color: "888888" })] }));
-      if (e.descricao) children.push(new Paragraph({ children: [new TextRun(e.descricao)], spacing: { after: 160 } }));
+      if (e.descricao) children.push(new Paragraph({ children: [new TextRun(e.descricao)], alignment: AlignmentType.JUSTIFIED, spacing: { after: 160 } }));
     });
   }
 

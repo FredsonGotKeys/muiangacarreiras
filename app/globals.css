@@ -15,6 +15,12 @@
    nunca infantil, sempre com propósito.
    ═══════════════════════════════════════════════════════════ */
 :root {
+  /* Site desenhado só para modo claro (Premium SaaS, cartões brancos,
+     texto bordô) — nunca foi feita/testada uma paleta escura completa;
+     força-se isto para que o telemóvel/browser nunca aplique UI nativa
+     escura (barras de scroll, controlos de formulário) por cima. */
+  color-scheme: light;
+
   /* ── Tipografia ── */
   --font-display: 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
@@ -98,25 +104,6 @@
   --shadow-primary-lg: 0 14px 34px -6px rgba(210,0,1,0.30);
 }
 
-/* ── Dark mode — automático via preferência do sistema ── */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1A0000;
-    --bg-alt: #3A0001;
-    --surface: #3A0001;
-    --text-primary: #FFF6F6;
-    --text-secondary: #C9A8A8;
-    --text-disabled: #8A6363;
-    --border: rgba(254,0,0,0.14);
-    --primary: #D20001;
-    --accent: #FE0000;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.30);
-    --shadow-md: 0 10px 40px rgba(0,0,0,0.35);
-    --shadow-lg: 0 20px 48px -12px rgba(0,0,0,0.45);
-  }
-  body { background-color: var(--bg); color: var(--text-primary); }
-  .service-card, .premium-card { background: var(--surface) !important; }
-}
 
 html { scroll-behavior: smooth; }
 

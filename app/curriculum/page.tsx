@@ -1339,7 +1339,7 @@ export default function CurriculumPage() {
                 <div style={{ margin: 0, color: "#333" }}>
                   {e.descricao.split("\n").filter(l => l.trim()).map((l, j) => {
                     const clean = l.replace(/^[-•·*]\s*/, "").trim();
-                    return <div key={j} style={{ display: "flex", gap: "2mm", marginTop: "0.8mm" }}><span>•</span><span>{clean}</span></div>;
+                    return <div key={j} style={{ display: "flex", gap: "2mm", marginTop: "0.8mm" }}><span>•</span><span style={{ textAlign: "justify" }}>{clean}</span></div>;
                   })}
                 </div>
               )}
@@ -1362,7 +1362,7 @@ export default function CurriculumPage() {
                 {f.curso}{f.grau ? ` (${f.grau})` : ""}
               </div>
               <div style={{ fontSize: "10pt", color: "#555", fontStyle: "italic", overflowWrap: "break-word" }}>{f.instituicao}</div>
-              {f.descricao && <p style={{ margin: "1mm 0 0", color: "#333" }}>{f.descricao}</p>}
+              {f.descricao && <p style={{ margin: "1mm 0 0", color: "#333", textAlign: "justify" }}>{f.descricao}</p>}
             </div>
           </div>
         ))}
@@ -1813,7 +1813,7 @@ export default function CurriculumPage() {
                       <div style={{ color: "#333" }}>
                         {e.descricao.split("\n").filter(l => l.trim()).map((l, j) => {
                           const clean = l.replace(/^[-•·*]\s*/, "").trim();
-                          return <div key={j} style={{ display: "flex", gap: "2mm", marginTop: "0.8mm" }}><span style={{ color: accent }}>•</span><span>{clean}</span></div>;
+                          return <div key={j} style={{ display: "flex", gap: "2mm", marginTop: "0.8mm" }}><span style={{ color: accent }}>•</span><span style={{ textAlign: "justify" }}>{clean}</span></div>;
                         })}
                       </div>
                     )}
@@ -1835,7 +1835,7 @@ export default function CurriculumPage() {
                       </span>
                     </div>
                     <div style={{ fontSize: "9.5pt", color: "#555", fontStyle: "italic", overflowWrap: "break-word" }}>{f.instituicao}</div>
-                    {f.descricao && <p style={{ margin: "1mm 0 0", color: "#444" }}>{f.descricao}</p>}
+                    {f.descricao && <p style={{ margin: "1mm 0 0", color: "#444", textAlign: "justify" }}>{f.descricao}</p>}
                   </div>
                 ))}
               </section>
@@ -1972,7 +1972,7 @@ export default function CurriculumPage() {
                     <div style={{ color: "#333" }}>
                       {e.descricao.split("\n").filter(l => l.trim()).map((l, j) => {
                         const clean = l.replace(/^[-•·*]\s*/, "").trim();
-                        return <div key={j} style={{ display: "flex", gap: "2mm", marginTop: "0.8mm" }}><span style={{ color: accent }}>•</span><span>{clean}</span></div>;
+                        return <div key={j} style={{ display: "flex", gap: "2mm", marginTop: "0.8mm" }}><span style={{ color: accent }}>•</span><span style={{ textAlign: "justify" }}>{clean}</span></div>;
                       })}
                     </div>
                   )}
@@ -1993,7 +1993,7 @@ export default function CurriculumPage() {
                     </span>
                   </div>
                   <div style={{ fontSize: "10pt", color: "#555", fontStyle: "italic", overflowWrap: "break-word" }}>{f.instituicao}</div>
-                  {f.descricao && <p style={{ margin: "1mm 0 0", color: "#333" }}>{f.descricao}</p>}
+                  {f.descricao && <p style={{ margin: "1mm 0 0", color: "#333", textAlign: "justify" }}>{f.descricao}</p>}
                 </div>
               ))}
             </section>
