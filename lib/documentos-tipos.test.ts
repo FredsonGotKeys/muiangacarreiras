@@ -2,11 +2,10 @@ import { describe, it, expect } from "vitest";
 import { TIPOS_DOCUMENTO, CATEGORIAS, getTipoDocumento } from "./documentos-tipos";
 
 /**
- * Estas regras existem porque um slug duplicado ou desalinhado com a
- * constraint `documentos_gerados_tipo_check` na base de dados falha
- * silenciosamente em produção (o INSERT do documento é rejeitado, mas o
- * download já aconteceu — o utilizador nem repara). Já apanhei este tipo de
- * bug manualmente uma vez nesta sessão; isto automatiza essa verificação.
+ * Estas regras existem porque um slug duplicado, ou um tipo com
+ * `servicoSlug`/`categoria` desalinhados, quebra o lookup por slug
+ * (`getTipoDocumento`) e o desbloqueio por categoria de forma silenciosa —
+ * o gerador ou a página escolhem o tipo errado sem qualquer erro visível.
  */
 describe("catálogo de documentos", () => {
   it("não tem slugs duplicados", () => {

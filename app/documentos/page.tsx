@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import {
-  FileText, Briefcase, ClipboardList, ScrollText,
+  FileText, Briefcase, ClipboardList, ScrollText, FileStack,
   Loader2, Copy, Check, Download, FileType2, Mail, Lock, ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -18,6 +18,7 @@ const ICONE_CATEGORIA: Record<CategoriaDocumento, typeof Briefcase> = {
   emprego: Briefcase,
   requerimentos: ClipboardList,
   declaracoes: ScrollText,
+  outros: FileStack,
 };
 
 export default function DocumentosPage() {
@@ -144,7 +145,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
       w.document.write(`
         <html><head><title>${tipo.titulo}</title>
         <style>
-          body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.7; padding: 25mm 22mm; white-space: pre-wrap; color: #111; }
+          body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; padding: 25mm 20mm 25mm 30mm; text-align: justify; white-space: pre-wrap; color: #111; }
           @page { size: A4; margin: 0; }
         </style></head>
         <body>${texto.replace(/</g, "&lt;")}</body></html>

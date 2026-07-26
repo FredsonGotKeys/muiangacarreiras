@@ -98,7 +98,7 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
       w.document.write(`
         <html><head><title>${activeDoc ? NOME_POR_DOC[activeDoc] : ""}</title>
         <style>
-          body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.7; padding: 25mm 22mm; white-space: pre-wrap; color: #111; }
+          body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; padding: 25mm 20mm 25mm 30mm; text-align: justify; white-space: pre-wrap; color: #111; }
           @page { size: A4; margin: 0; }
         </style></head>
         <body>${texto.replace(/</g, "&lt;")}</body></html>

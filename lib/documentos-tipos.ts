@@ -9,7 +9,7 @@
  * segui-las à risca, não é apenas um "tom" sugerido.
  */
 
-export type CategoriaDocumento = "emprego" | "requerimentos" | "declaracoes";
+export type CategoriaDocumento = "emprego" | "requerimentos" | "declaracoes" | "outros";
 
 export interface TipoDocumento {
   slug: string;
@@ -34,6 +34,7 @@ export const CATEGORIAS: { id: CategoriaDocumento; label: string; servicoSlug: s
   { id: "emprego", label: "Emprego", servicoSlug: "cartas-emprego-extra" },
   { id: "requerimentos", label: "Requerimentos", servicoSlug: "requerimentos-diversos" },
   { id: "declaracoes", label: "Declarações", servicoSlug: "declaracoes" },
+  { id: "outros", label: "Outros", servicoSlug: "requerimentos-diversos" },
 ];
 
 const FECHO_REQUERIMENTO = `Fecho obrigatório: termina sempre com a fórmula consagrada "Pede deferimento." (em parágrafo isolado), seguida de "[Local], aos [dia] de [mês] de [ano]" e, por fim, "O(A) Requerente,\n_____________________________" (linha para assinatura, com o nome completo por baixo).`;
@@ -83,6 +84,17 @@ export const TIPOS_DOCUMENTO: TipoDocumento[] = [
     descricaoCurta: "Recomenda alguém para um cargo, bolsa ou instituição",
     instrucao: "Redige uma carta de recomendação, escrita na perspectiva de quem recomenda (ex.: antigo superior, professor), atestando as qualidades e capacidades da pessoa recomendada com base nos detalhes fornecidos.",
     estrutura: `Cabeçalho com local/data. Corpo identifica quem recomenda e a relação com o recomendado (indicados nos detalhes), depois as qualidades e factos concretos. Fecho: disponibilidade para esclarecimentos adicionais, seguido de "_____________________________" e nome/cargo de quem recomenda.`,
+  },
+  {
+    slug: "carta-demissao",
+    categoria: "emprego",
+    servicoSlug: "cartas-emprego-extra",
+    titulo: "Carta de Demissão/Renúncia",
+    descricaoCurta: "Comunica formalmente a saída de um emprego",
+    instrucao: "Redige uma carta de demissão/renúncia ao cargo actual, dirigida à entidade empregadora indicada, comunicando a decisão de forma directa e profissional, com base no prazo de aviso prévio e data de saída indicados nos detalhes.",
+    estrutura: `Cabeçalho: "[Local], aos [dia] de [mês] de [ano]" seguido de "Exmo(a). Senhor(a) Director(a) de Recursos Humanos" (ou o cargo/entidade indicado). Corpo: comunica de forma directa e inequívoca, logo na primeira frase, a decisão de se demitir do cargo que ocupa, indicando o cargo, a data efectiva de saída e o cumprimento do aviso prévio quando aplicável. Tom respeitoso, sem detalhar motivos a não ser que estejam explicitamente nos detalhes fornecidos. Fecho: agradecimento pela oportunidade e disponibilidade para a transição, seguido de "Com os melhores cumprimentos," e "_____________________________" com o nome completo por baixo.`,
+    precisaEntidade: true,
+    labelEntidade: "Empresa a quem se dirige",
   },
 
   // Requerimentos
@@ -152,6 +164,28 @@ export const TIPOS_DOCUMENTO: TipoDocumento[] = [
     precisaEntidade: true,
     labelEntidade: "Entidade a quem se dirige",
   },
+  {
+    slug: "pedido-isencao",
+    categoria: "requerimentos",
+    servicoSlug: "requerimentos-diversos",
+    titulo: "Pedido de Isenção",
+    descricaoCurta: "Solicita isenção de uma taxa, propina ou obrigação",
+    instrucao: "Redige um requerimento a solicitar a isenção de uma taxa, propina, emolumento ou outra obrigação, fundamentando o pedido com base na situação e nos detalhes fornecidos.",
+    estrutura: `${FECHO_REQUERIMENTO} O corpo deve fundamentar o pedido de isenção citando a situação concreta do requerente (indicada nos detalhes) que justifica a dispensa, sem inventar enquadramentos legais que não tenham sido indicados.`,
+    precisaEntidade: true,
+    labelEntidade: "Entidade a quem se dirige",
+  },
+  {
+    slug: "pedido-licenca",
+    categoria: "requerimentos",
+    servicoSlug: "requerimentos-diversos",
+    titulo: "Pedido de Licença",
+    descricaoCurta: "Solicita uma licença (trabalho, construção, actividade, etc.)",
+    instrucao: "Redige um requerimento a solicitar a concessão de uma licença (ex.: licença de trabalho, de construção, para o exercício de uma actividade), especificando o tipo de licença e a finalidade indicados nos detalhes.",
+    estrutura: FECHO_REQUERIMENTO,
+    precisaEntidade: true,
+    labelEntidade: "Entidade licenciadora a quem se dirige",
+  },
 
   // Declarações
   {
@@ -213,6 +247,28 @@ export const TIPOS_DOCUMENTO: TipoDocumento[] = [
     precisaSegundaPessoa: true,
   },
   {
+    slug: "declaracao-estudante",
+    categoria: "declaracoes",
+    servicoSlug: "declaracoes",
+    titulo: "Declaração de Estudante",
+    descricaoCurta: "Confirma que uma pessoa está matriculada como estudante",
+    instrucao: "Redige uma declaração de estudante, emitida na perspectiva da INSTITUIÇÃO DE ENSINO (não do próprio estudante), confirmando que o(a) estudante identificado(a) se encontra matriculado(a) no curso e ano/período indicados.",
+    estrutura: `${FECHO_DECLARACAO} A declaração é redigida na voz da instituição de ensino indicada, não do estudante: abre com "[Nome da instituição de ensino], declara para os devidos efeitos que [nome do estudante], portador(a) do Bilhete de Identidade nº [...], se encontra matriculado(a) no curso de [curso], [ano/período], nesta instituição." Assinatura final: "A Direcção," ou "O(A) Secretário(a) Académico(a),".`,
+    precisaEntidade: true,
+    labelEntidade: "Nome da instituição de ensino",
+  },
+  {
+    slug: "declaracao-estagio",
+    categoria: "declaracoes",
+    servicoSlug: "declaracoes",
+    titulo: "Declaração de Estágio",
+    descricaoCurta: "Confirma a realização de um estágio numa empresa/instituição",
+    instrucao: "Redige uma declaração de estágio, emitida na perspectiva da EMPRESA/INSTITUIÇÃO (não do estagiário), confirmando que o(a) estagiário(a) identificado(a) realizou ou está a realizar um estágio, indicando período, área e, quando fornecida, avaliação do desempenho.",
+    estrutura: `${FECHO_DECLARACAO} A declaração é redigida na voz da empresa/instituição indicada, não do estagiário: abre com "[Nome da empresa/instituição], declara para os devidos efeitos que [nome do estagiário], portador(a) do Bilhete de Identidade nº [...], realizou estágio nesta entidade na área de [área], no período de [data início] a [data fim]." Assinatura final: "A Entidade," ou "O(A) Director(a) de Recursos Humanos,".`,
+    precisaEntidade: true,
+    labelEntidade: "Nome da empresa/instituição onde decorreu o estágio",
+  },
+  {
     slug: "declaracao-personalizada",
     categoria: "declaracoes",
     servicoSlug: "declaracoes",
@@ -220,6 +276,51 @@ export const TIPOS_DOCUMENTO: TipoDocumento[] = [
     descricaoCurta: "Uma declaração para uma finalidade que não está listada",
     instrucao: "Redige uma declaração formal adaptada exactamente à finalidade descrita nos detalhes fornecidos pelo utilizador, mantendo a estrutura e tom formais habituais em Moçambique.",
     estrutura: FECHO_DECLARACAO,
+  },
+
+  // Outros documentos institucionais
+  {
+    slug: "procuracao",
+    categoria: "outros",
+    servicoSlug: "requerimentos-diversos",
+    titulo: "Procuração",
+    descricaoCurta: "Autoriza outra pessoa a agir em teu nome",
+    instrucao: "Redige uma procuração em que o(a) outorgante (o requerente) confere a uma segunda pessoa (o(a) procurador(a), identificado(a) nos dados adicionais) poderes para praticar os actos especificados nos detalhes, em seu nome.",
+    estrutura: `Título centrado em negrito: "PROCURAÇÃO". Corpo abre identificando o(a) OUTORGANTE pelo nome completo, BI e demais dados fornecidos ("Eu, [nome do outorgante], portador(a) do BI nº [...], (...) pela presente procuração nomeio e constituo meu(minha) bastante procurador(a) [nome do procurador], portador(a) do BI nº [...]"), seguido de "a quem confiro os poderes necessários para, em meu nome, [poderes concedidos, conforme os detalhes fornecidos]." Fecho: "[Local], aos [dia] de [mês] de [ano]", seguido de "O(A) Outorgante,\n_____________________________" com o nome completo por baixo. Nunca inventar o âmbito dos poderes — usar apenas o que constar nos detalhes.`,
+    precisaSegundaPessoa: true,
+  },
+  {
+    slug: "oficio",
+    categoria: "outros",
+    servicoSlug: "requerimentos-diversos",
+    titulo: "Ofício",
+    descricaoCurta: "Comunicação formal entre instituições ou para uma entidade",
+    instrucao: "Redige um ofício — comunicação formal institucional dirigida à entidade indicada, sobre o assunto descrito nos detalhes.",
+    estrutura: `Cabeçalho: "[Local], aos [dia] de [mês] de [ano]", seguido de "Ofício n.º ___/[ano]" e o destinatário ("Exmo(a). Senhor(a) [cargo/entidade indicado]"). Depois, "Assunto:" (uma linha, resumindo o tema em poucas palavras). Corpo directo e objectivo, sem rodeios, expondo o assunto tratado. Fecho: "Com os melhores cumprimentos," ou "Atenciosamente,", seguido de "_____________________________" e nome/cargo de quem subscreve.`,
+    precisaEntidade: true,
+    labelEntidade: "Entidade destinatária",
+  },
+  {
+    slug: "memorando",
+    categoria: "outros",
+    servicoSlug: "requerimentos-diversos",
+    titulo: "Memorando",
+    descricaoCurta: "Comunicação interna curta e directa",
+    instrucao: "Redige um memorando interno — comunicação curta e directa dentro de uma organização, sobre o assunto descrito nos detalhes.",
+    estrutura: `Título centrado em negrito: "MEMORANDO". Bloco de cabeçalho em linhas separadas: "De: [remetente]", "Para: [destinatário/departamento indicado]", "Data: [data]", "Assunto: [resumo curto do tema]". Corpo directo, sem saudação formal nem despedida longa — vai directo ao ponto, em um ou dois parágrafos curtos. Fecho: apenas "_____________________________" com o nome de quem subscreve, sem fórmula de cortesia.`,
+    precisaEntidade: true,
+    labelEntidade: "Destinatário/departamento",
+  },
+  {
+    slug: "carta-reclamacao",
+    categoria: "outros",
+    servicoSlug: "requerimentos-diversos",
+    titulo: "Carta de Reclamação",
+    descricaoCurta: "Apresenta formalmente uma queixa a uma empresa/entidade",
+    instrucao: "Redige uma carta de reclamação formal, dirigida à entidade indicada, expondo o problema ou insatisfação descrito nos detalhes e solicitando uma resolução concreta.",
+    estrutura: `Cabeçalho: "[Local], aos [dia] de [mês] de [ano]" seguido de "Exmo(a). Senhor(a) [cargo/entidade indicado]". Corpo: identifica o requerente pelo nome completo logo na abertura, expõe os factos de forma objectiva e cronológica (datas, referências, o que aconteceu — apenas o que constar nos detalhes), e termina com um pedido claro e concreto de resolução (reembolso, substituição, resposta, correcção, conforme indicado). Tom firme mas respeitoso, nunca agressivo. Fecho: "Na expectativa de uma resposta e resolução em tempo útil," seguido de "_____________________________" e nome completo por baixo.`,
+    precisaEntidade: true,
+    labelEntidade: "Empresa/entidade a quem se dirige",
   },
 ];
 

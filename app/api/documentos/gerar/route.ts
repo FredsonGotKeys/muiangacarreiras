@@ -94,7 +94,9 @@ REGRAS ABSOLUTAS:
 - Usa APENAS a informação fornecida pelo utilizador (dados pessoais, entidade, detalhes). Nunca inventes factos, datas, entidades, números de BI ou moradas que não estejam indicados.
 - Integra TODOS os dados pessoais fornecidos (nome, BI e respectiva data/local de emissão quando indicados, data de nascimento, naturalidade, nacionalidade, estado civil, profissão, filiação, NUIT quando relevante para o tipo de documento, morada) no parágrafo de identificação do requerente/declarante, exactamente como as regras de estrutura acima descrevem — não os omitas nem os relegues para o fim. Usa apenas os campos que tiverem sido fornecidos; não incluas um campo que não veio preenchido.
 - Se faltar alguma informação necessária para completar o documento correctamente, deixa um marcador claro entre parênteses rectos, ex.: [Data de emissão do BI], em vez de inventar.
-- Tom formal, claro e directo — português de Moçambique/Portugal (nunca brasileiro).
+- Tom formal, claro e directo — português de Moçambique/Portugal (nunca brasileiro). Escreve como um técnico administrativo experiente, não como um assistente de IA a ser simpático.
+- Nunca uses fórmulas genéricas ou traduzidas do inglês que soam a IA, como "Espero que esta mensagem o encontre bem", "É com enorme satisfação/imenso prazer que...", ou qualquer abertura efusiva/emocional fora do tom administrativo. Fórmulas formais moçambicanas tradicionais (ex.: "Venho por este meio...", "Nos termos da legislação vigente...", "Pede deferimento.") são as correctas e devem ser usadas quando apropriado — não são "IA", são o registo correcto.
+- Não repitas a mesma frase ou ideia mais que uma vez no documento. Não uses emojis, listas com marcadores, nem qualquer formatação Markdown (**negrito**, #, -, etc.) — o texto é para um documento formal, não para um chat.
 - Devolve APENAS o texto do documento, sem explicações, sem markdown, sem títulos extra.`;
 
     const userMsg = `DADOS DO REQUERENTE/DECLARANTE:\n${dadosRequerente}${dadosExtra ? `\n\nDADOS ADICIONAIS:\n${dadosExtra}` : ""}\n\nDETALHES DO PEDIDO:\n${detalhes}`;

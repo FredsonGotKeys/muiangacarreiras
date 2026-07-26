@@ -81,18 +81,24 @@ export async function gerarTextoDocx(titulo: string, texto: string): Promise<Blo
   // Norma: Times New Roman, tamanho 12 (docx usa "half-points" — 24 = 12pt).
   const FONTE = "Times New Roman";
   const TAMANHO = 24;
+  // Margens oficiais A4 (docx usa twips — 1cm ≈ 567 twips):
+  // superior/inferior 2,5cm, esquerda 3cm, direita 2cm.
+  const MARGEM = { top: 1417, bottom: 1417, left: 1701, right: 1134 };
+  // Espaçamento 1.5 entre linhas (240 twips = espaçamento simples).
+  const ESPACAMENTO_1_5 = { line: 360, lineRule: "auto" as const };
   const doc = new Document({
     sections: [{
-      properties: {},
+      properties: { page: { margin: MARGEM } },
       children: [
         new Paragraph({
           children: [new TextRun({ text: titulo, font: FONTE, size: TAMANHO, bold: true })],
           alignment: AlignmentType.CENTER,
-          spacing: { after: 240 },
+          spacing: { after: 240, ...ESPACAMENTO_1_5 },
         }),
         ...texto.split("\n").map(line => new Paragraph({
           children: [new TextRun({ text: line, font: FONTE, size: TAMANHO })],
           alignment: AlignmentType.JUSTIFIED,
+          spacing: ESPACAMENTO_1_5,
         })),
       ],
     }],
