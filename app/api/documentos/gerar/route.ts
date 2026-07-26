@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { rateLimit, getIp, rateLimitedResponse, str } from "@/lib/api-utils";
 import { chatCompletion } from "@/lib/llm";
 import { getTipoDocumento } from "@/lib/documentos-tipos";
+import { juntarLinhasPartidas } from "@/lib/normalizar-texto";
 
 /**
  * Gera qualquer documento do catálogo "diversos" (cartas, requerimentos,
@@ -97,6 +98,7 @@ REGRAS DE ESTRUTURA OBRIGATÓRIAS PARA ESTE TIPO DE DOCUMENTO (cumprir à risca)
 ${tipo.estrutura}
 
 REGRAS ABSOLUTAS:
+- FORMATAÇÃO DE LINHAS: cada parágrafo de prosa (ex.: a frase de identificação, o corpo, a fundamentação) tem de ser devolvido numa ÚNICA linha contínua, sem nenhuma quebra de linha (\n) no meio da frase, seja qual for o comprimento. Só usa quebra de linha para separar blocos estruturais distintos e completos: uma linha do cabeçalho de outra, "Assunto:" do resto, um parágrafo completo do parágrafo seguinte, e a linha de assinatura. Nunca termines uma linha a meio de uma frase numa preposição ou conjunção (ex.: "...e", "...de", "...a") — isso corta o parágrafo ao meio de forma incorrecta.
 - Usa APENAS a informação fornecida pelo utilizador (dados pessoais, entidade, detalhes). Nunca inventes factos, datas, entidades, números de BI ou moradas que não estejam indicados.
 - Integra TODOS os dados pessoais fornecidos (nome, BI e respectiva data/local de emissão quando indicados, data de nascimento, naturalidade, nacionalidade, estado civil, profissão, filiação, NUIT quando relevante para o tipo de documento, morada) no parágrafo de identificação do requerente/declarante — não os omitas nem os relegues para o fim. Usa apenas os campos que tiverem sido fornecidos; não incluas um campo que não veio preenchido.
 - CONCORDÂNCIA DE GÉNERO: se o campo "Sexo" tiver sido indicado (Masculino/Feminino), escreve SEMPRE a forma correcta da palavra consoante esse género — nunca escrevas a forma dupla com barra ("filho(a)", "nascido(a)", "solteiro(a)", "portador(a)", "casado(a)", "senhor(a)"). Masculino: filho, nascido, solteiro, casado, divorciado, portador, "o requerente"/"o declarante". Feminino: filha, nascida, solteira, casada, divorciada, portadora, "a requerente"/"a declarante". Se o Sexo não tiver sido indicado, usa a forma masculina por defeito (é a convenção neutra em português quando o género é desconhecido) — nunca a forma com barra.
@@ -123,7 +125,7 @@ REGRAS ABSOLUTAS:
       return NextResponse.json({ error: "Erro ao gerar o documento." }, { status: 502 });
     }
 
-    const texto = result.content;
+    const texto = juntarLinhasPartidas(result.content);
     if (!texto.trim()) return NextResponse.json({ error: "Não foi possível gerar o documento." }, { status: 502 });
 
     return NextResponse.json({ texto });

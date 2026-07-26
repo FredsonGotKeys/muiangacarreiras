@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { rateLimit, getIp, rateLimitedResponse, str } from "@/lib/api-utils";
 import { chatCompletion } from "@/lib/llm";
+import { juntarLinhasPartidas } from "@/lib/normalizar-texto";
 
 /**
  * Gera Carta de Apresentação personalizada a partir dos dados do CV.
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
     const systemPrompt = `És um consultor de carreira moçambicano especializado em redigir cartas de apresentação profissionais.
 
 REGRAS ABSOLUTAS:
+- FORMATAÇÃO DE LINHAS: cada parágrafo de prosa tem de ser devolvido numa ÚNICA linha contínua, sem nenhuma quebra de linha (\n) no meio da frase, seja qual for o comprimento. Só usa quebra de linha para separar blocos estruturais distintos: cabeçalho, "Assunto:", um parágrafo completo do seguinte, e a assinatura. Nunca termines uma linha a meio de uma frase numa preposição ou conjunção (ex.: "...e", "...de", "...a").
 - Usa APENAS a informação fornecida sobre o candidato. Nunca inventes experiência, formação ou competências.
 - Tom profissional, formal, elegante e natural — adequado ao mercado de trabalho moçambicano. Escreve como um consultor de carreira experiente, não como um assistente de IA a ser simpático.
 - Estrutura obrigatória, exactamente por esta ordem:
@@ -109,7 +111,7 @@ REGRAS ABSOLUTAS:
       return NextResponse.json({ error: "Erro ao gerar carta." }, { status: 502 });
     }
 
-    const carta = result.content;
+    const carta = juntarLinhasPartidas(result.content);
     if (!carta.trim()) return NextResponse.json({ error: "Não foi possível gerar a carta." }, { status: 502 });
 
     return NextResponse.json({ carta });
