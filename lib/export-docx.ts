@@ -78,6 +78,7 @@ export async function gerarCvDocx(data: CvDataLike, accentColorHex = "C9A84C"): 
 
 export async function gerarTextoDocx(titulo: string, texto: string): Promise<Blob> {
   const { Document, Packer, Paragraph, TextRun, AlignmentType } = await import("docx");
+  const { parseNegrito } = await import("./negrito");
   // Norma: Times New Roman, tamanho 12 (docx usa "half-points" — 24 = 12pt).
   const FONTE = "Times New Roman";
   const TAMANHO = 24;
@@ -95,11 +96,18 @@ export async function gerarTextoDocx(titulo: string, texto: string): Promise<Blo
           alignment: AlignmentType.CENTER,
           spacing: { after: 240, ...ESPACAMENTO_1_5 },
         }),
-        ...texto.split("\n").map(line => new Paragraph({
-          children: [new TextRun({ text: line, font: FONTE, size: TAMANHO })],
-          alignment: AlignmentType.JUSTIFIED,
-          spacing: ESPACAMENTO_1_5,
-        })),
+        ...texto.split("\n").map(line => {
+          // Marcadores "**negrito**" (cabeçalho, nome do requerente) tornam-se
+          // negrito real no .docx, não texto literal com asteriscos.
+          const segmentos = parseNegrito(line);
+          return new Paragraph({
+            children: segmentos.length
+              ? segmentos.map(seg => new TextRun({ text: seg.texto, font: FONTE, size: TAMANHO, bold: seg.negrito }))
+              : [new TextRun({ text: "", font: FONTE, size: TAMANHO })],
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: ESPACAMENTO_1_5,
+          });
+        }),
       ],
     }],
     styles: { default: { document: { run: { font: FONTE, size: TAMANHO } } } },

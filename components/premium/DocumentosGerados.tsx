@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Mail, FileSignature, Loader2, Copy, Check, Download, Building2, FileType2, Heart, Lock } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
+import { parseNegrito, cortarSegmentos, negritoParaHtml, paraTextoPlano } from "@/lib/negrito";
+import TextoFormatado from "@/components/TextoFormatado";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
@@ -75,7 +77,7 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
 
   function copiar() {
     comAutorizacao(() => {
-      navigator.clipboard.writeText(texto);
+      navigator.clipboard.writeText(paraTextoPlano(texto));
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     });
@@ -101,7 +103,7 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
           body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; padding: 25mm 20mm 25mm 30mm; text-align: justify; white-space: pre-wrap; color: #111; }
           @page { size: A4; margin: 0; }
         </style></head>
-        <body>${texto.replace(/</g, "&lt;")}</body></html>
+        <body>${negritoParaHtml(texto)}</body></html>
       `);
       w.document.close();
       w.focus();
@@ -111,9 +113,10 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
 
   function partilhar(destino: "whatsapp" | "email") {
     comAutorizacao(() => {
+      const textoPlano = paraTextoPlano(texto);
       const url = destino === "whatsapp"
-        ? `https://wa.me/?text=${encodeURIComponent(texto)}`
-        : `mailto:?subject=${encodeURIComponent(activeDoc ? NOME_POR_DOC[activeDoc] : "")}&body=${encodeURIComponent(texto)}`;
+        ? `https://wa.me/?text=${encodeURIComponent(textoPlano)}`
+        : `mailto:?subject=${encodeURIComponent(activeDoc ? NOME_POR_DOC[activeDoc] : "")}&body=${encodeURIComponent(textoPlano)}`;
       window.open(url, "_blank", "noopener,noreferrer");
     });
   }
@@ -248,26 +251,32 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
                 style={{ fontFamily: "'Times New Roman', Times, serif" }}
               />
             ) : (
-              <div
-                className="relative overflow-hidden bg-white border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-justify text-gray-700"
-                style={{ fontFamily: "'Times New Roman', Times, serif" }}
-              >
-                {!(!!activeDoc && entitlementPorDoc[activeDoc].unlocked) && <MarcaDagua />}
-                {texto.slice(0, 140)}
-                {texto.length > 140 && "…"}
-                {texto.length > 140 && (
-                  <div className="mt-2">
-                    <BlocoBloqueado
-                      unlocked={!!activeDoc && entitlementPorDoc[activeDoc].unlocked}
-                      onDesbloquear={() => activeDoc && setCompraPendente(activeDoc)}
-                      precoMt={activeDoc ? entitlementPorDoc[activeDoc].servico?.preco_mt : undefined}
-                      minHeight={120}
-                    >
-                      <div className="whitespace-pre-wrap text-justify">{texto.slice(140)}</div>
-                    </BlocoBloqueado>
+              (() => {
+                const segmentos = parseNegrito(texto);
+                const [visiveis, bloqueados] = cortarSegmentos(segmentos, 140);
+                return (
+                  <div
+                    className="relative overflow-hidden bg-white border border-gray-100 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap text-justify text-gray-700"
+                    style={{ fontFamily: "'Times New Roman', Times, serif" }}
+                  >
+                    {!(!!activeDoc && entitlementPorDoc[activeDoc].unlocked) && <MarcaDagua />}
+                    <TextoFormatado segmentos={visiveis} />
+                    {bloqueados.length > 0 && "…"}
+                    {bloqueados.length > 0 && (
+                      <div className="mt-2">
+                        <BlocoBloqueado
+                          unlocked={!!activeDoc && entitlementPorDoc[activeDoc].unlocked}
+                          onDesbloquear={() => activeDoc && setCompraPendente(activeDoc)}
+                          precoMt={activeDoc ? entitlementPorDoc[activeDoc].servico?.preco_mt : undefined}
+                          minHeight={120}
+                        >
+                          <div className="whitespace-pre-wrap text-justify"><TextoFormatado segmentos={bloqueados} /></div>
+                        </BlocoBloqueado>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()
             )}
           </div>
         )}

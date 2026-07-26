@@ -37,9 +37,9 @@ export const CATEGORIAS: { id: CategoriaDocumento; label: string; servicoSlug: s
   { id: "outros", label: "Outros", servicoSlug: "requerimentos-diversos" },
 ];
 
-const FECHO_REQUERIMENTO = `Fecho obrigatório: termina sempre com a fórmula consagrada "Pede deferimento." (em parágrafo isolado), seguida de "[Local], aos [dia] de [mês] de [ano]" e, por fim, "O(A) Requerente,\n_____________________________" (linha para assinatura, com o nome completo por baixo).`;
+const FECHO_REQUERIMENTO = `Fecho obrigatório: termina sempre com a fórmula consagrada "Pede deferimento." (em parágrafo isolado), seguida de "[Local], aos [dia] de [mês] de [ano]", depois "**[Nome completo do requerente]**" (nome em negrito, sozinho numa linha) e, por fim, uma linha de sublinhado "_____________________________________" para a assinatura física — nesta ordem exacta: data, nome, sublinhado.`;
 
-const FECHO_DECLARACAO = `Fecho obrigatório: termina com "Por ser verdade e me ter sido solicitada, passo a presente declaração que vai por mim assinada." (adaptar o "por mim" se a declaração for emitida por uma entidade, não pela própria pessoa), seguida de "[Local], aos [dia] de [mês] de [ano]" e, por fim, uma linha de assinatura com a designação correcta (ex.: "O(A) Declarante," ou "A Entidade Empregadora," conforme o caso).`;
+const FECHO_DECLARACAO = `Fecho obrigatório: termina com "Por ser verdade e me ter sido solicitada, passo a presente declaração que vai por mim assinada." (adaptar o "por mim" se a declaração for emitida por uma entidade, não pela própria pessoa), seguida de "[Local], aos [dia] de [mês] de [ano]", depois "**[Nome completo do declarante, ou designação da entidade]**" (em negrito, sozinho numa linha) e, por fim, uma linha de sublinhado "_____________________________________" para a assinatura física — nesta ordem exacta: data, nome/designação, sublinhado.`;
 
 export const TIPOS_DOCUMENTO: TipoDocumento[] = [
   // Emprego

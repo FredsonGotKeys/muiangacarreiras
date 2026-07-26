@@ -7,6 +7,8 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { authFetch } from "@/lib/auth-fetch";
 import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
+import { parseNegrito, cortarSegmentos, negritoParaHtml, paraTextoPlano } from "@/lib/negrito";
+import TextoFormatado from "@/components/TextoFormatado";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { CATEGORIAS, TIPOS_DOCUMENTO, type CategoriaDocumento } from "@/lib/documentos-tipos";
 import AuthModal from "@/components/AuthModal";
@@ -125,7 +127,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
 
   function copiar() {
     comAutorizacao(() => {
-      navigator.clipboard.writeText(texto);
+      navigator.clipboard.writeText(paraTextoPlano(texto));
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     });
@@ -150,7 +152,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
           body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; padding: 25mm 20mm 25mm 30mm; text-align: justify; white-space: pre-wrap; color: #111; }
           @page { size: A4; margin: 0; }
         </style></head>
-        <body>${texto.replace(/</g, "&lt;")}</body></html>
+        <body>${negritoParaHtml(texto)}</body></html>
       `);
       w.document.close();
       w.focus();
@@ -160,14 +162,16 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
 
   function partilhar(destino: "whatsapp" | "email") {
     comAutorizacao(() => {
+      const textoPlano = paraTextoPlano(texto);
       const url = destino === "whatsapp"
-        ? `https://wa.me/?text=${encodeURIComponent(texto)}`
-        : `mailto:?subject=${encodeURIComponent(tipo?.titulo ?? "")}&body=${encodeURIComponent(texto)}`;
+        ? `https://wa.me/?text=${encodeURIComponent(textoPlano)}`
+        : `mailto:?subject=${encodeURIComponent(tipo?.titulo ?? "")}&body=${encodeURIComponent(textoPlano)}`;
       window.open(url, "_blank", "noopener,noreferrer");
     });
   }
 
   const tiposDaCategoria = TIPOS_DOCUMENTO.filter((t) => t.categoria === categoria);
+  const [previewVisivel, previewBloqueado] = cortarSegmentos(parseNegrito(texto), 140);
 
   return (
     <div className="min-h-screen bg-[#FFF8F8] pt-24 pb-16 px-4">
@@ -353,9 +357,9 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
                   style={{ fontFamily: "'Times New Roman', Times, serif" }}
                 >
                   {!ent.unlocked && <MarcaDagua />}
-                  {texto.slice(0, 140)}
-                  {texto.length > 140 && "…"}
-                  {texto.length > 140 && (
+                  <TextoFormatado segmentos={previewVisivel} />
+                  {previewBloqueado.length > 0 && "…"}
+                  {previewBloqueado.length > 0 && (
                     <div className="mt-2">
                       <BlocoBloqueado
                         unlocked={ent.unlocked}
@@ -363,7 +367,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
                         precoMt={ent.servico?.preco_mt}
                         minHeight={120}
                       >
-                        <div className="whitespace-pre-wrap text-justify">{texto.slice(140)}</div>
+                        <div className="whitespace-pre-wrap text-justify"><TextoFormatado segmentos={previewBloqueado} /></div>
                       </BlocoBloqueado>
                     </div>
                   )}
