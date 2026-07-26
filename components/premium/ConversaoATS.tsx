@@ -3,7 +3,6 @@ import { useState } from "react";
 import { FileCheck2, Loader2, Download, Lock } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { gerarCvDocx, downloadBlob } from "@/lib/export-docx";
-import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
@@ -61,7 +60,6 @@ export default function ConversaoATS({ cvData }: { cvData: Record<string, unknow
     const blob = await gerarCvDocx(merged, "000000");
     const nomeFicheiro = `CV_ATS_${((cvData.nome as string) || "curriculo").replace(/\s+/g, "_")}.docx`;
     downloadBlob(blob, nomeFicheiro);
-    guardarDocumento("conversao-ats", nomeFicheiro, blob);
   }
 
   function baixar() {

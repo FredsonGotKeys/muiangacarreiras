@@ -73,7 +73,7 @@ export default function AcessoStatus() {
         className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all hover:scale-[1.03] active:scale-95"
         style={{ background: "linear-gradient(135deg, #FE0000 0%, #D20001 100%)", color: "#fff" }}
       >
-        <Lock className="w-3 h-3" /> Desbloquear tudo — {servico?.preco_mt ?? 59} MT
+        <Lock className="w-3 h-3" /> Desbloquear tudo — {servico?.preco_mt ?? 109} MT
       </button>
 
       {comprar && servico && (

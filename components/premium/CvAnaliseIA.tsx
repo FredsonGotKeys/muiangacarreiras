@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Sparkles, Loader2, CheckCircle2, AlertTriangle, TrendingUp, RefreshCw, Download, Lock } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
-import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
@@ -120,7 +119,6 @@ export default function CvAnaliseIA({ cvData }: { cvData: Record<string, unknown
     const blob = await gerarTextoDocx("Relatório de Análise do CV", linhas.join("\n"));
     const nomeFicheiro = "Relatorio_Analise_CV.docx";
     downloadBlob(blob, nomeFicheiro);
-    guardarDocumento("analise-cv", nomeFicheiro, blob);
   }
 
   function baixar() {

@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Target, Loader2, AlertTriangle, CheckCircle2, XCircle, Lightbulb, Download, Lock } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
-import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
@@ -73,7 +72,6 @@ export default function CvMatchingVaga({ cvData }: { cvData: Record<string, unkn
     const blob = await gerarTextoDocx("Relatório de Compatibilidade com Vaga", linhas.join("\n"));
     const nomeFicheiro = "CV_Match_Vaga.docx";
     downloadBlob(blob, nomeFicheiro);
-    guardarDocumento("cv-matching-vaga", nomeFicheiro, blob);
   }
 
   function baixar() {

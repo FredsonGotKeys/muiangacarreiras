@@ -12,9 +12,7 @@ import { resolverPreco, type TipoCompra } from "@/lib/pricing";
  *
  * M-Pesa / e-Mola → STK push directo (POST /charges). O cliente nunca sai
  * do site — confirma no telemóvel e o pagamento activa via webhook. Sem
- * cartão: o valor mínimo do checkout de cartão da ZumboPay (100 MT) é
- * superior ao preço do passe (59 MT), por isso só M-Pesa/e-Mola fazem
- * sentido aqui.
+ * cartão: não é um método implementado neste fluxo (apenas M-Pesa/e-Mola).
  *
  * Insere em "compras" (direito permanente, sem janela). A linha nasce
  * "pendente"; o webhook (única fonte que confirma pagamento) promove-a

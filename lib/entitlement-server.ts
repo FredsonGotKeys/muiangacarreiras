@@ -6,7 +6,7 @@ const sb = createClient(
 );
 
 /**
- * Verificação server-side do passe de acesso total (59 MT / 8h, desbloqueia
+ * Verificação server-side do passe de acesso total (109 MT / 8h, desbloqueia
  * tudo) — mesma lógica de lib/use-entitlement.ts (client), para reforçar em
  * rotas de API que não devem confiar apenas na verificação do browser.
  * `servicoSlug` é ignorado; mantido só por compatibilidade de assinatura.

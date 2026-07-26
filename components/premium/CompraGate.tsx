@@ -10,7 +10,7 @@ type Fase = "inicial" | "pagamento";
 
 /**
  * Bloqueia o conteúdo até o utilizador ter um passe de Acesso Total activo
- * (59 MT, desbloqueia tudo no site por 8 horas). O pagamento acontece
+ * (109 MT, desbloqueia tudo no site por 8 horas). O pagamento acontece
  * dentro deste mesmo cartão — sem pop-up/modal — para nunca dar a
  * impressão de que "desapareceu" ou está instável enquanto se espera a
  * confirmação do operador.

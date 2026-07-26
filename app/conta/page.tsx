@@ -8,7 +8,6 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import AuthModal from "@/components/AuthModal";
-import MeusDocumentos from "@/components/premium/MeusDocumentos";
 
 type Compra = {
   id: string; tipo: string; preco_mt: number; status: string; created_at: string;
@@ -205,8 +204,6 @@ function ContaConteudo() {
           )}
         </div>
 
-        {/* Documentos */}
-        <MeusDocumentos />
       </div>
     </div>
   );

@@ -7,7 +7,6 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { authFetch } from "@/lib/auth-fetch";
 import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
-import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { CATEGORIAS, TIPOS_DOCUMENTO, type CategoriaDocumento } from "@/lib/documentos-tipos";
 import AuthModal from "@/components/AuthModal";
@@ -135,7 +134,6 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
       const nomeFicheiro = `${tipo.titulo.replace(/\s+/g, "_")}.docx`;
       const blob = await gerarTextoDocx(tipo.titulo, texto);
       downloadBlob(blob, nomeFicheiro);
-      guardarDocumento(tipo.slug, nomeFicheiro, blob);
     });
   }
 
@@ -176,7 +174,7 @@ function DocumentosConteudo({ nomeUser }: { nomeUser: string }) {
             Documentos
           </span>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#2A0001] mb-1">Cartas, requerimentos e declarações</h1>
-          <p className="text-gray-400 text-sm max-w-xl">Escolhe o documento, preenche os detalhes e gera de graça. Por 59 MT desbloqueias copiar, descarregar ou partilhar durante 8 horas.</p>
+          <p className="text-gray-400 text-sm max-w-xl">Escolhe o documento, preenche os detalhes e gera de graça. Por 109 MT desbloqueias copiar, descarregar ou partilhar durante 8 horas.</p>
         </div>
 
         {/* Categorias */}

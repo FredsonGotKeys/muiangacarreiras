@@ -17,8 +17,6 @@ import CompraGate from "@/components/premium/CompraGate";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { useAuthGate } from "@/lib/use-auth-gate";
 import AuthModal from "@/components/AuthModal";
-import { guardarDocumento } from "@/lib/documentos-client";
-import MeusDocumentos from "@/components/premium/MeusDocumentos";
 import MarcaDagua from "@/components/premium/MarcaDagua";
 import ConversaoATS from "@/components/premium/ConversaoATS";
 import TraducaoCv from "@/components/premium/TraducaoCv";
@@ -715,7 +713,6 @@ export default function CurriculumPage() {
       const blob = await gerarCvDocx(data, accentHex);
       const nomeFicheiro = `CV_${(data.nome || "curriculo").replace(/\s+/g, "_")}.docx`;
       downloadBlob(blob, nomeFicheiro);
-      guardarDocumento("cv", nomeFicheiro, blob);
     } catch {
       alert("Erro ao gerar o ficheiro Word. Tenta novamente.");
     } finally {
@@ -765,7 +762,7 @@ export default function CurriculumPage() {
             Um CV melhor dá mais chances de aceitação
           </h1>
           <p className="text-gray-500 mb-3 max-w-xl mx-auto">
-            É por isso que a MUIANGA existe: aqui não encontras só vagas, crias, melhoras e adaptas o teu CV para te destacares na candidatura. Experimenta grátis; por <span className="font-semibold text-[#2A0001]">59 MT</span> desbloqueias o download e todas as ferramentas de IA por 8 horas.
+            É por isso que a MUIANGA existe: aqui não encontras só vagas, crias, melhoras e adaptas o teu CV para te destacares na candidatura. Experimenta grátis; por <span className="font-semibold text-[#2A0001]">109 MT</span> desbloqueias o download e todas as ferramentas de IA por 8 horas.
           </p>
           <p className="text-gray-300 text-xs mb-8 max-w-xl mx-auto">
             Motor: MUIANGA IA, sistema dedicado a carreiras, desenvolvido por Fredson Muianga.
@@ -2203,9 +2200,6 @@ export default function CurriculumPage() {
           </Ferramenta>
           <Ferramenta title="Simulação de Entrevista" desc="Perguntas prováveis e dicas de resposta" icon={Users} open={ferramentaAberta === "entrevista"} onToggle={() => toggleFerramenta("entrevista")}>
             <SimulacaoEntrevista cvData={data as unknown as Record<string, unknown>} />
-          </Ferramenta>
-          <Ferramenta title="Os teus documentos" desc="Documentos já gerados, prontos a re-descarregar" icon={FileUser} open={ferramentaAberta === "meus"} onToggle={() => toggleFerramenta("meus")}>
-            <MeusDocumentos />
           </Ferramenta>
         </div>
       </div>

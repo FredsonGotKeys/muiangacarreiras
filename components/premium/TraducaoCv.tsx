@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Languages, Loader2, Download, Lock } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { gerarCvDocx, downloadBlob } from "@/lib/export-docx";
-import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
@@ -63,7 +62,6 @@ export default function TraducaoCv({ cvData }: { cvData: Record<string, unknown>
     const blob = await gerarCvDocx(merged);
     const nomeFicheiro = `CV_${idioma.toUpperCase()}_${((original.nome as string) || "curriculo").replace(/\s+/g, "_")}.docx`;
     downloadBlob(blob, nomeFicheiro);
-    guardarDocumento("traducao-cv", nomeFicheiro, blob);
   }
 
   function baixar() {

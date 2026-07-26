@@ -111,7 +111,7 @@ export function EntitlementProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * Acesso é um passe único global — "Acesso Total", 59 MT, desbloqueia tudo
+ * Acesso é um passe único global — "Acesso Total", 109 MT, desbloqueia tudo
  * no site por 8 horas — em vez de compras por serviço. O parâmetro
  * `servicoSlug` é ignorado; mantido só para não obrigar a reescrever todos
  * os componentes que já chamam `useEntitlement(slug)`.

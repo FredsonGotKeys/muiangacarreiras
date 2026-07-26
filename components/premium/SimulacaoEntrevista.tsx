@@ -3,7 +3,6 @@ import { useState } from "react";
 import { MessageCircleQuestion, Loader2, Download, Lock } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
-import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
@@ -47,7 +46,6 @@ export default function SimulacaoEntrevista({ cvData }: { cvData: Record<string,
     const blob = await gerarTextoDocx("Guião de Preparação para Entrevista", texto);
     const nomeFicheiro = "Guiao_Entrevista.docx";
     downloadBlob(blob, nomeFicheiro);
-    guardarDocumento("simulacao-entrevista", nomeFicheiro, blob);
   }
 
   function baixar() {

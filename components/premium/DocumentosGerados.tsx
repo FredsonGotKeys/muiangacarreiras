@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Mail, FileSignature, Loader2, Copy, Check, Download, Building2, FileType2, Heart, Lock } from "lucide-react";
 import { authFetch } from "@/lib/auth-fetch";
 import { gerarTextoDocx, downloadBlob } from "@/lib/export-docx";
-import { guardarDocumento } from "@/lib/documentos-client";
 import { useEntitlement } from "@/lib/use-entitlement";
 import { useAuthGate } from "@/lib/use-auth-gate";
 import CompraGate from "@/components/premium/CompraGate";
@@ -89,7 +88,6 @@ export default function DocumentosGerados({ cvData }: { cvData: Record<string, u
       const nomeFicheiro = `${titulo.replace(/\s+/g, "_")}.docx`;
       const blob = await gerarTextoDocx(titulo, texto);
       downloadBlob(blob, nomeFicheiro);
-      guardarDocumento(TIPO_DOCUMENTO_POR_DOC[activeDoc], nomeFicheiro, blob);
     });
   }
 
