@@ -49,12 +49,27 @@ export function EntitlementProvider({ children }: { children: ReactNode }) {
   const [expiraEm, setExpiraEm] = useState<string | null>(null);
   const [servico, setServico] = useState<CatalogoItem | null>(null);
 
+  // Só mostra o estado "a verificar" na primeira verificação de cada
+  // utilizador. Sem isto, cada revalidação em segundo plano (polling de
+  // 45s, o temporizador de expiração, o Realtime a "compras") também
+  // marcava `checking=true` por um instante — fazia o indicador da navbar
+  // (e qualquer CompraGate) desaparecer e reaparecer repetidamente,
+  // parecendo uma lâmpada com mau contacto, mesmo sem nada de errado.
+  const utilizadorVerificado = useRef<string | undefined>(undefined);
+
   const verificar = useCallback(async () => {
-    setChecking(true);
+    const primeiraVerificacao = utilizadorVerificado.current !== userId;
+    if (primeiraVerificacao) setChecking(true);
     const item = await getCatalogoItem("servico", "acesso-total");
     setServico(item);
 
-    if (!userId) { setUnlocked(false); setExpiraEm(null); setChecking(false); return; }
+    if (!userId) {
+      setUnlocked(false);
+      setExpiraEm(null);
+      setChecking(false);
+      utilizadorVerificado.current = userId;
+      return;
+    }
 
     try {
       const res = await authFetch("/api/entitlement/status");
@@ -67,6 +82,7 @@ export function EntitlementProvider({ children }: { children: ReactNode }) {
       setExpiraEm(null);
     } finally {
       setChecking(false);
+      utilizadorVerificado.current = userId;
     }
   }, [userId]);
 
