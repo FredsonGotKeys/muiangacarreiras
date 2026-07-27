@@ -16,7 +16,7 @@ const sections = [
   },
   {
     title: "3. Para que usamos os teus dados",
-    body: "Os teus dados são usados para: criar e gerir a tua conta, processar subscrições de acesso às vagas, enviar comunicações relacionadas com o serviço (confirmações, alertas de expiração), e melhorar a plataforma.",
+    body: "Os teus dados são usados para: criar e gerir a tua conta (autenticação feita através do Google, sem palavra-passe guardada por nós), processar os pagamentos de acesso à plataforma, e melhorar o serviço.",
   },
   {
     title: "4. Partilha de dados",

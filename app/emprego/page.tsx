@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import AuthModal from "@/components/AuthModal";
-import AlertaVagasForm from "@/components/premium/AlertaVagasForm";
 
 /* ── Tipos ── */
 type Vaga = {
@@ -372,10 +371,6 @@ export default function EmpregoPage() {
                 <span className="text-xs text-gray-500">Fonte: <span className="font-semibold text-[#2A0001]">njobs.co.mz</span> · actualizado a cada hora</span>
               </div>
             )}
-
-            <div className="mb-6">
-              <AlertaVagasForm />
-            </div>
 
             {vagasLoading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
