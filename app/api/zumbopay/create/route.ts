@@ -50,18 +50,18 @@ function walletIdFor(metodo: string): string | undefined {
 }
 
 /**
- * A ZumboPay às vezes devolve o erro interno em bruto do seu próprio
- * servidor (ex.: falhas de ligação à base de dados deles) em vez de uma
- * mensagem para o utilizador final. Nesses casos, mostrar isso tal como
- * está só confunde — troca-se por uma mensagem honesta e útil.
+ * O provedor às vezes devolve o erro interno em bruto do seu próprio
+ * servidor (ex.: falhas de ligação à base de dados) em vez de uma
+ * mensagem para o utilizador final. Mostrar isso tal como está expõe
+ * detalhes internos e não ajuda ninguém — troca-se por uma mensagem
+ * simples, sem nomear serviços que o cliente não precisa de conhecer.
  */
 const PADRAO_ERRO_INTERNO = /sqlstate|erro de liga[çc][ãa]o|access denied|database|incorrect database|^http \d+$/i;
 
 function mensagemErroOperador(desc: string, metodo: string): string {
   if (!PADRAO_ERRO_INTERNO.test(desc)) return desc;
   const nomeMetodo = metodo === "mpesa" ? "M-Pesa" : "e-Mola";
-  const alternativa = metodo === "mpesa" ? "e-Mola" : "M-Pesa";
-  return `${nomeMetodo} está indisponível de momento (falha no operador de pagamento). Tenta ${alternativa} ou volta a tentar dentro de alguns minutos.`;
+  return `${nomeMetodo} está indisponível de momento. Volta a tentar dentro de alguns minutos.`;
 }
 
 export async function POST(req: NextRequest) {
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Método de pagamento inválido." }, { status: 400 });
   }
   if (METODOS_DESACTIVADOS.has(metodo)) {
-    return NextResponse.json({ error: "e-Mola está temporariamente indisponível (instabilidade do lado da ZumboPay). Usa M-Pesa entretanto." }, { status: 503 });
+    return NextResponse.json({ error: "e-Mola está temporariamente indisponível e estará disponível em breve. Usa M-Pesa entretanto." }, { status: 503 });
   }
   const tipo = typeof body?.tipo === "string" ? (body.tipo as TipoCompra) : undefined;
   const itemId = str(body?.itemId, 100);

@@ -9,6 +9,7 @@ import {
   CABECALHOS_ASSINATURA,
   CABECALHOS_TIMESTAMP,
 } from "@/lib/zumbopay-cabecalhos";
+import { extrairEvento, extrairReferencia, extrairEventId } from "@/lib/zumbopay-payload";
 
 /**
  * Webhook ZumboPay → activa subscrições e compras avulsas (serviço/pacote).
@@ -101,18 +102,30 @@ export async function POST(req: NextRequest) {
     return recusar("invalid_json", 400, rawBody.slice(0, 200));
   }
 
-  const event = String(
-    payload.event ?? payload.type ?? req.headers.get("x-zumbopay-event") ?? "",
-  ).toLowerCase();
   const data = (payload.data ?? payload) as Record<string, unknown>;
-  const reference = String(data.reference ?? data.payment_reference ?? "");
-  // x-zumbopay-delivery é o id único da entrega — é a chave de
-  // idempotência mais fiável quando o corpo não traz um id próprio.
-  const eventId = String(
-    payload.id ?? payload.event_id ?? req.headers.get("x-zumbopay-delivery") ?? `${event}:${reference}`,
-  );
+  const event = extrairEvento(payload, req.headers.get("x-zumbopay-event"));
+  const reference = extrairReferencia(payload);
+  const eventId = extrairEventId(payload, req.headers.get("x-zumbopay-delivery"), event, reference);
 
-  if (!reference) return recusar("missing_reference", 400, payload);
+  /**
+   * Confirma a recepção sem processar. Usa-se quando o evento é
+   * legítimo mas não nos diz respeito (ex.: um pagamento feito através
+   * de um link da ZumboPay, que não corresponde a nenhuma compra
+   * nossa). Tem de devolver 2xx: com um código de erro, a ZumboPay
+   * assume falha de entrega e retenta indefinidamente — era o que
+   * estava a acontecer, com o mesmo evento a chegar de 5 em 5 minutos.
+   * Fica registado uma vez para haver rasto, e a idempotência impede
+   * que volte a ser tratado.
+   */
+  async function reconhecerSemProcessar(motivo: string, detalhe?: unknown) {
+    await logError({ route: "/api/zumbopay/webhook", message: `ignorado: ${motivo}`, detail: detalhe });
+    if (eventId) {
+      await sb.from("zumbopay_processed_events").insert({ event_id: eventId }).select().maybeSingle();
+    }
+    return NextResponse.json({ ok: true, ignored: motivo });
+  }
+
+  if (!reference) return reconhecerSemProcessar("missing_reference", payload);
 
   // Idempotência — evita reprocessar o mesmo evento
   const { data: already } = await sb
@@ -146,7 +159,11 @@ export async function POST(req: NextRequest) {
   }
 
   if (!sub && !compra) {
-    return recusar("purchase_not_found", 404, { reference, event });
+    // Não é um erro nosso: a referência é válida mas não pertence a
+    // nenhuma compra deste site (tipicamente um pagamento feito pelo
+    // link da ZumboPay). Reconhece-se para a entrega não ficar em
+    // retentativa perpétua.
+    return reconhecerSemProcessar("purchase_not_found", { reference, event });
   }
 
   const userId = sub ? sub.user_id : compra!.user_id;

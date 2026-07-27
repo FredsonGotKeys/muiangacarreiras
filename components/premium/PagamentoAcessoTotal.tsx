@@ -166,7 +166,7 @@ export default function PagamentoAcessoTotal({
                 key={m.id}
                 onClick={() => { if (m.disponivel) setMetodo(m.id); }}
                 disabled={!m.disponivel}
-                title={m.disponivel ? undefined : "e-Mola temporariamente indisponível — a ZumboPay está a resolver uma instabilidade do lado deles."}
+                title={m.disponivel ? undefined : "e-Mola temporariamente indisponível. Estará disponível em breve."}
                 className={`relative flex flex-col items-center gap-2 p-3 rounded-2xl border-2 bg-white transition-all min-h-[92px] ${
                   !m.disponivel
                     ? "border-gray-100 opacity-50 cursor-not-allowed grayscale"
@@ -186,7 +186,7 @@ export default function PagamentoAcessoTotal({
             <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mb-4">
               <AlertCircle size={14} className="text-amber-600 shrink-0 mt-0.5" />
               <p className="text-[11px] text-amber-700">
-                O pagamento por e-Mola está temporariamente indisponível devido a uma instabilidade da própria ZumboPay. Usa M-Pesa entretanto.
+                O pagamento por e-Mola está temporariamente indisponível e estará disponível em breve. Usa M-Pesa entretanto.
               </p>
             </div>
           )}
