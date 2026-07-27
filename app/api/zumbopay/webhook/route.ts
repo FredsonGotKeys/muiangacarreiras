@@ -1,9 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createHmac, timingSafeEqual } from "crypto";
 import { logError } from "@/lib/logger";
 import { sendEmail, templates } from "@/lib/email";
 import { verificarPagamento } from "@/lib/zumbopay-verificacao";
+import {
+  assinaturaValida,
+  lerCabecalho,
+  CABECALHOS_ASSINATURA,
+  CABECALHOS_TIMESTAMP,
+} from "@/lib/zumbopay-cabecalhos";
 
 /**
  * Webhook ZumboPay → activa subscrições e compras avulsas (serviço/pacote).
@@ -30,16 +35,7 @@ const sb = createClient(
 const MAX_SKEW_MS = 5 * 60 * 1000;
 
 function verifySignature(rawBody: string, timestamp: string, signature: string): boolean {
-  const secret = process.env.ZUMBOPAY_WEBHOOK_SECRET;
-  if (!secret || secret.length < 16) return false;
-  const sig = signature.replace(/^sha256=/i, "").trim();
-  const expected = createHmac("sha256", secret).update(`${timestamp}.${rawBody}`).digest("hex");
-  if (sig.length !== expected.length) return false;
-  try {
-    return timingSafeEqual(Buffer.from(sig, "hex"), Buffer.from(expected, "hex"));
-  } catch {
-    return false;
-  }
+  return assinaturaValida(rawBody, timestamp, signature, process.env.ZUMBOPAY_WEBHOOK_SECRET);
 }
 
 function emolaPinConfirmed(auth: Record<string, unknown>): boolean {
@@ -68,19 +64,25 @@ async function recusar(motivo: string, status: number, detalhe?: unknown) {
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
-  const signature = req.headers.get("x-signature") ?? "";
-  const timestamp = req.headers.get("x-timestamp") ?? "";
+  const signature = lerCabecalho(req.headers, CABECALHOS_ASSINATURA);
+  const timestamp = lerCabecalho(req.headers, CABECALHOS_TIMESTAMP);
 
-  if (!signature || !timestamp) {
+  if (!signature) {
     return recusar("missing_signature", 401, {
-      temSignature: !!signature,
-      temTimestamp: !!timestamp,
-      cabecalhos: [...req.headers.keys()],
+      cabecalhos: [...req.headers.keys()].filter((h) => /zumbo|signature|timestamp/i.test(h)),
     });
   }
-  const tsNum = Number(timestamp);
-  if (!tsNum || Math.abs(Date.now() - tsNum) > MAX_SKEW_MS) {
-    return recusar("stale_timestamp", 401, { timestamp, desvioMs: tsNum ? Date.now() - tsNum : null });
+
+  // O timestamp serve só para a janela de frescura. Se a ZumboPay não o
+  // enviar, a assinatura sozinha continua a provar autenticidade — não
+  // vale a pena recusar um pagamento legítimo por causa disso.
+  if (timestamp) {
+    // Aceita segundos ou milissegundos (a convenção varia).
+    const bruto = Number(timestamp);
+    const tsMs = bruto > 1e12 ? bruto : bruto * 1000;
+    if (!bruto || Math.abs(Date.now() - tsMs) > MAX_SKEW_MS) {
+      return recusar("stale_timestamp", 401, { timestamp, desvioMs: bruto ? Date.now() - tsMs : null });
+    }
   }
   if (!verifySignature(rawBody, timestamp, signature)) {
     const secret = process.env.ZUMBOPAY_WEBHOOK_SECRET;
@@ -99,10 +101,16 @@ export async function POST(req: NextRequest) {
     return recusar("invalid_json", 400, rawBody.slice(0, 200));
   }
 
-  const event = String(payload.event ?? payload.type ?? "").toLowerCase();
+  const event = String(
+    payload.event ?? payload.type ?? req.headers.get("x-zumbopay-event") ?? "",
+  ).toLowerCase();
   const data = (payload.data ?? payload) as Record<string, unknown>;
   const reference = String(data.reference ?? data.payment_reference ?? "");
-  const eventId = String(payload.id ?? payload.event_id ?? `${event}:${reference}`);
+  // x-zumbopay-delivery é o id único da entrega — é a chave de
+  // idempotência mais fiável quando o corpo não traz um id próprio.
+  const eventId = String(
+    payload.id ?? payload.event_id ?? req.headers.get("x-zumbopay-delivery") ?? `${event}:${reference}`,
+  );
 
   if (!reference) return recusar("missing_reference", 400, payload);
 
