@@ -117,6 +117,44 @@ export default function HomePage() {
           }}
         />
 
+        {/* Marca "MUIANGA" em marca de água. O ficheiro é vermelho sobre
+            preto; `mix-blend-screen` faz o preto desaparecer contra o fundo
+            escuro do hero (screen sobre preto devolve o próprio fundo),
+            ficando só as letras a brilhar de leve — por isso não foi
+            preciso editar a imagem para lhe tirar o fundo.
+
+            A máscara radial esbate os bordos para não se ver o rectângulo
+            da imagem, e a largura cresce à medida que o ecrã encolhe: num
+            telemóvel a palavra transborda de propósito, senão ficaria um
+            risco minúsculo perdido no meio. Fica sempre atrás do conteúdo
+            (que é z-10) e não intercepta cliques. */}
+        <div
+          aria-hidden
+          className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                     w-[180%] sm:w-[140%] lg:w-[115%] opacity-[0.14] mix-blend-screen"
+          style={{
+            maskImage: "radial-gradient(ellipse at center, #000 45%, transparent 78%)",
+            WebkitMaskImage: "radial-gradient(ellipse at center, #000 45%, transparent 78%)",
+          }}
+        >
+          <Image
+            src="/images/muianga-wordmark.png"
+            alt=""
+            width={2560}
+            height={1440}
+            sizes="(max-width: 640px) 210vw, (max-width: 1024px) 150vw, 115vw"
+            /* eager, não lazy: está acima da dobra, e em lazy aparecia
+               só depois — dava um "salto" visível no hero. Não leva
+               `priority` de propósito, para não competir no preload com
+               a foto de fundo, que é essa sim o elemento principal.
+               Qualidade baixa porque é um gráfico liso de duas cores
+               mostrado a 9% de opacidade: acima disto só se paga bytes. */
+            loading="eager"
+            quality={40}
+            className="w-full h-auto"
+          />
+        </div>
+
         <div className="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16">
           {/* Texto hero */}
           <div>
