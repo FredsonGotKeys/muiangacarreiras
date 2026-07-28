@@ -26,13 +26,13 @@ export const metadata: Metadata = {
     siteName: "MUIANGA CARREIRAS",
     title: "MUIANGA CARREIRAS: Emprego, CV e Oportunidades em Moçambique",
     description: "Plataforma moçambicana de empregabilidade: vagas, CV profissional e orientação de carreira.",
-    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "MUIANGA CARREIRAS" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "MUIANGA CARREIRAS" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "MUIANGA CARREIRAS",
     description: "Empregabilidade e carreiras em Moçambique: vagas, CV e oportunidades.",
-    images: ["/og-image.jpg"],
+    images: ["/og-image.png"],
   },
   robots: { index: true, follow: true },
   other: { "google-adsense-account": "ca-pub-8975008134897996" },
@@ -63,7 +63,7 @@ export default function RootLayout({
     "@type": "Organization",
     name: "MUIANGA CARREIRAS",
     url: BASE,
-    logo: `${BASE}/og-image.jpg`,
+    logo: `${BASE}/og-image.png`,
     description:
       "Plataforma de empregabilidade em Moçambique: vagas, criação de CV e orientação de carreira.",
     address: {
