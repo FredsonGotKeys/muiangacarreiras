@@ -19,6 +19,12 @@ const nextConfig = {
   serverExternalPackages: ["mammoth"],
   images: {
     formats: ["image/avif", "image/webp"],
+    // Qualidades usadas com <Image quality={...}> no projecto: 40 na marca
+    // de água do hero (gráfico liso, não precisa de mais) e 60 na foto de
+    // fundo. A partir do Next 16 é obrigatório declará-las aqui — sem
+    // isto, essas imagens deixariam de ser servidas depois da
+    // actualização. O aviso já aparece nos logs do Next 15.
+    qualities: [40, 60, 75],
     remotePatterns: [
       { protocol: "https", hostname: "drive.google.com" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },

@@ -45,6 +45,32 @@ function timeAgo(iso: string) {
   return `há ${Math.floor(diff / 60)}h`;
 }
 
+/**
+ * A fonte devolve as categorias como uma única string separada por
+ * vírgulas — e com repetições: é comum a mesma vaga trazer "Gestão e
+ * Assessoria" ou "Ciências Sociais" duas vezes. Despejar isso tal e qual
+ * dentro de um `.badge` (que é `rounded-full`, pensado para uma linha)
+ * fazia o texto enrolar em quatro linhas dentro de uma pílula gigante,
+ * ocupando metade do cartão.
+ *
+ * Aqui divide-se, tiram-se as repetidas (comparando sem maiúsculas) e
+ * devolvem-se só as primeiras, com a contagem do resto — o cartão passa
+ * a mostrar duas etiquetas curtas e um "+N" discreto.
+ */
+function categoriasResumidas(bruto: string, max = 2): { visiveis: string[]; resto: number } {
+  const vistas = new Set<string>();
+  const unicas: string[] = [];
+  for (const parte of (bruto ?? "").split(",")) {
+    const nome = parte.trim();
+    if (!nome) continue;
+    const chave = nome.toLowerCase();
+    if (vistas.has(chave)) continue;
+    vistas.add(chave);
+    unicas.push(nome);
+  }
+  return { visiveis: unicas.slice(0, max), resto: Math.max(0, unicas.length - max) };
+}
+
 /* ── Skeleton ── */
 function SkeletonCard() {
   return (
@@ -398,9 +424,31 @@ export default function EmpregoPage() {
                       <p className="text-gray-500 text-xs font-semibold">{v.empresa}</p>
                       <div className="flex items-center gap-1 text-gray-400 text-xs"><MapPin size={10}/>{v.local}</div>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      <span className="badge bg-gray-100 text-gray-600 text-xs">{v.categoria}</span>
-                    </div>
+                    {(() => {
+                      const { visiveis, resto } = categoriasResumidas(v.categoria);
+                      if (!visiveis.length) return null;
+                      return (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {visiveis.map((c) => (
+                            <span
+                              key={c}
+                              title={c}
+                              className="inline-block max-w-full truncate rounded-lg bg-gray-100 text-gray-600 text-[11px] font-medium px-2 py-1"
+                            >
+                              {c}
+                            </span>
+                          ))}
+                          {resto > 0 && (
+                            <span
+                              title={`Mais ${resto} área${resto > 1 ? "s" : ""}`}
+                              className="text-[11px] font-semibold text-gray-400 shrink-0"
+                            >
+                              +{resto}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
                       <div className="flex items-center gap-1 text-gray-400 text-xs">
                         <Clock size={10}/> <span className="font-medium text-[#2A0001]">{v.prazoLabel}</span>
