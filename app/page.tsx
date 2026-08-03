@@ -5,6 +5,7 @@ import Image from "next/image";
 import {
   Zap, Globe, Trophy,
 } from "lucide-react";
+import AcessoStatus from "@/components/premium/AcessoStatus";
 
 // Sistema de 2 tons — dourado (destaque) e grafite (neutro), alternados para
 // distinguir os cards sem sair da identidade da marca.
@@ -204,8 +205,19 @@ export default function HomePage() {
               </Link>
             </div>
 
+            {/* Entrada directa para o pagamento. Aqui só existia uma
+                frase a dizer "por 109 MT desbloqueias tudo" — informação
+                sem acção: quem já queria pagar não tinha onde clicar, e
+                o botão da barra de topo estava escondido a quem ainda
+                não tinha sessão. O preço vem do catálogo, deixando de
+                estar escrito à mão em texto que envelhece quando o valor
+                muda. */}
+            <div className="mb-6">
+              <AcessoStatus variante="destaque" />
+            </div>
+
             <p className="text-white/60 text-xs mb-10">
-              Candidaturas 100% gratuitas · Experimenta o CV grátis, por <span className="font-semibold" style={{ color: "#FE0000" }}>109 MT</span> desbloqueias tudo por 8 horas · Sem mensalidades
+              Candidaturas 100% gratuitas · Experimenta o CV grátis e paga só quando quiseres descarregar · Sem mensalidades
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8 border-t border-white/10">

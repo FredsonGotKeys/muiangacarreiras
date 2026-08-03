@@ -17,17 +17,29 @@ function formatRestante(expiraEm: string): string {
 
 const AVISO_EXPIRACAO_MS = 10 * 60000;
 
+type Variante = "compacto" | "destaque";
+
 /**
- * Indicador global do passe de Acesso Total: mostra a contagem decrescente
- * quando activo, ou um botão para o comprar quando não está. Visível em
- * qualquer página (montado no layout), para o utilizador perceber sempre
- * quanto tempo lhe resta ou quanto custa desbloquear.
+ * Ponto de entrada para comprar o passe de Acesso Total, e indicador do
+ * tempo que resta quando já está activo.
  *
- * O pagamento abre como painel embutido (ancorado ao botão), nunca como
- * modal/pop-up — evita a sensação de "pisca-pisca" quando a confirmação
- * demora.
+ * Duas correcções de visibilidade que faziam as pessoas não encontrarem
+ * como pagar:
+ *
+ * 1. Antes havia `if (!user) return null`, ou seja, quem ainda não tinha
+ *    sessão iniciada — precisamente o visitante que chega pela primeira
+ *    vez — não via botão nenhum, em lado nenhum do site. Agora vê: ao
+ *    clicar, inicia sessão e o painel de pagamento abre logo a seguir,
+ *    sem ter de procurar outra vez.
+ * 2. No telemóvel só existia dentro do menu hambúrguer. Passa a ficar
+ *    visível na barra de topo, com rótulo mais curto para caber.
+ *
+ * A variante "destaque" é para o hero: maior e com o preço em evidência.
+ * Nessa variante o painel de pagamento abre em fluxo (empurra o
+ * conteúdo) em vez de flutuar, porque a secção do hero tem
+ * `overflow-hidden` e cortaria um painel posicionado de forma absoluta.
  */
-export default function AcessoStatus() {
+export default function AcessoStatus({ variante = "compacto" }: { variante?: Variante }) {
   const { user } = useAuth();
   const { checking, unlocked, expiraEm, servico, refresh } = useEntitlement();
   const [comprar, setComprar] = useState(false);
@@ -40,16 +52,19 @@ export default function AcessoStatus() {
     return () => clearInterval(id);
   }, []);
 
+  // Fechar ao clicar fora só faz sentido no painel flutuante da barra.
   useEffect(() => {
-    if (!comprar) return;
+    if (!comprar || variante === "destaque") return;
     function onClickOutside(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setComprar(false);
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [comprar]);
+  }, [comprar, variante]);
 
-  if (!user || checking) return null;
+  // Enquanto não se sabe o estado, não mostrar nada — evita anunciar
+  // "desbloquear" a quem já pagou, por uma fracção de segundo.
+  if (checking) return null;
 
   if (unlocked && expiraEm) {
     const expirandoEm = new Date(expiraEm).getTime() - Date.now() < AVISO_EXPIRACAO_MS;
@@ -66,28 +81,83 @@ export default function AcessoStatus() {
     );
   }
 
+  const preco = servico?.preco_mt ?? 109;
+
+  /** Sem sessão: entra primeiro, e o pagamento abre a seguir sozinho. */
+  function aoClicar() {
+    if (!user) { setShowAuth(true); return; }
+    setComprar((v) => !v);
+  }
+
+  const painel = comprar && servico && (
+    <PagamentoAcessoTotal
+      servico={servico}
+      compacto
+      onCancel={() => setComprar(false)}
+      onSuccess={() => { setComprar(false); refresh(); }}
+    />
+  );
+
+  if (variante === "destaque") {
+    return (
+      <div ref={wrapRef} className="w-full max-w-sm">
+        <button
+          onClick={aoClicar}
+          className="w-full inline-flex items-center justify-between gap-3 px-5 py-4 rounded-2xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-95"
+          style={{
+            background: "rgba(254,0,0,0.10)",
+            border: "1px solid rgba(254,0,0,0.35)",
+            color: "#fff",
+          }}
+        >
+          <span className="inline-flex items-center gap-2">
+            <Lock className="w-4 h-4" style={{ color: "#FE0000" }} />
+            Desbloquear tudo por 8 horas
+          </span>
+          <span className="text-base font-black shrink-0" style={{ color: "#FE0000" }}>{preco} MT</span>
+        </button>
+
+        {painel && (
+          <div className="mt-3 bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden">
+            {painel}
+          </div>
+        )}
+
+        {showAuth && (
+          <AuthModal
+            onClose={() => setShowAuth(false)}
+            onSuccess={() => { setShowAuth(false); setComprar(true); }}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div ref={wrapRef} className="relative inline-block">
       <button
-        onClick={() => (user ? setComprar((v) => !v) : setShowAuth(true))}
-        className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all hover:scale-[1.03] active:scale-95"
+        onClick={aoClicar}
+        className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all hover:scale-[1.03] active:scale-95 whitespace-nowrap"
         style={{ background: "linear-gradient(135deg, #FE0000 0%, #D20001 100%)", color: "#fff" }}
       >
-        <Lock className="w-3 h-3" /> Desbloquear tudo — {servico?.preco_mt ?? 109} MT
+        <Lock className="w-3 h-3 shrink-0" />
+        {/* Rótulo curto no telemóvel, onde a barra tem pouco espaço. */}
+        <span className="hidden sm:inline">Desbloquear tudo — {preco} MT</span>
+        <span className="sm:hidden">{preco} MT</span>
       </button>
 
-      {comprar && servico && (
+      {painel && (
         <div className="absolute right-0 top-[calc(100%+8px)] w-[320px] max-w-[90vw] bg-white rounded-2xl border border-gray-100 shadow-xl z-40 overflow-hidden">
-          <PagamentoAcessoTotal
-            servico={servico}
-            compacto
-            onCancel={() => setComprar(false)}
-            onSuccess={() => { setComprar(false); refresh(); }}
-          />
+          {painel}
         </div>
       )}
 
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} />}
+      {showAuth && (
+        <AuthModal
+          onClose={() => setShowAuth(false)}
+          onSuccess={() => { setShowAuth(false); setComprar(true); }}
+        />
+      )}
     </div>
   );
 }

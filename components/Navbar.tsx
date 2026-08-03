@@ -99,11 +99,11 @@ export default function Navbar() {
 
         {/* CTA + user + Hamburger */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {user && (
-            <div className="hidden sm:block">
-              <AcessoStatus />
-            </div>
-          )}
+          {/* Sempre visível, com ou sem sessão iniciada, e também no
+              telemóvel. Antes estava condicionado a `user` e escondido
+              abaixo de 640px, o que deixava o visitante que chega pela
+              primeira vez sem forma nenhuma de encontrar o pagamento. */}
+          <AcessoStatus />
           {user ? (
             <div className="hidden sm:flex items-center gap-2">
               <Link href="/conta" className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 rounded-xl px-3 py-2 transition-colors">
